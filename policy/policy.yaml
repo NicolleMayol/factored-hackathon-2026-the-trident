@@ -1,14 +1,14 @@
 # Matriz de política · owner: ia-ml · consumers: servicio · v1 · 2026-09-28 · a validar con legal
 defaults: {action: escalate, reason_code: out_of_scope}
 rules:
-  - id: P01, intent: product_info,            action: auto,        requires: [citation]
-  - id: P02, intent: eligibility_simulation,  action: confirm,     requires: [jwt_valid, scope:credit:simulate, user_consent], output_label: simulacion
-  - id: P03, intent: formal_application,      action: escalate,    reason_code: regulatory
-  - id: P04, intent: disbursement,            action: escalate,    reason_code: regulatory
-  - id: P05, condition: rules_outcome == "Revisión humana" or prescore_ci_crosses_threshold, action: escalate, reason_code: borderline
-  - id: P06, condition: missing_required_slots, action: clarify, max_clarifications: 1, then: escalate, reason_code: missing_data
-  - id: P07, condition: days_past_due > 0 or customer_status in [Suspended] or fraud_flag, action: escalate, reason_code: risk_flag
-  - id: P08, intent: out_of_scope,            action: abstain
-  - id: P09, condition: intent_confidence < 0.6 or mixed_language, action: clarify
-  - id: P10, condition: injection_detected or third_party_data_request, action: block, log: true, reason_code: injection_suspected
-  - id: P11, condition: jwt_invalid or expired, action: reject
+  - {id: P01, intent: product_info, action: auto, requires: [citation]}
+  - {id: P02, intent: eligibility_simulation, action: confirm, requires: [jwt_valid, "scope:credit:simulate", user_consent], output_label: simulacion}
+  - {id: P03, intent: formal_application, action: escalate, reason_code: regulatory}
+  - {id: P04, intent: disbursement, action: escalate, reason_code: regulatory}
+  - {id: P05, condition: "rules_outcome == 'Revisión humana' or prescore_ci_crosses_threshold", action: escalate, reason_code: borderline}
+  - {id: P06, condition: missing_required_slots, action: clarify, max_clarifications: 1, then: escalate, reason_code: missing_data}
+  - {id: P07, condition: "days_past_due > 0 or customer_status in ['Suspended'] or fraud_flag", action: escalate, reason_code: risk_flag}
+  - {id: P08, intent: out_of_scope, action: abstain}
+  - {id: P09, condition: "intent_confidence < 0.6 or mixed_language", action: clarify}
+  - {id: P10, condition: "injection_detected or third_party_data_request", action: block, log: true, reason_code: injection_suspected}
+  - {id: P11, condition: "jwt_invalid or expired", action: reject}
