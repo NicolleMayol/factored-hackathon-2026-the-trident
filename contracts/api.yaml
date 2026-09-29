@@ -1,0 +1,9 @@
+openapi: 3.0.3
+info: {title: Agente Crédito LATAM API, version: "1.0.0", description: "owner endpoints: /session servicio; resto ia-ml. consumers: servicio (frontend, carga)."}
+paths:
+  /session: {post: {summary: Emite JWT de prueba (customer_id, scopes, exp 30 min)}}
+  /chat: {post: {summary: Turno de conversación, requestBody: {conversation_id, message, locale}, responses: {"200": {reply, action: "answer|clarify|confirm|escalate|blocked", citations: [{type: "chunk|rule|tool", id}], trace_id, cost_usd, latency_ms}, "401": {}, "429": {}}}}
+  /chat/confirm: {post: {summary: Confirma una acción pendiente (action_id)}}
+  /trace/{trace_id}: {get: {summary: Nodos ejecutados, tools, reglas disparadas, versiones}}
+  /handoff/{case_id}: {get: {summary: Paquete de handoff (rol agente humano)}}
+  /healthz: {get: {summary: Estado de dependencias (LLM, Cosmos, Model Serving, SQL Warehouse)}}

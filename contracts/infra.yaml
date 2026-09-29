@@ -1,0 +1,9 @@
+# Contrato de infraestructura · owner: servicio (Nicolle) salvo databricks_access (datos) y model_serving (ia-ml) · v1
+function_app: {runtime: python3.11, plan: Consumption, app_settings: [DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET, SQL_HTTP_PATH, FM_ENDPOINT, PRESCORE_ENDPOINT, COSMOS_ENDPOINT, COSMOS_KEY, MLFLOW_EXPERIMENT, JWT_SIGNING_KEY]}
+app_service: {plan: F1, routes: [/, /handoff/{case_id}]}
+cosmos: {api: NoSQL, free_tier: true (habilitar al crear; provisioned 1000 RU/s), database: agent, containers: {conversations: {pk: /conversation_id, ttl_s: 86400}, handoffs: {pk: /case_id}, policy_chunks: {pk: /country, vector_index: diskANN 1024 cosine}}}
+identity_mock: {endpoint: POST /session, jwt_exp_min: 30, test_users: docs/test-users.md}
+databricks_access: {service_principal: sp-agent-ro, grants: [SELECT hackathon.gold, SELECT hackathon.ref], sql_warehouse: wh-agent (serverless), catalog: hackathon}
+model_serving: {endpoint: prescore-lgbm, scale_to_zero: true, input: features de customer_360 + behavior_12m}
+observability: {app_insights: true, operation_id_equals_trace_id: true, export_to: ops.infra_requests}
+ci_cd: {tool: GitHub Actions, gates: [pytest, eval-harness, adr-impact], merge: solo Nicolle}

@@ -1,0 +1,40 @@
+# Contrato de tablas gold/ref · owner: datos (Eladio) · consumers: ia-ml · v1 · 2026-09-28
+catalog: hackathon
+tables:
+  gold.customer_360:
+    grain: 1 fila por customer_id
+    key: [customer_id]
+    columns:
+      customer_id: {type: string, nullable: false}
+      country: {type: string, nullable: false, values: [Mexico, Colombia, Argentina]}
+      segment: {type: string, nullable: false}
+      credit_score: {type: int, nullable: true, range: [300, 850]}
+      estimated_monthly_income: {type: decimal(12,2), nullable: true}
+      customer_status: {type: string, nullable: false}
+      registration_date: {type: timestamp, nullable: false}
+      detected_accent: {type: string, nullable: true}
+      _ingested_at: {type: timestamp, nullable: false}
+    excluded_from_features: [gender, marital_status, date_of_birth]   # no discriminación
+    dedup: document_number, último last_updated
+  gold.customer_products:
+    grain: 1 fila por product_id
+    key: [product_id]
+    columns: {product_id: string, customer_id: string, product_type: string, currency: string, current_balance: "decimal(15,2)", credit_limit: "decimal(15,2)", days_past_due: int, product_status: string, _ingested_at: timestamp}
+  gold.customer_behavior_12m:
+    grain: 1 fila por customer_id
+    cutoff_date: 2025-06-30
+    columns: {customer_id: string, n_tx: int, amount_usd_12m: "decimal(15,2)", declined_ratio: "decimal(5,4)", max_days_past_due: int, active_months: int, _ingested_at: timestamp}
+  gold.credit_product_catalog:
+    grain: 1 fila por producto × país
+    synthetic: true
+    columns: {product_code: string, country: string, name_es: string, name_pt: string, product_type: string, currency: string, rate_min: "decimal(5,2)", rate_max: "decimal(5,2)", amount_min: "decimal(15,2)", amount_max: "decimal(15,2)", term_months_max: int, requirements: string, valid_from: date, valid_to: date, es_sintetico: boolean}
+  gold.intent_labels:
+    grain: 1 fila por transcript_id
+    split: {by: process_date, test: últimos 3 meses}
+    columns: {transcript_id: string, customer_text: string, detected_intents: string, contact_reason: string, reason_category: string, detected_language: string, process_date: date, intent_label: string, action_label: string}
+  gold.contact_demand:
+    grain: día × país × reason_category
+    columns: {date: date, country: string, reason_category: string, volume: int, fcr_rate: "decimal(5,4)", escalated: int, wait_p50_s: int, csat_avg: "decimal(3,2)"}
+  ref.regulator_rates:
+    grain: país × producto × snapshot
+    columns: {country: string, product_type: string, rate_min: "decimal(5,2)", rate_max: "decimal(5,2)", source: string, url: string, snapshot_date: date}

@@ -1,0 +1,5 @@
+# Contrato de policy_chunks · owner: ia-ml · consumers: datos (E7), servicio (Cosmos N3) · v1
+embedding: {model: bge-m3, dims: 1024, metric: cosine, quantization: int8-onnx (go/no-go medido en PT)}
+chunk: {chunk_id: string, doc_id: string, text: string, language: "es|pt", country: "MX|CO|AR|BR", product_code: string, rule_id: string, version: string, valid_from: date, valid_to: date, es_sintetico: true, embedding: "float[1024]"}
+cosmos: {database: agent, container: policy_chunks, partition_key: /country, vector_index: {path: /embedding, type: diskANN, distance: cosine, dims: 1024}}
+load: E7 produce JSONL con estos campos; la Function (o un job) lo carga a Cosmos.

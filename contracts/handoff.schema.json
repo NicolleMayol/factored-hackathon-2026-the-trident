@@ -1,0 +1,14 @@
+{"$schema":"https://json-schema.org/draft/2020-12/schema","title":"Handoff","type":"object",
+ "required":["case_id","customer_id","locale","reason_code","request_summary","verified_facts","actions_taken","evidence","open_questions","risk_flags","trace_id"],
+ "properties":{
+  "case_id":{"type":"string"},"customer_id":{"type":"string"},"locale":{"type":"string","enum":["es-MX","es-CO","es-AR","pt-BR"]},
+  "reason_code":{"type":"string","enum":["regulatory","missing_data","borderline","out_of_scope","injection_suspected","risk_flag"]},
+  "request_summary":{"type":"string","maxLength":600},
+  "verified_facts":{"type":"array","items":{"type":"object","required":["fact","source"],"properties":{"fact":{"type":"string"},"source":{"type":"string"}}}},
+  "actions_taken":{"type":"array","items":{"type":"object","required":["tool","result","verified"],"properties":{"tool":{"type":"string"},"result":{"type":"string"},"verified":{"type":"boolean"}}}},
+  "evidence":{"type":"array","items":{"type":"object","required":["type","id"],"properties":{"type":{"type":"string","enum":["chunk","rule","tool"]},"id":{"type":"string"},"text":{"type":"string"}}}},
+  "open_questions":{"type":"array","items":{"type":"string"}},
+  "risk_flags":{"type":"array","items":{"type":"string"}},
+  "trace_id":{"type":"string"}},
+ "additionalProperties":false,
+ "x-never-include":["raw_transcript","document_number","pii_of_third_parties"]}

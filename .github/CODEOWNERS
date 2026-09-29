@@ -1,0 +1,9 @@
+# Cambios en contratos exigen revisión de todos los roles (GitHub pide approve de cada owner listado).
+/contracts/          @tu-user @eladioyovera @user-nicolle
+/policy/             @tu-user @user-nicolle
+/docs/adr/           @tu-user @eladioyovera @user-nicolle
+/agent/              @tu-user
+/data/               @eladioyovera
+/infra/              @user-nicolle
+/.github/            @user-nicolle
+/eval/               @tu-user @user-nicolle

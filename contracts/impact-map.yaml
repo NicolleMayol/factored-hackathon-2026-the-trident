@@ -1,0 +1,152 @@
+# Mapa de impacto: qué elemento del sistema es propiedad de quién y quién lo consume.
+# El skill adr-hackathon y el workflow adr-impact leen este archivo.
+# roles: datos (Eladio) · ia-ml (Manuela) · servicio (Nicolle)
+version: 1
+roles:
+  datos: { name: Eladio, github: "@eladioyovera" }
+  ia-ml: { name: Manuela, github: "@tu-user" }
+  servicio: { name: Nicolle, github: "@user-nicolle" }
+
+elements:
+  # --- contratos de datos ---
+  - id: gold.customer_360
+    file: contracts/gold.yaml
+    owner: datos
+    consumers: [ia-ml]
+    used_by: [get_customer_profile, prescore_features]
+  - id: gold.customer_products
+    file: contracts/gold.yaml
+    owner: datos
+    consumers: [ia-ml]
+    used_by: [get_customer_products, policy_flags]
+  - id: gold.customer_behavior_12m
+    file: contracts/gold.yaml
+    owner: datos
+    consumers: [ia-ml]
+    used_by: [prescore_features]
+  - id: gold.credit_product_catalog
+    file: contracts/gold.yaml
+    owner: datos
+    consumers: [ia-ml]
+    used_by: [policy/catalog.yaml, search_policy, evaluate_eligibility]
+  - id: gold.policy_chunks
+    file: contracts/chunks.yaml
+    owner: ia-ml
+    consumers: [datos, servicio]
+    used_by: [E7 pipeline, cosmos.policy_chunks vector index]
+  - id: gold.intent_labels
+    file: contracts/gold.yaml
+    owner: datos
+    consumers: [ia-ml]
+    used_by: [intent_classifier]
+  - id: gold.contact_demand
+    file: contracts/gold.yaml
+    owner: datos
+    consumers: [ia-ml]
+    used_by: [pitch slide 2]
+  - id: ref.regulator_rates
+    file: contracts/gold.yaml
+    owner: datos
+    consumers: [ia-ml]
+    used_by: [groundedness rate check, catalog calibration]
+  # --- tools y política (ia-ml) ---
+  - id: tools.*
+    file: contracts/tools.yaml
+    owner: ia-ml
+    consumers: [datos, servicio]
+    used_by: [gold schemas, Function App settings]
+  - id: policy.policy.yaml
+    file: policy/policy.yaml
+    owner: ia-ml
+    consumers: [servicio]
+    used_by: [test users N4, handoff view N5]
+  - id: policy.glossary.yaml
+    file: policy/glossary.yaml
+    owner: ia-ml
+    consumers: []
+  # --- API y servicio (servicio) ---
+  - id: api.POST_/chat
+    file: contracts/api.yaml
+    owner: ia-ml
+    consumers: [servicio]
+    used_by: [App Service chat, load test N7]
+  - id: api.POST_/session
+    file: contracts/api.yaml
+    owner: servicio
+    consumers: [ia-ml]
+    used_by: [auth node]
+  - id: api.GET_/trace
+    file: contracts/api.yaml
+    owner: ia-ml
+    consumers: [servicio]
+  - id: api.GET_/handoff
+    file: contracts/api.yaml
+    owner: ia-ml
+    consumers: [servicio]
+    used_by: [handoff view N5]
+  - id: handoff.schema
+    file: contracts/handoff.schema.json
+    owner: ia-ml
+    consumers: [servicio]
+  - id: infra.function_app_settings
+    file: contracts/infra.yaml
+    owner: servicio
+    consumers: [ia-ml]
+    used_by: [DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET, SQL_HTTP_PATH, FM_ENDPOINT, PRESCORE_ENDPOINT, COSMOS_ENDPOINT, COSMOS_KEY, MLFLOW_EXPERIMENT]
+  - id: infra.cosmos
+    file: contracts/infra.yaml
+    owner: servicio
+    consumers: [ia-ml, datos]
+    used_by: [conversations, handoffs, policy_chunks vector index 1024 cosine, E7 JSONL load]
+  - id: infra.databricks_access
+    file: contracts/infra.yaml
+    owner: datos
+    consumers: [ia-ml, servicio]
+    used_by: [sp-agent-ro, wh-agent http path, catalog hackathon]
+  - id: infra.model_serving
+    file: contracts/infra.yaml
+    owner: ia-ml
+    consumers: [servicio]
+    used_by: [PRESCORE_ENDPOINT]
+  # --- observabilidad ---
+  - id: ops.infra_requests
+    file: contracts/ops.yaml
+    owner: servicio
+    consumers: [datos]
+    used_by: [tablero AI/BI]
+  - id: ops.dq_results
+    file: contracts/ops.yaml
+    owner: datos
+    consumers: [servicio]
+    used_by: [alerta DQ]
+  - id: ops.agent_turns
+    file: contracts/ops.yaml
+    owner: ia-ml
+    consumers: [datos, servicio]
+    used_by: [tablero AI/BI, N7 correlación carga]
+  - id: ops.ml_inference
+    file: contracts/ops.yaml
+    owner: ia-ml
+    consumers: [datos]
+  # --- eval ---
+  - id: eval.cases
+    file: eval/cases.jsonl
+    owner: ia-ml
+    consumers: [servicio]
+    used_by: [CI gate, load test N7]
+
+# Reglas de gate: un cambio en un elemento con consumers ≠ owner exige
+# revisión aprobada de cada consumer antes de mergear (CODEOWNERS + workflow adr-impact).
+
+  # --- añadidos 2026-09-29 tras el diagrama de Eladio/Nicolle (DEMO) ---
+  - {id: infra.app_service,       file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [chat UI, BFF con managed identity, /handoff view]}
+  - {id: infra.identity,          file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [Entra Easy Auth o mock JWT (ADR-12), claims → customer_id]}
+  - {id: infra.key_vault,         file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml, datos],   used_by: [databricks-client-secret, jwt-signing-key, fm-api-token]}
+  - {id: infra.adls,              file: contracts/infra.yaml, owner: datos,    consumers: [ia-ml],          used_by: [bronze/silver/gold en ADLS Gen2 vía Access Connector]}
+  - {id: infra.fm_apis,           file: contracts/infra.yaml, owner: ia-ml,    consumers: [servicio],       used_by: [FM_ENDPOINT_MAIN, FM_ENDPOINT_SMALL, AI Gateway rate limit]}
+  - {id: infra.ci_cd,             file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [GitHub Actions, Asset Bundles, gates ci/adr-impact/diagram-sync]}
+  - {id: data.source_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: [bucket Factored read-only]}
+  - {id: data.ingest_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: [Auto Loader en SDP → bronze]}
+  - {id: data.pipeline_medallon,  file: contracts/gold.yaml,  owner: datos,    consumers: [ia-ml],          used_by: [SDP bronze→silver→gold, Lakeflow Jobs, DQ]}
+  - {id: ml.features,             file: contracts/gold.yaml,  owner: ia-ml,    consumers: [datos],          used_by: [customer_behavior_12m + customer_360 → feature table]}
+  - {id: ml.prescore_lgbm,        file: contracts/ops.yaml,   owner: ia-ml,    consumers: [servicio],       used_by: [registro UC hackathon.ml.prescore_lgbm, Model Serving]}

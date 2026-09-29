@@ -1,0 +1,37 @@
+name: adr-impact
+on:
+  pull_request:
+    paths: ["contracts/**", "policy/**", "docs/adr/**", "eval/**"]
+permissions:
+  pull-requests: write
+  contents: read
+jobs:
+  impact:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - run: pip install pyyaml
+      - name: Archivos cambiados
+        run: git diff --name-only origin/${{ github.base_ref }}...HEAD > changed.txt
+      - name: Rol del autor (por CODEOWNERS del área principal del PR)
+        id: role
+        run: |
+          ROLE=$(grep -m1 -oE '^\*\*Rol:\*\* *(datos|ia-ml|servicio)' <<< "$PR_BODY" | grep -oE '(datos|ia-ml|servicio)' || echo "")
+          echo "role=$ROLE" >> $GITHUB_OUTPUT
+        env: { PR_BODY: "${{ github.event.pull_request.body }}" }
+      - name: Calcular impacto
+        id: impact
+        continue-on-error: true
+        run: python scripts/impact_check.py changed.txt --author-role "${{ steps.role.outputs.role }}"
+        env: { PR_BODY: "${{ github.event.pull_request.body }}" }
+      - name: Comentar en el PR
+        uses: marocchino/sticky-pull-request-comment@v2
+        with: { path: impact.md }
+      - name: Pedir revisión a los impactados
+        if: steps.impact.outcome == 'failure'
+        run: |
+          echo "Impacto cruzado sin aviso: el PR queda bloqueado hasta que el autor añada el aviso y los impactados aprueben."
+          exit 1
