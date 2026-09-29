@@ -228,7 +228,10 @@
         <mxCell id="stcitb7SBD_jWocehg3U-7" parent="PnbJyAoxNO_utd6hSDmz-65" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" value="Functions App - Backend" vertex="1">
           <mxGeometry height="29" width="174" x="26.269999999999982" y="122" as="geometry" />
         </mxCell>
-        <mxCell id="stcitb7SBD_jWocehg3U-9" parent="PnbJyAoxNO_utd6hSDmz-65" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" value="App&amp;nbsp;&lt;div&gt;Insights&lt;/div&gt;" vertex="1">
+        <object label="Flex Consumption · agente LangGraph" id="ia-20260929-1" element="agent.runtime" adr="ADR-18" owner="ia-ml" estado="hackathon"><mxCell parent="PnbJyAoxNO_utd6hSDmz-65" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=11;" vertex="1">
+          <mxGeometry height="20" width="180" x="26" y="150" as="geometry" />
+        </mxCell>
+        </object><mxCell id="stcitb7SBD_jWocehg3U-9" parent="PnbJyAoxNO_utd6hSDmz-65" style="text;html=1;align=center;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;fontSize=14;" value="App&amp;nbsp;&lt;div&gt;Insights&lt;/div&gt;" vertex="1">
           <mxGeometry height="46" width="66" x="44.26999999999998" y="475" as="geometry" />
         </mxCell>
         <mxCell id="o5e24b7mk7TOF2sgoJaT-1" parent="PnbJyAoxNO_utd6hSDmz-65" style="image;aspect=fixed;html=1;points=[];align=center;fontSize=12;image=img/lib/azure2/analytics/Log_Analytics_Workspaces.svg;" value="" vertex="1">

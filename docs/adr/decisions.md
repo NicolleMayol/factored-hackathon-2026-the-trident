@@ -1,4 +1,4 @@
-# Decisiones (ADR-01…NN) · fuente: ADR compartido v1.2 · 2026-09-28
+# Decisiones (ADR-01…NN) · fuente: ADR compartido v1.2 · 2026-09-28 · ADR-18 añadida 2026-09-29
 
 | ADR | Rol | Decisión | Alternativas descartadas | Criterio | Estado |
 | --- | --- | --- | --- | --- | --- |
@@ -19,3 +19,4 @@
 | 15 | todos | Observabilidad: un plano, cuatro dominios sobre ops.*; tablero AI/BI; sin consola propia | Admin console | El jurado puntúa trazas, no frontend | cerrada |
 | 16 | ia-ml | Multilenguaje sin traducción; idioma en Understand y Respond; embeddings cross-lingual; glosario; país desde perfil | Traducir; fine-tuning | No se pierde contexto; PT medido donde falla | cerrada |
 | 17 | ia-ml | Cuantización int8 solo embeddings/clasificador/reranker con go/no-go en PT | Cuantizar todo | Gana donde se nota en el servicio | cerrada |
+| 18 | ia-ml | El agente (grafo LangGraph) corre en la Function App Flex Consumption; Databricks aporta Foundation Model APIs, Model Serving y MLflow, no un Agent Framework | Mosaic AI Agent Framework (agente como endpoint de Model Serving); Agent Bricks | Un runtime, junto a la API; sin endpoint de agente con costo fijo; mismo código en func start y en Azure | cerrada |
