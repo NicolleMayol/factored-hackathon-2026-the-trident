@@ -18,6 +18,7 @@ Fuente de verdad del diseño. Se edita por PR con el skill `adr-hackathon` (`.cl
 | 11 | 11-multilenguaje.md | Manuela |
 | 12 | 12-fuentes-externas.md | Eladio |
 | 13 | dependencies.md | todos |
+| 14 | 18-agente-runtime.md (ADR-18: dónde corre el agente) | Manuela |
 
 ## Glosario
 | Término | Significado |

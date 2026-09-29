@@ -1,6 +1,7 @@
-# Contrato de telemetría · v1 · todo lleva trace_id y conversation_id
+# Contrato de telemetría · v2 · 2026-09-29 · todo lleva trace_id y conversation_id
+# v2 (ADR-18): p95 solo en caliente (cold_start = false); cold start se reporta aparte. Avisar: servicio, datos.
 ops.infra_requests: {owner: servicio, columns: [ts, operation_id, endpoint, status, latency_ms, retries, cold_start, region]}
 ops.dq_results:     {owner: datos,    columns: [run_ts, table, rule, passed, rows_checked, rows_failed, freshness_h]}
 ops.agent_turns:    {owner: ia-ml,    columns: [ts, trace_id, conversation_id, locale, node_path, tools_called, rules_fired, expected_action, action, guardrail_hits, groundedness, tokens_in, tokens_out, cost_usd, latency_ms, prompt_version, model_version]}
 ops.ml_inference:   {owner: ia-ml,    columns: [ts, model_version, customer_segment, country, probability, ci_low, ci_high, latency_ms]}
-alerts: {p95_ms: 8000, error_rate: 0.02, unsafe_outcomes: 0, dq_failed: 1, freshness_h: 24}
+alerts: {p95_ms: 8000, p95_filter: "ops.infra_requests.cold_start = false (join por operation_id = trace_id)", cold_start_report: aparte (p50/p95/conteo, sin umbral), error_rate: 0.02, unsafe_outcomes: 0, dq_failed: 1, freshness_h: 24}

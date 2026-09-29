@@ -4,8 +4,8 @@
 version: 1
 roles:
   datos: { name: Eladio, github: "@eladioyovera" }
-  ia-ml: { name: Manuela, github: "@tu-user" }
-  servicio: { name: Nicolle, github: "@user-nicolle" }
+  ia-ml: { name: Manuela, github: "@manularrea" }
+  servicio: { name: Nicolle, github: "@nicollemayol" }
 
 elements:
   # --- contratos de datos ---
@@ -92,7 +92,7 @@ elements:
     file: contracts/infra.yaml
     owner: servicio
     consumers: [ia-ml]
-    used_by: [DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET, SQL_HTTP_PATH, FM_ENDPOINT, PRESCORE_ENDPOINT, COSMOS_ENDPOINT, COSMOS_KEY, MLFLOW_EXPERIMENT]
+    used_by: [DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET, SQL_HTTP_PATH, FM_ENDPOINT_MAIN, FM_ENDPOINT_SMALL, PRESCORE_ENDPOINT, COSMOS_ENDPOINT, COSMOS_KEY, MLFLOW_TRACKING_URI, MLFLOW_EXPERIMENT, JWT_SIGNING_KEY]
   - id: infra.cosmos
     file: contracts/infra.yaml
     owner: servicio
@@ -102,7 +102,7 @@ elements:
     file: contracts/infra.yaml
     owner: datos
     consumers: [ia-ml, servicio]
-    used_by: [sp-agent-ro, wh-agent http path, catalog hackathon]
+    used_by: [sp-agent-ro, wh-agent http path, catalog hackathon, CAN_EDIT experimento /Shared/fh26/agente]
   - id: infra.model_serving
     file: contracts/infra.yaml
     owner: ia-ml
@@ -150,3 +150,8 @@ elements:
   - {id: data.pipeline_medallon,  file: contracts/gold.yaml,  owner: datos,    consumers: [ia-ml],          used_by: [SDP bronze→silver→gold, Lakeflow Jobs, DQ]}
   - {id: ml.features,             file: contracts/gold.yaml,  owner: ia-ml,    consumers: [datos],          used_by: [customer_behavior_12m + customer_360 → feature table]}
   - {id: ml.prescore_lgbm,        file: contracts/ops.yaml,   owner: ia-ml,    consumers: [servicio],       used_by: [registro UC hackathon.ml.prescore_lgbm, Model Serving]}
+
+  # --- añadidos 2026-09-29 por ADR-18 (agente en la Function App) ---
+  - {id: infra.function_app,      file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [plan Flex Consumption, runtime python3.11, host de agent.runtime]}
+  - {id: agent.runtime,           file: contracts/infra.yaml, owner: ia-ml,    consumers: [servicio],       used_by: [grafo LangGraph en la Function App, POST /chat, POST /chat/confirm, GET /trace, GET /handoff, GET /healthz, M6]}
+  - {id: agent.prompts,           file: agent/prompts/,       owner: ia-ml,    consumers: [],               used_by: [hash → ops.agent_turns.prompt_version]}
