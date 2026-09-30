@@ -139,12 +139,12 @@ elements:
 # revisión aprobada de cada consumer antes de mergear (CODEOWNERS + workflow adr-impact).
 
   # --- añadidos 2026-09-29 tras el diagrama de Eladio/Nicolle (DEMO) ---
-  - {id: infra.app_service,       file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [wapp-agent-bank-dev + asp-agent-bank-dev B1 (ADR-19), chat UI, BFF con managed identity, /handoff view]}
+  - {id: infra.app_service,       file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [swa-agent-bank-dev Static Web Apps Free (ADR-19 v3), chat UI, /handoff view, CORS a la Function App]}
   - {id: infra.identity,          file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [mock JWT HS256 (ADR-12 cerrada), POST /session, claims → customer_id]}
   - {id: infra.key_vault,         file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml, datos],   used_by: [databricks-client-secret, cosmos-key, jwt-signing-key, s3-access-key-id, s3-secret-access-key, secret scope fh26]}
   - {id: infra.adls,              file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [bronze/silver/gold en ADLS Gen2 vía Access Connector, contenedor ops-export]}
   - {id: infra.fm_apis,           file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [FM_ENDPOINT_MAIN, FM_ENDPOINT_SMALL, AI Gateway rate limit; modelo en ADR-02 (ia-ml)]}
-  - {id: infra.ci_cd,             file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [GitHub Actions con OIDC, Asset Bundles, gates ci/adr-impact/diagram-sync/terraform-plan/gitleaks, deploy.yml]}
+  - {id: infra.ci_cd,             file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [workflow infra (plan/apply), environment hackathon, SP sp-deploy-iac-hackathon, Asset Bundles, gates adr-impact/diagram-sync/terraform-plan]}
   - {id: data.source_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: [bucket Factored read-only]}
   - {id: data.ingest_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: [Auto Loader en SDP → bronze]}
   - {id: data.pipeline_medallon,  file: contracts/gold.yaml,  owner: datos,    consumers: [ia-ml],          used_by: [SDP bronze→silver→gold, Lakeflow Jobs, DQ]}
@@ -157,5 +157,5 @@ elements:
   - {id: agent.prompts,           file: agent/prompts/,       owner: ia-ml,    consumers: [],               used_by: [hash → ops.agent_turns.prompt_version]}
 
   # --- añadidos 2026-09-29 por ADR-19 (plan de infraestructura en Terraform) ---
-  - {id: infra.iac,               file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [infra/bootstrap, infra/azure, infra/databricks, estado en sttfstateagentbankdev]}
+  - {id: infra.iac,               file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [infra/azure, infra/databricks, infra/scripts/ensure-backend.sh, estado en sttfstateagentbankdev]}
   - {id: infra.databricks_workspace, file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: [dbw-agent-bank-dev Premium, solo serverless, DATABRICKS_HOST]}
