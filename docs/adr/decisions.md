@@ -1,4 +1,4 @@
-# Decisiones (ADR-01…NN) · fuente: ADR compartido v1.2 · 2026-09-28 · ADR-18 añadida 2026-09-29
+# Decisiones (ADR-01…NN) · fuente: ADR compartido v1.2 · 2026-09-28 · ADR-18 y ADR-19 añadidas y ADR-12 cerrada 2026-09-29
 
 | ADR | Rol | Decisión | Alternativas descartadas | Criterio | Estado |
 | --- | --- | --- | --- | --- | --- |
@@ -13,10 +13,11 @@
 | 09 | servicio/ia-ml | Estado, handoffs y vectores en Cosmos free tier (TTL 24 h); trazas MLflow + App Insights | Lakebase; Redis | Costo cero, un componente | cerrada |
 | 10 | ia-ml | MLflow Evaluate; eval set held-out ES/PT; judge validado con 50 juicios; métricas en CI | Evaluación manual final | El reto puntúa evidencia | cerrada |
 | 11 | ia-ml | PT: corpus, eval y clasificador bilingües; métricas por idioma | Traducir en runtime | Reportar la limitación es requisito | cerrada |
-| 12 | servicio | Identidad mock JWT (customer_id, scopes, exp); customer_id solo del token | Documento en el chat | Un documento no prueba identidad | abierta (mock vs Entra) |
+| 12 | servicio | Identidad mock JWT HS256 (customer_id, scopes, exp 30 min) emitido por POST /session en la Function App; customer_id solo del token; Entra External ID en To-Be | Documento en el chat; Entra External ID en el hackathon | Un documento no prueba identidad; Entra no cabe en el calendario | cerrada (2026-09-29, ADR-19) |
 | 13 | ia-ml | Métrica de no agencia = matriz de confusión de acción con Act/Abstain/Paired Accuracy, CAR, SR/UR/IRR, FP rate, IVR, AbsRec@K; MITRE ATLAS aparte para amenazas | "MAT/MAD"; solo tasa de escalamiento | Métricas reconocidas; aíslan contención de capacidad | cerrada |
 | 14 | ia-ml | Graph + harness + loop engineering; ontología ligera; Jev opcional | Agente libre | Costo casi nulo | abierta (Jev, jue 1) |
 | 15 | todos | Observabilidad: un plano, cuatro dominios sobre ops.*; tablero AI/BI; sin consola propia | Admin console | El valor está en trazas y registros de ejecución, no en una consola propia | cerrada |
 | 16 | ia-ml | Multilenguaje sin traducción; idioma en Understand y Respond; embeddings cross-lingual; glosario; país desde perfil | Traducir; fine-tuning | No se pierde contexto; PT medido donde falla | cerrada |
 | 17 | ia-ml | Cuantización int8 solo embeddings/clasificador/reranker con go/no-go en PT | Cuantizar todo | Gana donde se nota en el servicio | cerrada |
 | 18 | ia-ml | El agente (grafo LangGraph) corre en la Function App Flex Consumption; Databricks aporta Foundation Model APIs, Model Serving y MLflow, no un Agent Framework | Mosaic AI Agent Framework (agente como endpoint de Model Serving); Agent Bricks | Un runtime, junto a la API; sin endpoint de agente con costo fijo; mismo código en func start y en Azure | cerrada |
+| 19 | servicio | Toda la infraestructura de Azure y Databricks en Terraform (East US 2), owner servicio: workspace, ADLS, Key Vault, catálogo y grants, Cosmos 3 × 400 RU/s, Function App Flex 2048 MB, Web App B1 con BFF (diagrama DEMO), CI con OIDC; ver `09-servicio.md` | Bicep; scripts az; cada rol crea sus recursos; App Service F1; Static Web Apps Free; Cosmos con throughput compartido | Un plan, un `destroy`, permisos en un solo lugar; vector search exige throughput dedicado; F1 se detiene tras 60 min de CPU al día | cerrada |
