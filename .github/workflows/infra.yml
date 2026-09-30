@@ -1,0 +1,103 @@
+# Mover a .github/workflows/infra.yml (la conexión de Claude no puede escribir en .github/workflows).
+name: infra
+on:
+  pull_request:
+    paths: ["infra/**", ".github/workflows/infra.yml"]
+  push:
+    branches: [main]
+    paths: ["infra/**", ".github/workflows/infra.yml"]
+  workflow_dispatch:
+
+permissions: { contents: read, pull-requests: write }
+concurrency: { group: terraform-azure, cancel-in-progress: false }
+
+env:
+  # Temporal: secreto del SP. Pasar a OIDC cuando haya credenciales federadas (ADR-19).
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  TF_VAR_budget_amount: ${{ vars.BUDGET_AMOUNT || '100' }}
+  TF_VAR_budget_emails: ${{ vars.BUDGET_EMAILS || '[]' }}
+  TF_VAR_admin_object_ids: ${{ vars.ADMIN_OBJECT_IDS || '[]' }}
+  TF_VAR_function_always_ready: ${{ vars.FUNCTION_ALWAYS_READY || 'false' }}
+  TF_VAR_databricks_client_id: ${{ vars.DATABRICKS_CLIENT_ID }}
+  TF_VAR_sql_http_path: ${{ vars.SQL_HTTP_PATH }}
+  TF_VAR_s3_access_key_id: ${{ secrets.S3_ACCESS_KEY_ID }}
+  TF_VAR_s3_secret_access_key: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  WORKDIR: infra/azure
+
+jobs:
+  plan:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "1.16.4", terraform_wrapper: false }
+      - name: Azure login (SP)
+        run: az login --service-principal -u "$ARM_CLIENT_ID" --password="$ARM_CLIENT_SECRET" --tenant "$ARM_TENANT_ID" -o none && az account set -s "$ARM_SUBSCRIPTION_ID"
+      - name: Backend del estado
+        run: bash infra/scripts/ensure-backend.sh
+      - name: fmt
+        run: terraform fmt -check -recursive infra || echo "::warning::terraform fmt encontró diferencias; corre 'terraform fmt -recursive infra'"
+      - name: init + validate
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform init && terraform validate
+      - name: plan
+        id: plan
+        working-directory: ${{ env.WORKDIR }}
+        run: |
+          set -o pipefail
+          terraform plan -no-color -lock-timeout=5m -out=tfplan | tee plan.txt
+      - name: Resumen para el PR
+        if: always()
+        working-directory: ${{ env.WORKDIR }}
+        run: |
+          {
+            echo "## terraform plan · infra/azure"
+            echo
+            if [ -f plan.txt ]; then
+              grep -E '^(Plan:|No changes\.)' plan.txt || echo "(sin línea de resumen)"
+              echo
+              echo "<details><summary>Plan completo</summary>"
+              echo
+              echo '```'
+              head -c 60000 plan.txt
+              echo '```'
+              echo "</details>"
+            else
+              echo "El plan no llegó a correr. Revisa el log del job."
+            fi
+          } > comment.md
+      - uses: marocchino/sticky-pull-request-comment@v2
+        if: always()
+        with: { header: infra-plan, path: infra/azure/comment.md }
+
+  apply:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: hackathon # exige la aprobación de Nicolle
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "1.16.4", terraform_wrapper: false }
+      - name: Azure login (SP)
+        run: az login --service-principal -u "$ARM_CLIENT_ID" --password="$ARM_CLIENT_SECRET" --tenant "$ARM_TENANT_ID" -o none && az account set -s "$ARM_SUBSCRIPTION_ID"
+      - name: Backend del estado
+        run: bash infra/scripts/ensure-backend.sh
+      - name: init
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform init
+      - name: apply
+        working-directory: ${{ env.WORKDIR }}
+        run: terraform apply -auto-approve -lock-timeout=5m
+      - name: Salidas
+        working-directory: ${{ env.WORKDIR }}
+        run: |
+          echo '## infra/azure · salidas' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          terraform output >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"

@@ -6,3 +6,10 @@ __pycache__/
 .terraform/
 local.settings.json
 .DS_Store
+
+# Terraform (ADR-19)
+*.tfvars
+!*.tfvars.example
+tfplan
+plan.txt
+infra/**/comment.md
