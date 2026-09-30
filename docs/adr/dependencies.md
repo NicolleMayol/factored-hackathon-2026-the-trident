@@ -1,4 +1,4 @@
-# Dependencias entre roles · v3 · 2026-09-29 (ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian)
+# Dependencias entre roles · v3 · 2026-09-29 (ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5)
 Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega, el receptor trabaja con mock. Integraciones: mié 30 sep y sáb 3 oct.
 
 ## Manuela ← Eladio
@@ -16,11 +16,11 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 ## Manuela ← Nicolle
 | # | Entregable | Fecha | Mock |
 | --- | --- | --- | --- |
-| N1 | Repo en nicollemayol/factored-hackathon-2026-the-trident; CI con OIDC (pytest + eval + adr-impact + terraform plan + gitleaks); solo Nicolle mergea | Mié 30 | rama local |
+| N1 | Repo en NicolleMayol/factored-hackathon-2026-the-trident; workflow infra (plan en PR, apply con aprobación); OIDC, pytest, eval y gitleaks pendientes; solo Nicolle mergea | Mié 30 | rama local |
 | N2 | Function App Flex Consumption 2048 MB + App Settings de contracts/infra.yaml v3 (+ APPLICATIONINSIGHTS_CONNECTION_STRING; secretos como referencias a Key Vault) | Mié 30 mañana | func start + local.settings.json |
 | N3 | Cosmos free tier: conversations, handoffs, policy_chunks (DiskANN), 400 RU/s dedicados por contenedor | Mar 29 | emulador / LanceDB |
 | N4 | Identidad mock POST /session + 5 clientes de prueba | Mar 29 | JWT local |
-| N5 | Web App B1 (UI + BFF con identidad administrada): chat + /handoff (ADR-19) | Mié 30 | curl |
+| N5 | Static Web Apps Free: chat + /handoff (ADR-19 v3; recurso creado) | Mié 30 | curl |
 | N6 | App Insights + export ops.infra_requests | Jue 1 | logs locales |
 | N7 | Carga 10/25/50 usuarios; p50/p95; costo por caso | Sáb 3 | — |
 | N8 | Job CI post-deploy: smoke /chat con subconjunto de eval/cases.jsonl; p95 en caliente separado de cold start | Vie 2 | func start local |
