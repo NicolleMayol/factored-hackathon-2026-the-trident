@@ -6,6 +6,7 @@ permissions: { contents: write, pull-requests: write }
 jobs:
   sync-and-export:
     if: github.actor != 'github-actions[bot]'   # evita el bucle bot → push → bot
+    if: github.actor != 'github-actions[bot]'   # evita el bucle bot → push → bot
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
