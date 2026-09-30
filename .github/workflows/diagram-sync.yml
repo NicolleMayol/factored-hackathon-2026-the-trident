@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with: { ref: "${{ github.head_ref }}" }   # rama del PR, no HEAD suelto: así el push funciona
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install pyyaml
@@ -29,5 +30,5 @@ jobs:
       - name: Subir exportes al PR
         run: |
           git config user.name "diagram-bot"; git config user.email "bot@users.noreply.github.com"
-          git add diagrams/out && git commit -m "chore(diagrams): export" || echo "sin cambios"
-          git push || true
+          git add diagrams/out
+          if git diff --cached --quiet; then echo "sin cambios"; else git commit -m "chore(diagrams): export" && git push; fi

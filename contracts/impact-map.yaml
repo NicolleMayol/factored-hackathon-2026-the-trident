@@ -92,22 +92,22 @@ elements:
     file: contracts/infra.yaml
     owner: servicio
     consumers: [ia-ml]
-    used_by: [DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET, SQL_HTTP_PATH, FM_ENDPOINT_MAIN, FM_ENDPOINT_SMALL, PRESCORE_ENDPOINT, COSMOS_ENDPOINT, COSMOS_KEY, MLFLOW_TRACKING_URI, MLFLOW_EXPERIMENT, JWT_SIGNING_KEY]
+    used_by: [DATABRICKS_HOST, DATABRICKS_CLIENT_ID, DATABRICKS_CLIENT_SECRET, SQL_HTTP_PATH, FM_ENDPOINT_MAIN, FM_ENDPOINT_SMALL, PRESCORE_ENDPOINT, COSMOS_ENDPOINT, COSMOS_KEY, MLFLOW_TRACKING_URI, MLFLOW_EXPERIMENT, JWT_SIGNING_KEY, APPLICATIONINSIGHTS_CONNECTION_STRING]
   - id: infra.cosmos
     file: contracts/infra.yaml
     owner: servicio
     consumers: [ia-ml, datos]
-    used_by: [conversations, handoffs, policy_chunks vector index 1024 cosine, E7 JSONL load]
+    used_by: [conversations, handoffs, policy_chunks vector index 1024 cosine, 3 × 400 RU/s dedicados, E7 JSONL load]
   - id: infra.databricks_access
     file: contracts/infra.yaml
-    owner: datos
-    consumers: [ia-ml, servicio]
-    used_by: [sp-agent-ro, wh-agent http path, catalog hackathon, CAN_EDIT experimento /Shared/fh26/agente]
+    owner: servicio
+    consumers: [datos, ia-ml]
+    used_by: [sp-agent-ro, grants UC, catálogo hackathon, sp-pipelines, grants del equipo, storage credential, esquemas bronze/silver/gold/ref/ops/ml, wh-agent http path, CAN_EDIT experimento /Shared/fh26/agente]
   - id: infra.model_serving
     file: contracts/infra.yaml
-    owner: ia-ml
-    consumers: [servicio]
-    used_by: [PRESCORE_ENDPOINT]
+    owner: servicio
+    consumers: [ia-ml]
+    used_by: [PRESCORE_ENDPOINT, endpoint prescore-lgbm, scale_to_zero]
   # --- observabilidad ---
   - id: ops.infra_requests
     file: contracts/ops.yaml
@@ -139,12 +139,12 @@ elements:
 # revisión aprobada de cada consumer antes de mergear (CODEOWNERS + workflow adr-impact).
 
   # --- añadidos 2026-09-29 tras el diagrama de Eladio/Nicolle (DEMO) ---
-  - {id: infra.app_service,       file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [chat UI, BFF con managed identity, /handoff view]}
-  - {id: infra.identity,          file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [Entra Easy Auth o mock JWT (ADR-12), claims → customer_id]}
-  - {id: infra.key_vault,         file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml, datos],   used_by: [databricks-client-secret, jwt-signing-key, fm-api-token]}
-  - {id: infra.adls,              file: contracts/infra.yaml, owner: datos,    consumers: [ia-ml],          used_by: [bronze/silver/gold en ADLS Gen2 vía Access Connector]}
-  - {id: infra.fm_apis,           file: contracts/infra.yaml, owner: ia-ml,    consumers: [servicio],       used_by: [FM_ENDPOINT_MAIN, FM_ENDPOINT_SMALL, AI Gateway rate limit]}
-  - {id: infra.ci_cd,             file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [GitHub Actions, Asset Bundles, gates ci/adr-impact/diagram-sync]}
+  - {id: infra.app_service,       file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [wapp-agent-bank-dev + asp-agent-bank-dev B1 (ADR-19), chat UI, BFF con managed identity, /handoff view]}
+  - {id: infra.identity,          file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [mock JWT HS256 (ADR-12 cerrada), POST /session, claims → customer_id]}
+  - {id: infra.key_vault,         file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml, datos],   used_by: [databricks-client-secret, cosmos-key, jwt-signing-key, s3-access-key-id, s3-secret-access-key, secret scope fh26]}
+  - {id: infra.adls,              file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [bronze/silver/gold en ADLS Gen2 vía Access Connector, contenedor ops-export]}
+  - {id: infra.fm_apis,           file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [FM_ENDPOINT_MAIN, FM_ENDPOINT_SMALL, AI Gateway rate limit; modelo en ADR-02 (ia-ml)]}
+  - {id: infra.ci_cd,             file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [GitHub Actions con OIDC, Asset Bundles, gates ci/adr-impact/diagram-sync/terraform-plan/gitleaks, deploy.yml]}
   - {id: data.source_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: [bucket Factored read-only]}
   - {id: data.ingest_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: [Auto Loader en SDP → bronze]}
   - {id: data.pipeline_medallon,  file: contracts/gold.yaml,  owner: datos,    consumers: [ia-ml],          used_by: [SDP bronze→silver→gold, Lakeflow Jobs, DQ]}
@@ -152,6 +152,10 @@ elements:
   - {id: ml.prescore_lgbm,        file: contracts/ops.yaml,   owner: ia-ml,    consumers: [servicio],       used_by: [registro UC hackathon.ml.prescore_lgbm, Model Serving]}
 
   # --- añadidos 2026-09-29 por ADR-18 (agente en la Function App) ---
-  - {id: infra.function_app,      file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [plan Flex Consumption, runtime python3.11, host de agent.runtime]}
+  - {id: infra.function_app,      file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [plan Flex Consumption, runtime python3.11, 2048 MB, máx. 10 instancias, arranque ≤ 30 s, host de agent.runtime]}
   - {id: agent.runtime,           file: contracts/infra.yaml, owner: ia-ml,    consumers: [servicio],       used_by: [grafo LangGraph en la Function App, POST /chat, POST /chat/confirm, GET /trace, GET /handoff, GET /healthz, M6]}
   - {id: agent.prompts,           file: agent/prompts/,       owner: ia-ml,    consumers: [],               used_by: [hash → ops.agent_turns.prompt_version]}
+
+  # --- añadidos 2026-09-29 por ADR-19 (plan de infraestructura en Terraform) ---
+  - {id: infra.iac,               file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [infra/bootstrap, infra/azure, infra/databricks, estado en sttfstateagentbankdev]}
+  - {id: infra.databricks_workspace, file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: [dbw-agent-bank-dev Premium, solo serverless, DATABRICKS_HOST]}
