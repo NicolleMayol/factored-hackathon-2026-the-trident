@@ -1,8 +1,13 @@
 # Mover a .github/workflows/data-landing.yml (la conexión de Claude no puede escribir en .github/workflows).
-# Copia el dataset de Factored (S3, solo lectura, prefijo data/) a ADLS: adlsagentbankdev/landing/factored-datathon/data/.
-# Las llaves de AWS solo viven aquí (secretos de GitHub); Databricks lee de ADLS con el Access Connector.
+# Copia incremental del dataset de Factored (S3, solo lectura, prefijo data/) a ADLS:
+#   adlsagentbankdev/landing/factored-datathon/data/
+# Corre cada 6 h y a mano. Solo trae archivos nuevos o cambiados (ifSourceNewer) y deja un manifiesto
+# con el inventario y las diferencias contra la corrida anterior (evidencia de llegadas tardías).
+# Sin environment/aprobación: solo lee S3 y escribe en landing. Las llaves de AWS solo viven aquí.
 name: data-landing
 on:
+  schedule:
+    - cron: "17 */6 * * *" # cada 6 h, minuto 17 para no caer en :00
   workflow_dispatch:
     inputs:
       overwrite:
@@ -17,11 +22,11 @@ env:
   DEST_ACCOUNT: adlsagentbankdev
   DEST_CONTAINER: landing
   DEST_PREFIX: factored-datathon
+  OVERWRITE: ${{ inputs.overwrite || 'ifSourceNewer' }}
 
 jobs:
   copy:
     runs-on: ubuntu-latest
-    environment: hackathon # misma aprobación que el apply
     steps:
       - name: azcopy disponible
         run: |
@@ -29,7 +34,7 @@ jobs:
             curl -sSL https://aka.ms/downloadazcopy-v10-linux | tar -xz --strip-components=1 -C /usr/local/bin --wildcards '*/azcopy'
           fi
           azcopy --version
-      - name: Copia S3 → ADLS (servidor a servidor)
+      - name: Copia incremental S3 → ADLS (servidor a servidor)
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
@@ -40,10 +45,11 @@ jobs:
         run: |
           azcopy copy "$S3_URL" \
             "https://$DEST_ACCOUNT.blob.core.windows.net/$DEST_CONTAINER/$DEST_PREFIX" \
-            --recursive --overwrite="${{ inputs.overwrite }}" --log-level=WARNING \
+            --recursive --overwrite="$OVERWRITE" --log-level=WARNING \
             --output-type=text | tee azcopy.txt
-          grep -E "Final Job Status" azcopy.txt | grep -q "Completed" || { echo "::error::azcopy no terminó en Completed"; exit 1; }
-      - name: Manifiesto (evidencia de la copia)
+          grep -E "Final Job Status" azcopy.txt | grep -qE "Completed|CompletedWithSkipped" \
+            || { echo "::error::azcopy no terminó en Completed"; exit 1; }
+      - name: Manifiesto con diferencias contra la corrida anterior
         env:
           ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
           ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
@@ -51,16 +57,48 @@ jobs:
         run: |
           az login --service-principal -u "$ARM_CLIENT_ID" --password="$ARM_CLIENT_SECRET" --tenant "$ARM_TENANT_ID" -o none
           TS=$(date -u +%Y%m%dT%H%M%SZ)
-          az storage blob list --account-name "$DEST_ACCOUNT" -c "$DEST_CONTAINER" --prefix "$DEST_PREFIX/" \
-            --auth-mode login --num-results "*" \
-            --query "[].{name:name, bytes:properties.contentLength, md5:properties.contentSettings.contentMd5, modified:properties.lastModified}" \
-            -o json > manifest.json
-          jq -n --arg ts "$TS" --arg run "${{ github.run_id }}" --arg src "$S3_URL" --slurpfile files manifest.json \
-            '{copied_at:$ts, run_id:$run, source:$src, files:($files[0]|length), total_bytes:($files[0]|map(.bytes)|add), items:$files[0]}' > "manifest-$TS.json"
-          az storage blob upload --account-name "$DEST_ACCOUNT" -c "$DEST_CONTAINER" -n "_manifest/manifest-$TS.json" \
-            -f "manifest-$TS.json" --auth-mode login -o none
+          SA=(--account-name "$DEST_ACCOUNT" -c "$DEST_CONTAINER" --auth-mode login)
+
+          # inventario actual
+          az storage blob list "${SA[@]}" --prefix "$DEST_PREFIX/" --num-results "*" \
+            --query "[].{name:name, bytes:properties.contentLength, md5:properties.contentSettings.contentMd5}" \
+            -o json > current.json
+
+          # manifiesto anterior (el último por nombre); si no hay, inventario vacío
+          PREV=$(az storage blob list "${SA[@]}" --prefix "_manifest/manifest-" --num-results "*" \
+            --query "sort_by(@, &name)[-1].name" -o tsv)
+          if [ -n "$PREV" ] && [ "$PREV" != "None" ]; then
+            az storage blob download "${SA[@]}" -n "$PREV" -f prev_manifest.json -o none
+            jq '.items' prev_manifest.json > prev.json
+          else
+            PREV="none"; echo '[]' > prev.json
+          fi
+
+          SKIPPED=$(grep -oE "Number of File Transfers Skipped: [0-9]+" azcopy.txt | grep -oE "[0-9]+$" || echo 0)
+          jq -n --arg ts "$TS" --arg run "${{ github.run_id }}" --arg trigger "${{ github.event_name }}" \
+                --arg src "$S3_URL" --arg prev "$PREV" --argjson skipped "${SKIPPED:-0}" \
+                --slurpfile cur current.json --slurpfile old prev.json '
+            ($old[0] | map({key: .name, value: .}) | from_entries) as $o
+            | ($cur[0]) as $c
+            | {
+                copied_at: $ts, run_id: $run, trigger: $trigger, source: $src, previous_manifest: $prev,
+                files: ($c | length), total_bytes: ($c | map(.bytes) | add // 0),
+                skipped_unchanged: $skipped,
+                new: [ $c[] | select($o[.name] == null) | .name ],
+                changed: [ $c[] | select($o[.name] != null and ($o[.name].md5 != .md5 or $o[.name].bytes != .bytes)) | .name ],
+                items: $c
+              }' > "manifest-$TS.json"
+
+          az storage blob upload "${SA[@]}" -n "_manifest/manifest-$TS.json" -f "manifest-$TS.json" -o none
+
           {
-            echo "## data-landing"
+            echo "## data-landing · $TS (${{ github.event_name }})"
             echo "- destino: \`abfss://$DEST_CONTAINER@$DEST_ACCOUNT.dfs.core.windows.net/$DEST_PREFIX/data/\`"
-            jq -r '"- archivos: \(.files)\n- bytes: \(.total_bytes)\n- manifiesto: _manifest/manifest-" + .copied_at + ".json"' "manifest-$TS.json"
+            jq -r '"- archivos: \(.files) · bytes: \(.total_bytes)\n- nuevos: \(.new|length) · cambiados: \(.changed|length) · sin cambios (omitidos por azcopy): \(.skipped_unchanged)\n- manifiesto anterior: \(.previous_manifest)"' "manifest-$TS.json"
+            echo "- manifiesto: \`_manifest/manifest-$TS.json\`"
+            if [ "$(jq '.new|length' "manifest-$TS.json")" -gt 0 ] && [ "$PREV" != "none" ]; then
+              echo; echo "<details><summary>Archivos nuevos (llegadas tardías)</summary>"; echo
+              jq -r '.new[] | "- \(.)"' "manifest-$TS.json" | head -200
+              echo "</details>"
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
