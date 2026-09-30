@@ -22,7 +22,7 @@ resource "azurerm_storage_account" "adls" {
 }
 
 resource "azurerm_storage_container" "adls" {
-  for_each              = toset(["unity-catalog", "ops-export"])
+  for_each              = toset(["unity-catalog", "ops-export", "landing"]) # landing: copia de S3 (workflow data-landing)
   name                  = each.value
   storage_account_id    = azurerm_storage_account.adls.id
   container_access_type = "private"

@@ -1,0 +1,66 @@
+# Mover a .github/workflows/data-landing.yml (la conexión de Claude no puede escribir en .github/workflows).
+# Copia el dataset de Factored (S3, solo lectura, prefijo data/) a ADLS: adlsagentbankdev/landing/factored-datathon/data/.
+# Las llaves de AWS solo viven aquí (secretos de GitHub); Databricks lee de ADLS con el Access Connector.
+name: data-landing
+on:
+  workflow_dispatch:
+    inputs:
+      overwrite:
+        description: "Sobrescribir archivos existentes (ifSourceNewer | true | false)"
+        default: ifSourceNewer
+
+permissions: { contents: read }
+concurrency: { group: data-landing, cancel-in-progress: false }
+
+env:
+  S3_URL: https://factored-datathon-2026-s3-157725502942-us-east-2-an.s3.us-east-2.amazonaws.com/data # solo data/, según el diccionario de datos
+  DEST_ACCOUNT: adlsagentbankdev
+  DEST_CONTAINER: landing
+  DEST_PREFIX: factored-datathon
+
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    environment: hackathon # misma aprobación que el apply
+    steps:
+      - name: azcopy disponible
+        run: |
+          if ! command -v azcopy >/dev/null; then
+            curl -sSL https://aka.ms/downloadazcopy-v10-linux | tar -xz --strip-components=1 -C /usr/local/bin --wildcards '*/azcopy'
+          fi
+          azcopy --version
+      - name: Copia S3 → ADLS (servidor a servidor)
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.S3_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.S3_SECRET_ACCESS_KEY }}
+          AZCOPY_AUTO_LOGIN_TYPE: SPN
+          AZCOPY_SPA_APPLICATION_ID: ${{ vars.AZURE_CLIENT_ID }}
+          AZCOPY_SPA_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          AZCOPY_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        run: |
+          azcopy copy "$S3_URL" \
+            "https://$DEST_ACCOUNT.blob.core.windows.net/$DEST_CONTAINER/$DEST_PREFIX" \
+            --recursive --overwrite="${{ inputs.overwrite }}" --log-level=WARNING \
+            --output-type=text | tee azcopy.txt
+          grep -E "Final Job Status" azcopy.txt | grep -q "Completed" || { echo "::error::azcopy no terminó en Completed"; exit 1; }
+      - name: Manifiesto (evidencia de la copia)
+        env:
+          ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+        run: |
+          az login --service-principal -u "$ARM_CLIENT_ID" --password="$ARM_CLIENT_SECRET" --tenant "$ARM_TENANT_ID" -o none
+          TS=$(date -u +%Y%m%dT%H%M%SZ)
+          az storage blob list --account-name "$DEST_ACCOUNT" -c "$DEST_CONTAINER" --prefix "$DEST_PREFIX/" \
+            --auth-mode login --num-results "*" \
+            --query "[].{name:name, bytes:properties.contentLength, md5:properties.contentSettings.contentMd5, modified:properties.lastModified}" \
+            -o json > manifest.json
+          jq -n --arg ts "$TS" --arg run "${{ github.run_id }}" --arg src "$S3_URL" --slurpfile files manifest.json \
+            '{copied_at:$ts, run_id:$run, source:$src, files:($files[0]|length), total_bytes:($files[0]|map(.bytes)|add), items:$files[0]}' > "manifest-$TS.json"
+          az storage blob upload --account-name "$DEST_ACCOUNT" -c "$DEST_CONTAINER" -n "_manifest/manifest-$TS.json" \
+            -f "manifest-$TS.json" --auth-mode login -o none
+          {
+            echo "## data-landing"
+            echo "- destino: \`abfss://$DEST_CONTAINER@$DEST_ACCOUNT.dfs.core.windows.net/$DEST_PREFIX/data/\`"
+            jq -r '"- archivos: \(.files)\n- bytes: \(.total_bytes)\n- manifiesto: _manifest/manifest-" + .copied_at + ".json"' "manifest-$TS.json"
+          } >> "$GITHUB_STEP_SUMMARY"
