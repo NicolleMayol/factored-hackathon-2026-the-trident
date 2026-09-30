@@ -114,7 +114,7 @@ El chat (Static Web App) llama a la Function App desde el navegador con el JWT. 
 | Workflow | Disparo | Qué hace |
 | --- | --- | --- |
 | `infra.yml` | PR y push a `main` en `infra/**` | PR: backend, `init`, `validate`, `plan`, comentario en el PR. `main`: `apply` tras aprobar el environment `hackathon` |
-| `data-landing.yml` | manual (`workflow_dispatch`), con aprobación de `hackathon` | `azcopy` S3 → `adlsagentbankdev/landing/factored-datathon/data/` servidor a servidor; sube `_manifest/manifest-<fecha>.json` con archivos, bytes y MD5 |
+| `data-landing.yml` | cada 6 h (cron `17 */6 * * *`) y manual; sin aprobación (solo lee S3 y escribe en `landing`) | `azcopy` S3 → `adlsagentbankdev/landing/factored-datathon/data/`, incremental (`ifSourceNewer`); sube `_manifest/manifest-<fecha>.json` con inventario (archivos, bytes, MD5) y diferencias contra la corrida anterior (nuevos, cambiados). Carga inicial 2026-09-30: 7.671 archivos, 5,35 GB, 0 fallas |
 | `ci.yml` (pendiente) | PR | pytest, eval-harness (cuando exista M7), gitleaks |
 | `deploy.yml` (pendiente) | push a `main` | deploy de la Function App y de la Static Web App (el token de deploy se pide con `az staticwebapp secrets list`), smoke `/chat` (N8) |
 | `bundles.yml` (pendiente) | push a `main` con cambios en bundles | `databricks bundle deploy` (X2), con `run_as` = `sp-pipelines` |
