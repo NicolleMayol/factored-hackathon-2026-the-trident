@@ -11,6 +11,7 @@ Owner: Nicolle · v3 · 2026-09-29 (noche).
 - Terraform corre **solo en GitHub Actions** (workflow `infra`): plan en cada PR, apply en `main` con aprobación del environment `hackathon`. No hay `infra/bootstrap`: el workflow crea el storage del estado con `infra/scripts/ensure-backend.sh`.
 - Identidad de CI: el SP `sp-deploy-iac-hackathon` que entregó Eladio, con secreto en GitHub **temporal**. Pasa a OIDC cuando Nicolle tenga Cloud Application Administrator en Entra ID. Roles del SP en la suscripción: Contributor, Storage Blob Data Contributor, User Access Administrator (con condición ABAC: solo asigna ese mismo rol) y Role Based Access Control Administrator (sin condición, otorgado por Nicolle el 2026-09-29 para que Terraform asigne roles).
 - Secret scope `fh26` administrado por Databricks (no respaldado en Key Vault: ese tipo exige token de usuario y Terraform no corre desde una laptop). Terraform copia los valores desde Key Vault.
+- Ingesta: el dataset de Factored se copia de S3 a ADLS (`landing`) con `azcopy` en el workflow `data-landing`. Las llaves de AWS solo viven en GitHub; Databricks lee de ADLS con el Access Connector.
 - Desplegado el 2026-09-29: todo `infra/azure`. Pendiente: `infra/databricks` (requiere account admin de Databricks).
 
 ### Reparto
@@ -35,7 +36,7 @@ Región: `eastus2` (Claude Sonnet 5 verificado por Nicolle el 2026-09-29). Nombr
 | Frontend | `swa-agent-bank-dev` | Static Web Apps Free | chat + vista `/handoff/{case_id}`; llama a la Function App desde el navegador (CORS) |
 | Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capability `EnableNoSQLVectorSearch` | ver "Cosmos" |
 | Databricks | `dbw-agent-bank-dev` | Premium trial (14 días), como en el diagrama | solo cómputo serverless |
-| ADLS Gen2 | `adlsagentbankdev` | Standard LRS, HNS | storage del catálogo; contenedor `ops-export` |
+| ADLS Gen2 | `adlsagentbankdev` | Standard LRS, HNS | contenedores `unity-catalog` (storage del catálogo), `landing` (copia de S3), `ops-export` |
 | Access Connector | `acc-agent-bank-dev` | — | identidad de Databricks sobre ADLS |
 | SQL Warehouse | `wh-agent` | serverless 2X-Small, auto-stop 10 min | lectura de gold/ref |
 | Presupuesto | `budget-agent-bank-dev` | — | alertas al 50/80/100 % de `budget_usd` |
@@ -64,9 +65,9 @@ Dos stacks porque el provider de Databricks necesita la URL del workspace antes 
 | `databricks-client-secret` | Function App (`DATABRICKS_CLIENT_SECRET`) |
 | `cosmos-key` | Function App (`COSMOS_KEY`), carga de chunks |
 | `jwt-signing-key` | Function App (`JWT_SIGNING_KEY`) |
-| `s3-access-key-id`, `s3-secret-access-key` | ingesta de S3, vía secret scope `fh26`. Entran como secretos de GitHub (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`) → Terraform → Key Vault |
+| — | Las llaves de S3 **no** están en Key Vault ni en Databricks: solo como secretos de GitHub (`S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`) para el workflow `data-landing` |
 
-El scope `fh26` expone `s3-access-key-id`, `s3-secret-access-key` y `cosmos-key` (carga de chunks a Cosmos, E7).
+El scope `fh26` expone `cosmos-key` (carga de chunks a Cosmos, E7).
 
 App Settings de la Function App (`contracts/infra.yaml` v3): los 12 de v2 más `APPLICATIONINSIGHTS_CONNECTION_STRING`. Los secretos van como referencias `@Microsoft.KeyVault(...)`; los nombres no cambian. Local: `local.settings.json` con los mismos nombres, fuera de git.
 
@@ -113,6 +114,7 @@ El chat (Static Web App) llama a la Function App desde el navegador con el JWT. 
 | Workflow | Disparo | Qué hace |
 | --- | --- | --- |
 | `infra.yml` | PR y push a `main` en `infra/**` | PR: backend, `init`, `validate`, `plan`, comentario en el PR. `main`: `apply` tras aprobar el environment `hackathon` |
+| `data-landing.yml` | manual (`workflow_dispatch`), con aprobación de `hackathon` | `azcopy` S3 → `adlsagentbankdev/landing/factored-datathon/data/` servidor a servidor; sube `_manifest/manifest-<fecha>.json` con archivos, bytes y MD5 |
 | `ci.yml` (pendiente) | PR | pytest, eval-harness (cuando exista M7), gitleaks |
 | `deploy.yml` (pendiente) | push a `main` | deploy de la Function App y de la Static Web App (el token de deploy se pide con `az staticwebapp secrets list`), smoke `/chat` (N8) |
 | `bundles.yml` (pendiente) | push a `main` con cambios en bundles | `databricks bundle deploy` (X2), con `run_as` = `sp-pipelines` |
@@ -132,7 +134,7 @@ Autenticación (temporal): SP `sp-deploy-iac-hackathon` con secreto `AZURE_CLIEN
 | Primer apply de la Function App | bug de azurerm 5.1: el bloque CORS depende de la URL de la Static Web App y falla la primera vez | volver a correr el apply; desde entonces planea bien |
 | FM APIs pay-per-token | límites por workspace | se miden en N7 |
 | Cuota de vCPU de la suscripción | depende de la cuenta | solo cómputo serverless en Databricks |
-| Lectura de S3 desde serverless | las llaves de S3 en la config de Spark no están disponibles en serverless (a verificar) | ingesta con boto3 + llaves del scope → volumen de UC → Auto Loader; o `azcopy` S3 → ADLS desde GitHub Actions. Decide datos |
+| Lectura de S3 desde Azure Databricks serverless | Unity Catalog en Azure no toma llaves de S3 y serverless no deja ponerlas en la config de Spark | resuelto: copia S3 → ADLS `landing` (workflow `data-landing`); Auto Loader lee `abfss://landing@adlsagentbankdev.dfs.core.windows.net/factored-datathon/data/` |
 
 Carga (N7): k6 desde GitHub Actions con 10/25/50 usuarios; p50/p95 en caliente, cold start aparte, error rate, costo por caso.
 
@@ -181,7 +183,8 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | `infra.databricks_access` | cambia: owner datos → servicio; X1 lo entrega servicio; + esquemas `bronze`/`silver`, grants del equipo, `sp-pipelines` | servicio | datos, ia-ml | Eladio: crear tablas y pipelines en sus esquemas; elegir cómo leer S3 desde serverless. Manuela: registrar modelos en `ml` | mié 30 mañana |
 | `infra.databricks_workspace` | nuevo | servicio | datos, ia-ml | usar solo serverless | mar 29 noche |
 | `infra.adls` | cambia: owner datos → servicio | servicio | datos, ia-ml | nada | — |
-| `infra.key_vault` | cambia: + llaves S3 (desde secretos de GitHub), scope `fh26` administrado por Databricks | servicio | datos, ia-ml | Eladio: leer S3 solo con `dbutils.secrets.get("fh26", ...)` | mié 30 |
+| `infra.key_vault` | cambia: sin llaves de S3 (solo en GitHub); scope `fh26` administrado por Databricks, solo `cosmos-key` | servicio | datos, ia-ml | Eladio: no leer S3 desde Databricks; leer de ADLS `landing` | mié 30 |
+| `infra.adls` | cambia: + contenedor `landing` con la copia del dataset y `_manifest/` | servicio | datos, ia-ml | Eladio: Auto Loader desde `landing`; actualizar `data.ingest_s3` en `gold.yaml` | mié 30 |
 | `infra.cosmos` | cambia: 3 × 400 RU/s dedicados, vector search | servicio | ia-ml, datos | Eladio: carga del JSONL con throttle | mar 29 |
 | `infra.function_app` | cambia: 2048 MB, máx. 10 instancias, arranque ≤ 30 s | servicio | ia-ml | Manuela: no cargar modelos al importar `agent/`; decir dónde corre el embedding de la consulta | mié 30 mañana |
 | `infra.function_app_settings` | cambia: + `APPLICATIONINSIGHTS_CONNECTION_STRING`; secretos como referencias a Key Vault | servicio | ia-ml | nada en código | mié 30 mañana |

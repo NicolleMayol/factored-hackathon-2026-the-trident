@@ -60,19 +60,3 @@ resource "azurerm_key_vault_secret" "databricks_client_secret" {
     ignore_changes = [value]
   }
 }
-
-resource "azurerm_key_vault_secret" "s3_access_key_id" {
-  count        = nonsensitive(var.s3_access_key_id != "") ? 1 : 0 # count no acepta valores sensibles
-  name         = "s3-access-key-id"
-  value        = var.s3_access_key_id
-  key_vault_id = azurerm_key_vault.main.id
-  depends_on   = [time_sleep.kv_rbac]
-}
-
-resource "azurerm_key_vault_secret" "s3_secret_access_key" {
-  count        = nonsensitive(var.s3_secret_access_key != "") ? 1 : 0
-  name         = "s3-secret-access-key"
-  value        = var.s3_secret_access_key
-  key_vault_id = azurerm_key_vault.main.id
-  depends_on   = [time_sleep.kv_rbac]
-}

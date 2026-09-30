@@ -21,19 +21,6 @@ variable "admin_object_ids" {
   default     = []
 }
 
-variable "s3_access_key_id" {
-  description = "Llave de lectura del bucket de Factored. Vacía = no se crea el secreto."
-  type        = string
-  default     = ""
-  sensitive   = true
-}
-
-variable "s3_secret_access_key" {
-  type      = string
-  default   = ""
-  sensitive = true
-}
-
 variable "function_always_ready" {
   description = "true solo en la ventana de jurado (1 instancia caliente)."
   type        = bool
