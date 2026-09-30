@@ -65,6 +65,10 @@ resource "azurerm_function_app_flex_consumption" "main" {
 
   site_config {
     application_insights_connection_string = azurerm_application_insights.main.connection_string
+
+    cors {
+      allowed_origins = ["https://${azurerm_static_web_app.main.default_host_name}"]
+    }
   }
 
   # contracts/infra.yaml v3 · function_app.app_settings
@@ -87,38 +91,16 @@ resource "azurerm_role_assignment" "func_kv" {
   principal_id         = azurerm_function_app_flex_consumption.main.identity[0].principal_id
 }
 
-# ------------------------------------------------------------------ Web App (UI + BFF, N5)
-resource "azurerm_service_plan" "web" {
-  name                = "asp-agent-bank-dev"
+# ------------------------------------------------------------------ Chat UI (N5)
+# Static Web Apps Free en vez de Web App B1: sin costo, sin cuota de App Service (que está en 0),
+# y la página carga desde CDN aunque la Function esté fría. Con el JWT de prueba (ADR-12) un BFF
+# no protege nada extra; App Service + Easy Auth queda en ENTERPRISE (To-Be).
+# El token de deploy no se guarda: el workflow lo lee con `az staticwebapp secrets list`.
+resource "azurerm_static_web_app" "main" {
+  name                = "swa-agent-bank-dev"
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  os_type             = "Linux"
-  sku_name            = "B1"
+  sku_tier            = "Free"
+  sku_size            = "Free"
   tags                = local.tags
-}
-
-resource "azurerm_linux_web_app" "main" {
-  name                = "wapp-agent-bank-dev"
-  location            = azurerm_resource_group.main.location
-  resource_group_name = azurerm_resource_group.main.name
-  service_plan_id     = azurerm_service_plan.web.id
-  https_only          = true
-  tags                = local.tags
-
-  identity {
-    type = "SystemAssigned"
-  }
-
-  site_config {
-    always_on  = true
-    ftps_state = "Disabled"
-    application_stack {
-      python_version = "3.11"
-    }
-  }
-
-  # App Settings del BFF: se definen en N5.
-  app_settings = {
-    APPLICATIONINSIGHTS_CONNECTION_STRING = azurerm_application_insights.main.connection_string
-  }
 }
