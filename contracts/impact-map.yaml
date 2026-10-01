@@ -118,7 +118,7 @@ elements:
     file: contracts/ops.yaml
     owner: datos
     consumers: [servicio]
-    used_by: [alerta DQ]
+    used_by: [alerta DQ, "poblada por expectativas de SDP y por checks propios; esquema sin cambio (ADR-20)"]
   - id: ops.agent_turns
     file: contracts/ops.yaml
     owner: ia-ml
@@ -145,9 +145,9 @@ elements:
   - {id: infra.adls,              file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [bronze/silver/gold en ADLS Gen2 vía Access Connector, contenedor landing (copia de S3, workflow data-landing), contenedor ops-export]}
   - {id: infra.fm_apis,           file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [FM_ENDPOINT_MAIN, FM_ENDPOINT_SMALL, AI Gateway rate limit; modelo en ADR-02 (ia-ml)]}
   - {id: infra.ci_cd,             file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [workflow infra (plan/apply), environment hackathon, SP sp-deploy-iac-hackathon, Asset Bundles, gates adr-impact/diagram-sync/terraform-plan]}
-  - {id: data.source_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: [bucket Factored read-only]}
-  - {id: data.ingest_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: [Auto Loader en SDP → bronze]}
-  - {id: data.pipeline_medallon,  file: contracts/gold.yaml,  owner: datos,    consumers: [ia-ml],          used_by: [SDP bronze→silver→gold, Lakeflow Jobs, DQ]}
+  - {id: data.source_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: [bucket Factored read-only, "Databricks ya no lee S3: lee la copia en landing (ADR-20)"]}
+  - {id: data.ingest_s3,          file: contracts/gold.yaml,  owner: datos,    consumers: [],               used_by: ["Auto Loader en SDP → bronze desde landing (Parquet, directory listing, cada 6 h al minuto 50) (ADR-20)"]}
+  - {id: data.pipeline_medallon,  file: contracts/gold.yaml,  owner: datos,    consumers: [ia-ml],          used_by: ["SDP declarativo bronze→silver→gold (ADR-20)", Lakeflow Jobs, "DQ en dos vías: expectativas SDP + checks propios"]}
   - {id: ml.features,             file: contracts/gold.yaml,  owner: ia-ml,    consumers: [datos],          used_by: [customer_behavior_12m + customer_360 → feature table]}
   - {id: ml.prescore_lgbm,        file: contracts/ops.yaml,   owner: ia-ml,    consumers: [servicio],       used_by: [registro UC hackathon.ml.prescore_lgbm, Model Serving]}
 
@@ -159,3 +159,8 @@ elements:
   # --- añadidos 2026-09-29 por ADR-19 (plan de infraestructura en Terraform) ---
   - {id: infra.iac,               file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [infra/azure, infra/databricks, infra/scripts/ensure-backend.sh, estado en sttfstateagentbankdev]}
   - {id: infra.databricks_workspace, file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: [dbw-agent-bank-dev Premium, solo serverless, DATABRICKS_HOST]}
+
+  # --- añadidos 2026-09-30 por ADR-20 (plataforma de datos e ingesta) ---
+  - {id: infra.uc_external_locations, file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: ["stg-credential-adlsagentbankdev", "ext-loc-adlsagentbankdev-{bronze,silver,gold,ref,ops,ml,landing}", "managed location por esquema", "READ FILES de sp-pipelines sobre la de landing"]}
+  - {id: infra.uc_volumes,            file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: ["hackathon.ref.policy_docs managed (E7)", "hackathon.ref.fuentes managed (E6)", "la escritura sale de los grants de ref"]}
+  - {id: ml.embeddings_endpoint,      file: contracts/chunks.yaml, owner: ia-ml,   consumers: [datos, servicio], used_by: ["bge-m3 1024 dims de chunks.yaml; no existe en infra.fm_apis y no es modelo de FM APIs", "DECISIÓN ABIERTA (ADR-20): Model Serving propio o dentro del job de E7", bloquea E7]}

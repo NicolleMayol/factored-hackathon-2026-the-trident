@@ -1,5 +1,13 @@
-# Contrato de tablas gold/ref · owner: datos (Eladio) · consumers: ia-ml · v1 · 2026-09-28
+# Contrato de tablas gold/ref · owner: datos (Eladio) · consumers: ia-ml · v2 · 2026-09-30
+# v2 (ADR-20): + bloque source (la ingesta lee la copia en ADLS, no S3); esquemas de bronze y silver como decisión abierta (E9). Avisar: ia-ml.
 catalog: hackathon
+schemas: [bronze, silver, gold, ref, ops, ml]   # un container homónimo en adlsagentbankdev y una external location ext-loc-adlsagentbankdev-<esquema> (ADR-20)
+source:
+  landing: {path: "abfss://landing@adlsagentbankdev.dfs.core.windows.net/factored-datathon/data/", format: parquet, copy: "workflow data-landing (azcopy, cada 6 h al minuto 17)", carga_inicial: "2026-09-30: 7.671 archivos, 5.349.322.481 bytes", external_location: ext-loc-adlsagentbankdev-landing}
+  ingest: {tool: "Auto Loader en SDP", discovery: "directory listing (file events queda en To-Be: exige una cola y una suscripción de Event Grid fuera de Terraform)", checkpoint: "lo gestiona el pipeline; no se configura a mano", schema_evolution: "addNewColumns + _rescued_data", schedule: "cada 6 h al minuto 50", partition: none}
+  bronze_silver: "decisión abierta (ADR-20): el contrato de columnas se congela en E9, tras inspeccionar landing"
+  volumes: {policy_docs: hackathon.ref.policy_docs, fuentes: hackathon.ref.fuentes, tipo: managed}
+  ops_write: "datos solo escribe ops.dq_results; agent_turns y ml_inference son de ia-ml, infra_requests de servicio"
 tables:
   gold.customer_360:
     grain: 1 fila por customer_id
