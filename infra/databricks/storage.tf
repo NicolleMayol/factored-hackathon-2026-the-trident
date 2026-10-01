@@ -26,7 +26,7 @@ resource "databricks_grants" "landing" {
   external_location = databricks_external_location.adls["landing"].id
 
   dynamic "grant" {
-    for_each = local.writers
+    for_each = concat(var.admin_users, local.writers)
     content {
       principal  = grant.value
       privileges = ["READ_FILES"]

@@ -11,6 +11,12 @@ variable "existing_metastore_id" {
   default     = ""
 }
 
+variable "admin_users" {
+  description = "Usuarios de Databricks con ALL PRIVILEGES y MANAGE sobre el catálogo (servicio: Nicolle)."
+  type        = list(string)
+  default     = []
+}
+
 variable "datos_users" {
   description = "Usuarios del rol datos (Eladio)."
   type        = list(string)
