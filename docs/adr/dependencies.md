@@ -1,17 +1,18 @@
-# Dependencias entre roles · v3 · 2026-09-29 (ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5)
+# Dependencias entre roles · v4 · 2026-09-30 (ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5 · ADR-20: X1, X2, E1, E7, E8 cambian; E9 nueva)
 Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega, el receptor trabaja con mock. Integraciones: mié 30 sep y sáb 3 oct.
 
 ## Manuela ← Eladio
 | # | Entregable | Formato / acceso | Fecha | Mock |
 | --- | --- | --- | --- | --- |
-| E1 | Esquema congelado 7 tablas gold | contracts/gold.yaml + tablas vacías hackathon.gold | Mié 30 mañana (depende de X1) | CSV 50 filas |
+| E1 | Esquema congelado 7 tablas gold; bronze y silver pasan a decisión abierta (E9) | contracts/gold.yaml v2 + tablas vacías hackathon.gold | Mié 30 mañana (depende de X1) | CSV 50 filas |
 | E2 | customer_360, customer_products, customer_behavior_12m (corte 2025-06-30) | Delta; wh-agent; sp-agent-ro | Mié 30 mediodía (depende de X1) | CSV |
 | E3 | intent_labels con split temporal | Delta | Mié 30 noche | 300 filas manuales |
 | E4 | contact_demand + notebook "por qué workflow 4" | Delta | Jue 1 | — |
 | E5 | credit_product_catalog sintético 3×5 | Delta + policy/catalog.yaml | Mar 29 noche | 5 productos inventados |
 | E6 | ref.regulator_rates con fuente y fecha | Delta + data/ref/ | Mar 29 | rangos aprox. |
-| E7 | Pipeline policy_docs ES+PT → policy_chunks (+JSONL Cosmos) | Asset Bundle | Mié 30 | 10 docs manuales |
-| E8 | ops.dq_results + fixture llegada tardía | Delta | Vie 2 | — |
+| E7 | Pipeline policy_docs ES+PT → policy_chunks (+JSONL Cosmos); depende de ml.embeddings_endpoint (abierta) y de lectura del scope fh26 | Asset Bundle | Jue 1 | 10 docs manuales |
+| E8 | ops.dq_results por dos vías (expectativas SDP + checks propios) + fixture de llegada tardía desde el manifiesto de data-landing | Delta | Vie 2 | — |
+| E9 | Contrato de columnas de bronze y silver tras inspeccionar landing | contracts/gold.yaml | Jue 1 | esquemas abiertos |
 
 ## Manuela ← Nicolle
 | # | Entregable | Fecha | Mock |
@@ -40,8 +41,8 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 ## Eladio ↔ Nicolle
 | # | Entregable | De → para | Fecha |
 | --- | --- | --- | --- |
-| X1 | Workspace Premium, ADLS + Access Connector, Key Vault + secret scope fh26 (llaves S3), storage credential, catálogo hackathon y esquemas bronze/silver/gold/ref/ops/ml, grants del equipo, sp-agent-ro, sp-pipelines, wh-agent, experimento /Shared/fh26/agente con CAN_EDIT; todo en Terraform (ADR-19) (mock: CSV local; experimento personal de Manuela) | Nicolle → Eladio, Manuela | Mar 29 noche; grants Mié 30 mañana |
-| X2 | Asset Bundles desde GitHub Actions | Nicolle → Eladio | Mar 29 |
+| X1 | Workspace Premium, ADLS + Access Connector, Key Vault + secret scope fh26 (llaves S3), storage credential, catálogo hackathon y esquemas bronze/silver/gold/ref/ops/ml, grants del equipo, sp-agent-ro, sp-pipelines, wh-agent con CAN_USE, experimento /Shared/fh26/agente con CAN_EDIT; y por ADR-20: un container por esquema con el mismo nombre, stg-credential-adlsagentbankdev, 7 external locations ext-loc-adlsagentbankdev-{esquema|landing}, 4 roles al Access Connector, ALL PRIVILEGES para Eladio y sp-pipelines, volumen UC para policy_docs/ref/checkpoints, lectura del scope fh26 para sp-pipelines; todo en Terraform (ADR-19) (mock: CSV local; experimento personal de Manuela) | Nicolle → Eladio, Manuela | Mar 29 noche; grants Mié 30 mañana |
+| X2 | Asset Bundles desde GitHub Actions: bundles.yml con run_as = sp-pipelines | Nicolle → Eladio | Mié 30 (vencida desde mar 29) |
 | X3 | Export App Insights → ops.infra_requests; tablero AI/BI con p95 en caliente y cold start por separado | Nicolle → Eladio | Vie 2 |
 
 ## Calendario
@@ -50,7 +51,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | Lun 28 | — | M1, M2, esqueleto | — | 21:00 contratos firmados |
 | Mar 29 | E5, E6, E7 inicio | M3–M5, corpus, reglas | X1 (workspace), N2, N3, N4, X2 | — |
 | Mié 30 | E1, E2, E3, E7 | M6, caso normal | X1 (grants), N1, N2, N5 | Integración 1 |
-| Jue 1 | E4 | modelos + baselines, Jev, M8 | N6 | — |
+| Jue 1 | E4, E9 | modelos + baselines, Jev, M8 | N6 | — |
 | Vie 2 | E8 | ambiguo/escalamiento, PT, guardrails, eval, M7 | X3, N8 | — |
 | Sáb 3 | README datos | harness, métricas | N7 | Integración 2 |
 | Dom 4 | slides datos | README, slides arq. | video, setup | ensayo ×2 |
