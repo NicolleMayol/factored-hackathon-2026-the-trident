@@ -9,7 +9,7 @@ Owner: Nicolle · v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-2
 **Cambios v3 (2026-09-29, tras el primer despliegue).**
 - Chat en **Static Web Apps Free** (`swa-agent-bank-dev`) en vez de Web App B1 + BFF: la suscripción tiene 0 de cuota de App Service B1, y con el JWT de prueba un BFF no protege nada extra.
 - Terraform corre **solo en GitHub Actions** (workflow `infra`): plan en cada PR, apply en `main` con aprobación del environment `hackathon`. No hay `infra/bootstrap`: el workflow crea el storage del estado con `infra/scripts/ensure-backend.sh`.
-- Identidad de CI: el SP `sp-deploy-iac-hackathon` que entregó Eladio, con secreto en GitHub **temporal**. Pasa a OIDC cuando Nicolle tenga Cloud Application Administrator en Entra ID. Roles del SP en la suscripción: Contributor, Storage Blob Data Contributor, User Access Administrator (con condición ABAC: solo asigna ese mismo rol) y Role Based Access Control Administrator (sin condición, otorgado por Nicolle el 2026-09-29 para que Terraform asigne roles).
+- Identidad de CI: el SP `sp-deploy-iac-hackathon` que entregó Eladio, con **OIDC** desde el 2026-09-30: tres credenciales federadas (PR, environment `hackathon`, rama `main`) y sin secreto en GitHub. Roles del SP en la suscripción: Contributor, Storage Blob Data Contributor, User Access Administrator (con condición ABAC: solo asigna ese mismo rol) y Role Based Access Control Administrator (sin condición, otorgado por Nicolle el 2026-09-29 para que Terraform asigne roles).
 - Secret scope `fh26` administrado por Databricks (no respaldado en Key Vault: ese tipo exige token de usuario y Terraform no corre desde una laptop). Terraform copia los valores desde Key Vault.
 - Ingesta: el dataset de Factored se copia de S3 a ADLS (`landing`) con `azcopy` en el workflow `data-landing`. Las llaves de AWS solo viven en GitHub; Databricks lee de ADLS con el Access Connector.
 - Desplegado el 2026-09-29: todo `infra/azure`. `infra/databricks` (2026-09-30, PR #9 y #10): storage credential, 8 external locations (6 esquemas, `landing` y `unity-catalog` para el catálogo), catálogo, esquemas, volúmenes, grants por esquema, `sp-pipelines`, `sp-agent-ro`, usuario de Manuela, `wh-agent`, scope `fh26`, experimento. El workspace no tenía metastore asignado: la cuenta ya tenía `metastore_azure_eastus2` (sin storage propio; uno por región) y Terraform lo asigna con el provider de cuenta y da al SP del pipeline `CREATE CATALOG`, `CREATE EXTERNAL LOCATION` y `CREATE STORAGE CREDENTIAL`. Para eso el SP es account admin, asignado a mano una vez por Nicolle (account admin desde el 2026-09-29), igual que su rol de RBAC.
@@ -123,7 +123,7 @@ El chat (Static Web App) llama a la Function App desde el navegador con el JWT. 
 | `bundles.yml` | PR y push a `main` con cambios en `data/` | `validate` en PR; `deploy -t prod` en `main` (X2), con `run_as` = `sp-pipelines`. El SP del pipeline y Eladio tienen `servicePrincipal.user` sobre `sp-pipelines` |
 | `adr-impact.yml`, `diagram-sync.yml` | PR | `diagram-sync` sube los PNG a la rama del PR y no corre en commits del bot |
 
-Autenticación (temporal): SP `sp-deploy-iac-hackathon` con secreto `AZURE_CLIENT_SECRET` en GitHub; `AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID` como variables. Riesgo: cualquier rama del repo puede leer el secreto desde un workflow; se acepta por días entre tres personas. Destino: OIDC con credenciales federadas para `repo:NicolleMayol/factored-hackathon-2026-the-trident:pull_request` y `…:environment:hackathon`. Solo Nicolle aprueba el apply y mergea a `main`.
+Autenticación: OIDC. El SP `sp-deploy-iac-hackathon` confía en tres sujetos de GitHub: `repo:NicolleMayol@42590549/factored-hackathon-2026-the-trident@1396845609:pull_request` (planes y validate; GitHub incluye los IDs de dueño y repo), `…:environment:hackathon` (apply) y `…:ref:refs/heads/main` (`bundles` y `data-landing` en `main`). En GitHub solo quedan variables (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`); ningún secreto de Azure. Un PR desde un fork no obtiene token: GitHub no da `id-token` a forks. Solo Nicolle aprueba el apply y mergea a `main`.
 
 ### Capacidad y límites conocidos
 | Límite | Valor | Efecto |
@@ -172,7 +172,7 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | Cada rol crea sus recursos | tres formas de crear infra; permisos repartidos; sin un solo `destroy` |
 | App Service F1 para el chat | se detiene tras 60 min de CPU al día; riesgo durante la evaluación |
 | Web App B1 + BFF (diagrama DEMO) | cuota de App Service B1 en 0; con JWT de prueba el BFF no protege nada extra; ~USD 13/mes |
-| App registration propia para OIDC | exige permisos de Entra ID que hoy no hay; se usa el SP entregado por Eladio |
+| App registration propia para OIDC | el SP de Eladio ya tiene los roles; basta con agregarle credenciales federadas |
 | Scope `fh26` respaldado en Key Vault | exige token de usuario; Terraform corre solo en el pipeline |
 | `infra/bootstrap` corrido desde una laptop | Terraform corre solo en el pipeline; el backend lo crea un script idempotente |
 | Cosmos con throughput compartido de 1.000 RU/s | no admite búsqueda vectorial |
@@ -195,7 +195,7 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | `infra.app_service` | cambia: App Service F1 → Static Web Apps Free (`swa-agent-bank-dev`), llamada directa a la Function App con CORS | servicio | ia-ml | nada en infra; ver `infra.identity` | mié 30 |
 | `infra.model_serving` | cambia: owner ia-ml → servicio (endpoint); el modelo sigue en `ml.prescore_lgbm` | servicio | ia-ml | Manuela: registrar la versión en UC | jue 1 |
 | `infra.fm_apis` | cambia: owner ia-ml → servicio (endpoints, rate limits); el modelo sigue en ADR-02 | servicio | ia-ml | nada | — |
-| `infra.ci_cd` | cambia: workflow `infra` con SP y secreto temporal (OIDC pendiente), environment `hackathon` con aprobación | servicio | datos, ia-ml | nada | hecho |
+| `infra.ci_cd` | cambia: workflow `infra` con SP por OIDC, environment `hackathon` con aprobación | servicio | datos, ia-ml | nada | hecho |
 | `infra.iac` | nuevo | servicio | datos, ia-ml | pedir recursos por PR a `infra/` | — |
 
 **Cómo se prueba.**
@@ -218,7 +218,7 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | Hackathon | To-Be |
 | --- | --- |
 | Un entorno | dev/staging/prod con promoción |
-| SP de CI con secreto en GitHub (Contributor + RBAC Administrator en la suscripción) | OIDC; SPs separados para plan y apply |
+| SP de CI por OIDC (Contributor + RBAC Administrator en la suscripción; account admin de Databricks) | SPs separados para plan y apply |
 | Mock JWT HS256 | Entra External ID |
 | `COSMOS_KEY` en Key Vault | RBAC de Cosmos con identidad administrada, sin llave |
 | Static Web App y Function App con endpoints públicos; chat sin BFF | página ENTERPRISE de `diagrams/arquitectura.drawio`: App Service + Easy Auth + token OBO detrás de WAF y firewall, private endpoints y DNS privado, Sentinel |
@@ -233,7 +233,7 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | # | Entregable | De → para | Formato | Fecha | Mock |
 | --- | --- | --- | --- | --- | --- |
 | X1 (cambia) | Workspace Premium trial, ADLS, storage credential, KV + scope `fh26`, catálogo y esquemas (`bronze`, `silver`, `gold`, `ref`, `ops`, `ml`), grants del equipo, `sp-agent-ro`, `sp-pipelines`, `wh-agent`, experimento con `CAN_EDIT` | Nicolle → Eladio, Manuela | Terraform `infra/databricks` + URL y http path | mar 29 noche; grants mié 30 mañana | CSV local; experimento personal |
-| N1 (cambia) | Repo en `NicolleMayol/factored-hackathon-2026-the-trident`; workflow `infra` (plan en PR, apply con aprobación); OIDC y gitleaks pendientes | Nicolle → todos | GitHub | hecho (OIDC pendiente) | — |
+| N1 (cambia) | Repo en `NicolleMayol/factored-hackathon-2026-the-trident`; workflow `infra` (plan en PR, apply con aprobación); OIDC hecho; gitleaks pendiente | Nicolle → todos | GitHub | hecho (OIDC pendiente) | — |
 | N2 (cambia) | Function App Flex 2048 MB + App Settings de `infra.yaml` v3 | Nicolle → Manuela | Azure | mié 30 mañana | `func start` + `local.settings.json` |
 | N3 (cambia) | Cosmos free tier, 3 contenedores × 400 RU/s, vector search | Nicolle → Manuela, Eladio | Azure | mar 29 | emulador / LanceDB |
 | N5 (cambia) | Static Web Apps Free: chat + vista `/handoff` | Nicolle → Manuela | Azure | recurso creado; UI mié 30 | curl |

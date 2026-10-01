@@ -18,7 +18,7 @@ terraform {
   }
 }
 
-# Autenticación: variables ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_TENANT_ID, ARM_SUBSCRIPTION_ID (las pone el workflow).
+# Autenticación: OIDC de GitHub (ARM_USE_OIDC, ARM_CLIENT_ID, ARM_TENANT_ID, ARM_SUBSCRIPTION_ID; las pone el workflow).
 provider "azurerm" {
   features {
     key_vault {

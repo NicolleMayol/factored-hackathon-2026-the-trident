@@ -10,16 +10,15 @@ on:
     paths: ["data/**", ".github/workflows/bundles.yml"]
   workflow_dispatch:
 
-permissions: { contents: read }
+permissions: { contents: read, id-token: write }
 concurrency: { group: bundles, cancel-in-progress: false }
 
 env:
   # El SP del pipeline entra al workspace como admin y tiene servicePrincipal.user sobre sp-pipelines.
   DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
-  DATABRICKS_AUTH_TYPE: azure-client-secret
+  DATABRICKS_AUTH_TYPE: github-oidc-azure
   ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
   ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
-  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
   BUNDLE_TARGET: ${{ vars.BUNDLE_TARGET || 'prod' }}
 
 jobs:

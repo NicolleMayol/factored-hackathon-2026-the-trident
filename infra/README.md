@@ -20,7 +20,6 @@ Configuración en GitHub (Settings → Secrets and variables → Actions):
 | variable | `AZURE_CLIENT_ID` | client id de `sp-deploy-iac-hackathon` |
 | variable | `AZURE_TENANT_ID` | tenant |
 | variable | `AZURE_SUBSCRIPTION_ID` | `sub-ai-dev` |
-| secreto | `AZURE_CLIENT_SECRET` | secreto del SP (temporal, hasta OIDC) |
 | variable | `BUDGET_AMOUNT`, `BUDGET_EMAILS`, `ADMIN_OBJECT_IDS` | opcionales; listas en formato `["a","b"]` |
 | secreto | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | opcionales; llaves del bucket de Factored |
 | variable | `FUNCTION_ALWAYS_READY` | `true` solo en la ventana de jurado |
@@ -50,3 +49,15 @@ targets:
 ```
 
 Grants de `sp-pipelines`: `ALL PRIVILEGES` en `bronze`…`ops`, `READ FILES` en `landing`, `READ` en el scope `fh26`, `CAN_USE` en `wh-agent`.
+
+## OIDC (sin secreto de Azure en GitHub)
+
+El SP `sp-deploy-iac-hackathon` tiene tres credenciales federadas, creadas una vez con `az` por Nicolle (Cloud Application Administrator):
+
+| Nombre | Sujeto | Quién lo usa |
+| --- | --- | --- |
+| `gh-pull-request` | `repo:NicolleMayol@42590549/factored-hackathon-2026-the-trident@1396845609:pull_request` | plan de `infra`, `validate` de `bundles` |
+| `gh-env-hackathon` | `repo:NicolleMayol@42590549/factored-hackathon-2026-the-trident@1396845609:environment:hackathon` | apply de `infra` |
+| `gh-main` | `repo:NicolleMayol@42590549/factored-hackathon-2026-the-trident@1396845609:ref:refs/heads/main` | `bundles` y `data-landing` en `main` |
+
+GitHub manda el sujeto con los IDs de dueño y repo (`dueño@id/repo@id`), así que un repo renombrado no puede hacerse pasar por este. Cada workflow pide `id-token: write`. Terraform usa `ARM_USE_OIDC`; el provider de Databricks y el CLI, `github-oidc-azure`; `azcopy`, la sesión de `azure/login`.
