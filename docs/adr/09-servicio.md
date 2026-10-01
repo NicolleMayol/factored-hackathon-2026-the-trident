@@ -1,6 +1,6 @@
 # 09-servicio
 
-Owner: Nicolle · v3.1 · 2026-09-30 (stack `infra/databricks`, ADR-20).
+Owner: Nicolle · v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
 
 ## ADR-19 · Plan de infraestructura en Terraform  ·  rol: servicio  ·  2026-09-29  ·  estado: cerrada
 
@@ -12,7 +12,7 @@ Owner: Nicolle · v3.1 · 2026-09-30 (stack `infra/databricks`, ADR-20).
 - Identidad de CI: el SP `sp-deploy-iac-hackathon` que entregó Eladio, con secreto en GitHub **temporal**. Pasa a OIDC cuando Nicolle tenga Cloud Application Administrator en Entra ID. Roles del SP en la suscripción: Contributor, Storage Blob Data Contributor, User Access Administrator (con condición ABAC: solo asigna ese mismo rol) y Role Based Access Control Administrator (sin condición, otorgado por Nicolle el 2026-09-29 para que Terraform asigne roles).
 - Secret scope `fh26` administrado por Databricks (no respaldado en Key Vault: ese tipo exige token de usuario y Terraform no corre desde una laptop). Terraform copia los valores desde Key Vault.
 - Ingesta: el dataset de Factored se copia de S3 a ADLS (`landing`) con `azcopy` en el workflow `data-landing`. Las llaves de AWS solo viven en GitHub; Databricks lee de ADLS con el Access Connector.
-- Desplegado el 2026-09-29: todo `infra/azure`. `infra/databricks` (2026-09-30): storage credential, 8 external locations (6 esquemas, `landing` y `unity-catalog` para el catálogo), catálogo, esquemas, volúmenes, grants por esquema, `sp-pipelines`, `sp-agent-ro`, `wh-agent`, scope `fh26`, experimento. El workspace no trajo metastore: Terraform crea `metastore-eastus2` (sin storage propio) y lo asigna con el provider de cuenta. Para eso el SP del pipeline es account admin, asignado a mano una vez por Nicolle (account admin desde el 2026-09-29), igual que el rol de RBAC del SP.
+- Desplegado el 2026-09-29: todo `infra/azure`. `infra/databricks` (2026-09-30, PR #9 y #10): storage credential, 8 external locations (6 esquemas, `landing` y `unity-catalog` para el catálogo), catálogo, esquemas, volúmenes, grants por esquema, `sp-pipelines`, `sp-agent-ro`, usuario de Manuela, `wh-agent`, scope `fh26`, experimento. El workspace no tenía metastore asignado: la cuenta ya tenía `metastore_azure_eastus2` (sin storage propio; uno por región) y Terraform lo asigna con el provider de cuenta y da al SP del pipeline `CREATE CATALOG`, `CREATE EXTERNAL LOCATION` y `CREATE STORAGE CREDENTIAL`. Para eso el SP es account admin, asignado a mano una vez por Nicolle (account admin desde el 2026-09-29), igual que su rol de RBAC.
 - Solo serverless en Databricks, por tres razones: no hay clusters que administrar ni políticas que mantener, arranca en segundos, y la única razón para cómputo clásico (llaves de S3 en la config de Spark) desapareció con la copia a `landing`. Lakeflow Connect pide cómputo clásico solo en el gateway de CDC de bases de datos, que no usamos.
 
 ### Reparto
@@ -80,12 +80,14 @@ Grants del equipo:
 
 | Identidad | Permisos |
 | --- | --- |
-| Nicolle | admin del workspace y del metastore |
-| Eladio y `sp-pipelines` (SP con el que corren los Asset Bundles de datos, X2) | `USE CATALOG hackathon`; `ALL PRIVILEGES` en `bronze`, `silver`, `gold`, `ref`, `ops`; lectura del scope `fh26` |
-| Manuela | `USE CATALOG hackathon`; `SELECT` en `gold` y `ref`; `ALL PRIVILEGES` en `ml`; `CAN_MANAGE` sobre `/Shared/fh26/agente`; `CAN_QUERY` sobre endpoints de serving y FM APIs; lectura del scope `fh26` |
-| `sp-agent-ro` | lo de arriba; sin escritura en datos |
+| Nicolle | account admin; admin del workspace |
+| `sp-deploy-iac-hackathon` (CI) | account admin; admin del workspace; `CREATE CATALOG`, `CREATE EXTERNAL LOCATION`, `CREATE STORAGE CREDENTIAL` en el metastore; dueño de lo que crea Terraform |
+| Eladio | admin del workspace; `USE CATALOG hackathon`; `ALL PRIVILEGES` en `bronze`, `silver`, `gold`, `ref`, `ops`; `READ FILES` en `landing`; `CAN_USE` en `wh-agent` |
+| `sp-pipelines` (SP con el que corren los Asset Bundles de datos, X2) | lo mismo que Eladio en datos; `READ` en el scope `fh26` |
+| Manuela | `USE CATALOG hackathon`; `SELECT` en `gold` y `ref`; `USE SCHEMA`, `SELECT`, `CREATE TABLE` en `ops` (dueña de `agent_turns` y `ml_inference`); `ALL PRIVILEGES` en `ml`; `CAN_USE` en `wh-agent`; `CAN_MANAGE` sobre `/Shared/fh26/agente`; `CAN_QUERY` sobre serving y FM APIs (pendiente, con `prescore-lgbm`) |
+| `sp-agent-ro` | `USE CATALOG hackathon`; `SELECT` en `gold` y `ref`; `CAN_USE` en `wh-agent`; `CAN_EDIT` en el experimento; sin escritura en datos |
 
-Storage: storage credential sobre `acc-agent-bank-dev` y external location sobre `adlsagentbankdev`; el catálogo `hackathon` usa esa ubicación como managed location. Crearlos exige permisos de metastore: lo corre Nicolle en la primera aplicación si el SP de CI no los tiene.
+Storage: `stg-credential-adlsagentbankdev` sobre `acc-agent-bank-dev` y una external location por container (`ext-loc-adlsagentbankdev-<container>`). El catálogo guarda en `unity-catalog/hackathon`; cada esquema en su container (`ml` en `ml-data`: Azure pide nombres de 3 a 63 caracteres). `landing` es de solo lectura. Catálogo, credential y external locations quedan aislados a este workspace.
 
 ### Identidad (cierra ADR-12)
 Mock JWT. `POST /session` corre en la Function App, recibe uno de los 5 clientes de prueba (M3, `docs/test-users.md`) y firma HS256 con `JWT_SIGNING_KEY`. Claims: `customer_id`, `scopes`, `exp` (30 min). El nodo de auth valida firma y `exp`; `customer_id` solo sale del token. Entra External ID queda en To-Be.
@@ -134,6 +136,7 @@ Autenticación (temporal): SP `sp-deploy-iac-hackathon` con secreto `AZURE_CLIEN
 | SQL Warehouse serverless apagado | varios segundos de arranque (a medir) | la primera consulta de `get_customer_profile` puede pasar los 8 s y escalar. Propuesta abierta: copiar los datos de cliente que usa el agente a Cosmos |
 | Primer apply de la Function App | bug de azurerm 5.1: el bloque CORS depende de la URL de la Static Web App y falla la primera vez | volver a correr el apply; desde entonces planea bien |
 | FM APIs pay-per-token | límites por workspace | se miden en N7 |
+| Metastore | el workspace no lo trajo asignado; la cuenta admite uno por región | Terraform asigna el existente (`metastore_azure_eastus2`); el SP del pipeline es account admin |
 | Lectura de S3 desde Azure Databricks serverless | Unity Catalog en Azure no toma llaves de S3 y serverless no deja ponerlas en la config de Spark | resuelto: copia S3 → ADLS `landing` (workflow `data-landing`); Auto Loader lee `abfss://landing@adlsagentbankdev.dfs.core.windows.net/factored-datathon/data/` |
 
 Carga (N7): k6 desde GitHub Actions con 10/25/50 usuarios; p50/p95 en caliente, cold start aparte, error rate, costo por caso.
@@ -142,7 +145,7 @@ Carga (N7): k6 desde GitHub Actions con 10/25/50 usuarios; p50/p95 en caliente, 
 | Fase | Fecha | Qué | Desbloquea |
 | --- | --- | --- | --- |
 | 0 · Chequeos | mar 29 noche | créditos en Cost Management, regiones de Flex, cuota de vCPU | — |
-| 1 · Databricks | mar 29 noche: workspace, ADLS y Access Connector hechos; el resto espera account admin | workspace, ADLS, Access Connector, storage credential, KV + scope, catálogo, esquemas, grants del equipo, `sp-agent-ro`, `sp-pipelines`, `wh-agent`, experimento | X1 → Eladio, Manuela |
+| 1 · Databricks | hecho mié 30 (22:00) | workspace, ADLS, Access Connector, storage credential, KV + scope, catálogo, esquemas, grants del equipo, `sp-agent-ro`, `sp-pipelines`, `wh-agent`, experimento | X1 → Eladio, Manuela |
 | 2 · Azure app | mar 29 noche: hecho salvo `/session` | Cosmos, Function App, App Insights, `/session` | N3, N4, N2 |
 | 3 · CI/CD + frontend | mié 30 | workflow `infra` (hecho), `ci.yml`, `deploy.yml`, bundles, Static Web App (creada) | N1, X2, N5 → Integración 1 |
 | 4 · Observar + carga | jue 1 → sáb 3 | export a `ops.infra_requests`, smoke, tablero, k6 | N6, N8, X3, N7 |
