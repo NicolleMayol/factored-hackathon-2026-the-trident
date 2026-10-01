@@ -69,7 +69,7 @@ elements:
     file: contracts/api.yaml
     owner: ia-ml
     consumers: [servicio]
-    used_by: [App Service chat, load test N7]
+    used_by: [chat en Static Web Apps, load test N7]
   - id: api.POST_/session
     file: contracts/api.yaml
     owner: servicio

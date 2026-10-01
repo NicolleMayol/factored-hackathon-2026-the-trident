@@ -147,7 +147,7 @@ Carga (N7): k6 desde GitHub Actions con 10/25/50 usuarios; p50/p95 en caliente, 
 | 0 · Chequeos | mar 29 noche | créditos en Cost Management, regiones de Flex, cuota de vCPU | — |
 | 1 · Databricks | hecho mié 30 (22:00) | workspace, ADLS, Access Connector, storage credential, KV + scope, catálogo, esquemas, grants del equipo, `sp-agent-ro`, `sp-pipelines`, `wh-agent`, experimento | X1 → Eladio, Manuela |
 | 2 · Azure app | mar 29 noche: hecho salvo `/session` | Cosmos, Function App, App Insights, `/session` | N3, N4, N2 |
-| 3 · CI/CD + frontend | mié 30 | workflow `infra` (hecho), `ci.yml`, `deploy.yml`, bundles, Static Web App (creada) | N1, X2, N5 → Integración 1 |
+| 3 · CI/CD + frontend | mié 30: `infra`, `bundles`, `data-landing` y OIDC hechos; Static Web App creada | `ci.yml`, `deploy.yml`, UI del chat | N1, X2, N5 → Integración 1 |
 | 4 · Observar + carga | jue 1 → sáb 3 | export a `ops.infra_requests`, smoke, tablero, k6 | N6, N8, X3, N7 |
 | 5 · Ventana de jurado | sáb 3 → resultados | always-ready 1 en la Function App; Model Serving sin scale-to-zero | demo sin cold start |
 | 6 · Cierre | tras resultados | `terraform destroy` | corta el gasto |
@@ -233,7 +233,7 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | # | Entregable | De → para | Formato | Fecha | Mock |
 | --- | --- | --- | --- | --- | --- |
 | X1 (cambia) | Workspace Premium trial, ADLS, storage credential, KV + scope `fh26`, catálogo y esquemas (`bronze`, `silver`, `gold`, `ref`, `ops`, `ml`), grants del equipo, `sp-agent-ro`, `sp-pipelines`, `wh-agent`, experimento con `CAN_EDIT` | Nicolle → Eladio, Manuela | Terraform `infra/databricks` + URL y http path | mar 29 noche; grants mié 30 mañana | CSV local; experimento personal |
-| N1 (cambia) | Repo en `NicolleMayol/factored-hackathon-2026-the-trident`; workflow `infra` (plan en PR, apply con aprobación); OIDC hecho; gitleaks pendiente | Nicolle → todos | GitHub | hecho (OIDC pendiente) | — |
+| N1 (cambia) | Repo en `NicolleMayol/factored-hackathon-2026-the-trident`; workflow `infra` (plan en PR, apply con aprobación); OIDC hecho; gitleaks pendiente | Nicolle → todos | GitHub | hecho | — |
 | N2 (cambia) | Function App Flex 2048 MB + App Settings de `infra.yaml` v3 | Nicolle → Manuela | Azure | mié 30 mañana | `func start` + `local.settings.json` |
 | N3 (cambia) | Cosmos free tier, 3 contenedores × 400 RU/s, vector search | Nicolle → Manuela, Eladio | Azure | mar 29 | emulador / LanceDB |
 | N5 (cambia) | Static Web Apps Free: chat + vista `/handoff` | Nicolle → Manuela | Azure | recurso creado; UI mié 30 | curl |

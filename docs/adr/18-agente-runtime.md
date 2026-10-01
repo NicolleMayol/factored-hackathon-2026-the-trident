@@ -8,7 +8,7 @@ Reparto:
 | --- | --- | --- |
 | Grafo Understand → Decide → Act → Verify → Escalate → Respond, policy engine, tools | Function App Flex Consumption (python3.11) | `infra.yaml` `agent_runtime` |
 | `POST /chat`, `POST /chat/confirm`, `GET /trace/{trace_id}`, `GET /handoff/{case_id}`, `GET /healthz` | misma Function App | `api.yaml` (sin cambio) |
-| `POST /session` | la define servicio (ADR-12 abierta) | `api.yaml` |
+| `POST /session` | la define servicio (ADR-12 cerrada: JWT HS256) | `api.yaml` |
 | LLM: Claude Sonnet (`FM_ENDPOINT_MAIN`), Llama 8B (`FM_ENDPOINT_SMALL`) | Databricks Foundation Model APIs | `infra.fm_apis`, ADR-02 |
 | Pre-score LightGBM (`PRESCORE_ENDPOINT`) | Databricks Model Serving scale-to-zero | `infra.model_serving`, ADR-06 |
 | Trazas | MLflow Tracing (`MLFLOW_TRACKING_URI=databricks`, experimento `/Shared/fh26/agente`) + App Insights; `trace_id` = `operation_id` | `ops.agent_turns`, ADR-15 |

@@ -14,7 +14,7 @@ Datos no crea recursos (ADR-19). Esta es la lista completa de lo que hace falta 
 | 1 | Catálogo y esquemas en Unity Catalog | `hackathon` · `bronze`, `silver`, `gold`, `ref`, `ops`, `ml` | sin esto no hay dónde crear tablas |
 | 2 | Containers en `adlsagentbankdev`, uno por esquema y con el mismo nombre | `bronze`, `silver`, `gold`, `ref`, `ops`, `ml` | managed location por esquema; frontera de permisos por capa |
 | 3 | Storage credential | `stg-credential-adlsagentbankdev` | identidad de Unity Catalog sobre ADLS |
-| 4 | External locations, una por container más `landing` | `ext-loc-adlsagentbankdev-{bronze,silver,gold,ref,ops,ml,landing}` | managed location de cada esquema y lectura del dataset |
+| 4 | External locations, una por container más `landing` | `ext-loc-adlsagentbankdev-{bronze,silver,gold,ref,ops,ml-data,landing}` (el container de `ml` es `ml-data`: Azure pide 3 a 63 caracteres; servicio agregó `unity-catalog` para el catálogo) | managed location de cada esquema y lectura del dataset |
 | 5 | Grants por esquema, no globales | Eladio y `sp-pipelines`: `USE CATALOG hackathon` + `ALL PRIVILEGES` en `bronze`, `silver`, `gold`, `ref`, `ops`. `sp-pipelines` además: `READ FILES` en `ext-loc-adlsagentbankdev-landing` | trabajar sin pedir un grant por tabla, sin alcanzar `ml` (de ia-ml) |
 | 6 | Volúmenes managed de Unity Catalog | `hackathon.ref.policy_docs` (ES+PT, E7) · `hackathon.ref.fuentes` (snapshots de `ref`, E6) | insumos que no van al repo |
 | 7 | SQL Warehouse | `CAN_USE` en `wh-agent` para Eladio y `sp-pipelines` | validar tablas y correr los checks de calidad |
