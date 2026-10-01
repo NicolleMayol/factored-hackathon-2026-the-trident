@@ -56,8 +56,8 @@ El SP `sp-deploy-iac-hackathon` tiene tres credenciales federadas, creadas una v
 
 | Nombre | Sujeto | Quién lo usa |
 | --- | --- | --- |
-| `gh-pull-request` | `repo:NicolleMayol/factored-hackathon-2026-the-trident:pull_request` | plan de `infra`, `validate` de `bundles` |
-| `gh-env-hackathon` | `repo:NicolleMayol/factored-hackathon-2026-the-trident:environment:hackathon` | apply de `infra` |
-| `gh-main` | `repo:NicolleMayol/factored-hackathon-2026-the-trident:ref:refs/heads/main` | `bundles` y `data-landing` en `main` |
+| `gh-pull-request` | `repo:NicolleMayol@42590549/factored-hackathon-2026-the-trident@1396845609:pull_request` | plan de `infra`, `validate` de `bundles` |
+| `gh-env-hackathon` | `repo:NicolleMayol@42590549/factored-hackathon-2026-the-trident@1396845609:environment:hackathon` | apply de `infra` |
+| `gh-main` | `repo:NicolleMayol@42590549/factored-hackathon-2026-the-trident@1396845609:ref:refs/heads/main` | `bundles` y `data-landing` en `main` |
 
-Cada workflow pide `id-token: write`. Terraform usa `ARM_USE_OIDC`; el provider de Databricks y el CLI, `github-oidc-azure`; `azcopy`, la sesión de `azure/login`.
+GitHub manda el sujeto con los IDs de dueño y repo (`dueño@id/repo@id`), así que un repo renombrado no puede hacerse pasar por este. Cada workflow pide `id-token: write`. Terraform usa `ARM_USE_OIDC`; el provider de Databricks y el CLI, `github-oidc-azure`; `azcopy`, la sesión de `azure/login`.

@@ -123,7 +123,7 @@ El chat (Static Web App) llama a la Function App desde el navegador con el JWT. 
 | `bundles.yml` | PR y push a `main` con cambios en `data/` | `validate` en PR; `deploy -t prod` en `main` (X2), con `run_as` = `sp-pipelines`. El SP del pipeline y Eladio tienen `servicePrincipal.user` sobre `sp-pipelines` |
 | `adr-impact.yml`, `diagram-sync.yml` | PR | `diagram-sync` sube los PNG a la rama del PR y no corre en commits del bot |
 
-Autenticación: OIDC. El SP `sp-deploy-iac-hackathon` confía en tres sujetos de GitHub: `repo:NicolleMayol/factored-hackathon-2026-the-trident:pull_request` (planes y validate), `…:environment:hackathon` (apply) y `…:ref:refs/heads/main` (`bundles` y `data-landing` en `main`). En GitHub solo quedan variables (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`); ningún secreto de Azure. Un PR desde un fork no obtiene token: GitHub no da `id-token` a forks. Solo Nicolle aprueba el apply y mergea a `main`.
+Autenticación: OIDC. El SP `sp-deploy-iac-hackathon` confía en tres sujetos de GitHub: `repo:NicolleMayol@42590549/factored-hackathon-2026-the-trident@1396845609:pull_request` (planes y validate; GitHub incluye los IDs de dueño y repo), `…:environment:hackathon` (apply) y `…:ref:refs/heads/main` (`bundles` y `data-landing` en `main`). En GitHub solo quedan variables (`AZURE_CLIENT_ID`, `AZURE_TENANT_ID`, `AZURE_SUBSCRIPTION_ID`); ningún secreto de Azure. Un PR desde un fork no obtiene token: GitHub no da `id-token` a forks. Solo Nicolle aprueba el apply y mergea a `main`.
 
 ### Capacidad y límites conocidos
 | Límite | Valor | Efecto |
