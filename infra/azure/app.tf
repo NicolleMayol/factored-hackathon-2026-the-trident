@@ -26,11 +26,11 @@ resource "azurerm_service_plan" "func" {
 }
 
 locals {
-  kv_ref = { for k, s in {
-    DATABRICKS_CLIENT_SECRET = azurerm_key_vault_secret.databricks_client_secret
-    COSMOS_KEY               = azurerm_key_vault_secret.cosmos_key
-    JWT_SIGNING_KEY          = azurerm_key_vault_secret.jwt_signing_key
-  } : k => "@Microsoft.KeyVault(SecretUri=${s.versionless_id})" }
+  kv_ref = { for k, uri in {
+    DATABRICKS_CLIENT_SECRET = "${azurerm_key_vault.main.vault_uri}secrets/sp-agent-ro-client-secret" # lo escribe infra/databricks
+    COSMOS_KEY               = azurerm_key_vault_secret.cosmos_key.versionless_id
+    JWT_SIGNING_KEY          = azurerm_key_vault_secret.jwt_signing_key.versionless_id
+  } : k => "@Microsoft.KeyVault(SecretUri=${uri})" }
 }
 
 resource "azurerm_function_app_flex_consumption" "main" {

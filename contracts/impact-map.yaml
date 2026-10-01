@@ -141,7 +141,7 @@ elements:
   # --- añadidos 2026-09-29 tras el diagrama de Eladio/Nicolle (DEMO) ---
   - {id: infra.app_service,       file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [swa-agent-bank-dev Static Web Apps Free (ADR-19 v3), chat UI, /handoff view, CORS a la Function App]}
   - {id: infra.identity,          file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [mock JWT HS256 (ADR-12 cerrada), POST /session, claims → customer_id]}
-  - {id: infra.key_vault,         file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml, datos],   used_by: [databricks-client-secret, cosmos-key, jwt-signing-key, secret scope fh26]}
+  - {id: infra.key_vault,         file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml, datos],   used_by: [sp-agent-ro-client-secret, cosmos-key, jwt-signing-key, secret scope fh26]}
   - {id: infra.adls,              file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [bronze/silver/gold en ADLS Gen2 vía Access Connector, contenedor landing (copia de S3, workflow data-landing), contenedor ops-export]}
   - {id: infra.fm_apis,           file: contracts/infra.yaml, owner: servicio, consumers: [ia-ml],          used_by: [FM_ENDPOINT_MAIN, FM_ENDPOINT_SMALL, AI Gateway rate limit; modelo en ADR-02 (ia-ml)]}
   - {id: infra.ci_cd,             file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml],   used_by: [workflow infra (plan/apply), environment hackathon, SP sp-deploy-iac-hackathon, Asset Bundles, gates adr-impact/diagram-sync/terraform-plan]}
