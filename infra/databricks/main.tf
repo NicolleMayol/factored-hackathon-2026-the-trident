@@ -24,9 +24,12 @@ locals {
   adls    = "adlsagentbankdev"
   schemas = ["bronze", "silver", "gold", "ref", "ops", "ml"]
 
+  # Un container por esquema, con el mismo nombre salvo ml: Azure pide container de 3 a 63 caracteres.
+  container_of = { for s in local.schemas : s => s == "ml" ? "ml-data" : s }
+
   # Una external location por container (ADR-20). unity-catalog es la managed location del catálogo:
   # el metastore automático no tiene storage propio, así que el catálogo necesita una.
-  containers = toset(concat(local.schemas, ["landing", "unity-catalog"]))
+  containers = toset(concat(values(local.container_of), ["landing", "unity-catalog"]))
   url        = { for c in local.containers : c => "abfss://${c}@${local.adls}.dfs.core.windows.net/" }
 
   sp_pipelines = databricks_service_principal.pipelines.application_id

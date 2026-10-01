@@ -11,7 +11,7 @@ resource "databricks_schema" "this" {
   for_each     = toset(local.schemas)
   catalog_name = databricks_catalog.hackathon.name
   name         = each.key
-  storage_root = local.url[each.key]
+  storage_root = local.url[local.container_of[each.key]]
   comment      = "Terraform (ADR-20)"
   depends_on   = [databricks_external_location.adls]
 }

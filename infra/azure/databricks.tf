@@ -22,8 +22,9 @@ resource "azurerm_storage_account" "adls" {
 }
 
 resource "azurerm_storage_container" "adls" {
-  # landing: copia de S3 (workflow data-landing). bronze…ml: managed location de cada esquema (ADR-20).
-  for_each              = toset(["unity-catalog", "ops-export", "landing", "bronze", "silver", "gold", "ref", "ops", "ml"])
+  # landing: copia de S3 (workflow data-landing). bronze…ml-data: managed location de cada esquema (ADR-20).
+  # El esquema ml usa "ml-data": Azure pide nombres de container de 3 a 63 caracteres.
+  for_each              = toset(["unity-catalog", "ops-export", "landing", "bronze", "silver", "gold", "ref", "ops", "ml-data"])
   name                  = each.value
   storage_account_id    = azurerm_storage_account.adls.id
   container_access_type = "private"
