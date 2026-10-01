@@ -2,11 +2,12 @@
 # Dos stacks en orden: infra/azure (recursos de Azure) y luego infra/databricks (Unity Catalog, grants, SPs, warehouse).
 name: infra
 on:
+  # Solo Terraform y el script del backend: cambios en infra/README.md o en docs no corren plan.
   pull_request:
-    paths: ["infra/**", ".github/workflows/infra.yml"]
+    paths: ["infra/**/*.tf", "infra/scripts/**", ".github/workflows/infra.yml"]
   push:
     branches: [main]
-    paths: ["infra/**", ".github/workflows/infra.yml"]
+    paths: ["infra/**/*.tf", "infra/scripts/**", ".github/workflows/infra.yml"]
   workflow_dispatch:
 
 permissions: { contents: read, pull-requests: write, id-token: write }
