@@ -1,9 +1,12 @@
 openapi: 3.0.3
-info: {title: Agente Crédito LATAM API, version: "1.0.0", description: "owner endpoints: /session servicio; resto ia-ml. consumers: servicio (frontend, carga)."}
+info: {title: Agente Crédito LATAM API, version: "1.1.0", description: "owner endpoints: /session servicio; resto ia-ml. consumers: servicio (frontend, carga). v1.1 (ADR-21, 2026-10-01): scope handoff:read en /handoff y /trace; /chat/confirm y /healthz detallados; JWT HS256 validado en código, auth_level anonymous."}
 paths:
   /session: {post: {summary: Emite JWT de prueba (customer_id, scopes, exp 30 min)}}
   /chat: {post: {summary: Turno de conversación, requestBody: {conversation_id, message, locale}, responses: {"200": {reply, action: "answer|clarify|confirm|escalate|blocked", citations: [{type: "chunk|rule|tool", id}], trace_id, cost_usd, latency_ms}, "401": {}, "429": {}}}}
-  /chat/confirm: {post: {summary: Confirma una acción pendiente (action_id)}}
-  /trace/{trace_id}: {get: {summary: Nodos ejecutados, tools, reglas disparadas, versiones}}
-  /handoff/{case_id}: {get: {summary: Paquete de handoff (rol agente humano)}}
-  /healthz: {get: {summary: Estado de dependencias (LLM, Cosmos, Model Serving, SQL Warehouse)}}
+  /chat/confirm: {post: {summary: Confirma una acción pendiente (action_id) dejada por evaluate_eligibility, requestBody: {conversation_id, action_id, confirmed: boolean}, responses: {"200": {reply, action: "answer|escalate", citations, trace_id}, "404": {action_id desconocido o vencido (TTL 10 min)}, "401": {}}}}
+  /trace/{trace_id}: {get: {summary: Nodos ejecutados, tools, reglas disparadas, versiones, security: [{bearer: [handoff:read]}], responses: {"403": {sin scope handoff:read}}}}
+  /handoff/{case_id}: {get: {summary: Paquete de handoff (contracts/handoff.schema.json), security: [{bearer: [handoff:read]}], responses: {"403": {sin scope handoff:read}}}}
+  /healthz: {get: {summary: Estado de dependencias, responses: {"200": {llm: ok, cosmos: ok, prescore: ok, embed: ok, sql_warehouse: ok}, "503": {la dependencia que falla}}, nota: "sin JWT; lo usa el smoke N8 y un ping cada 5 min en ventana de evaluación para mantener wh-agent caliente"}}
+components:
+  securitySchemes: {bearer: {type: http, scheme: bearer, bearerFormat: JWT HS256 (JWT_SIGNING_KEY), claims: [customer_id, scopes, exp]}}
+  scopes: {customer:read: lee perfil y productos del customer_id del token, credit:simulate: pre-score y evaluate_eligibility, handoff:read: agente humano; /handoff y /trace, public: sin token}
