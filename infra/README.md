@@ -4,13 +4,13 @@ Terraform corre solo en GitHub Actions (`.github/workflows/infra.yml`), nunca de
 
 | Evento | Job | Qué hace |
 | --- | --- | --- |
-| PR que toca `infra/**` | `plan` | crea el backend si falta, `init`, `validate`, `plan`; comenta el plan en el PR |
-| push a `main` | `apply` | espera la aprobación del environment `hackathon`; `apply` |
+| PR que toca `infra/**` | `plan` | crea el backend si falta; `init`, `validate`, `plan` de `azure` y luego de `databricks`; comenta los dos planes en el PR |
+| push a `main` | `apply` | espera la aprobación del environment `hackathon`; `apply` de `azure` y luego de `databricks` |
 
 | Carpeta | Contenido |
 | --- | --- |
-| `azure/` | RG, Key Vault, Log Analytics + App Insights, Cosmos (3 × 400 RU/s, vector search), Function App Flex, Web App B1, Databricks workspace (trial), ADLS, Access Connector, presupuesto |
-| `databricks/` | pendiente: Unity Catalog, grants, `sp-agent-ro`, `sp-pipelines`, scope `fh26`, `wh-agent`, experimento. Requiere account admin de Databricks |
+| `azure/` | RG, Key Vault, Log Analytics + App Insights, Cosmos (3 × 400 RU/s, vector search), Function App Flex, Static Web App Free, Databricks workspace (trial), ADLS, Access Connector, presupuesto |
+| `databricks/` | storage credential, external locations, catálogo `hackathon`, esquemas, volúmenes, grants por esquema, `sp-agent-ro`, `sp-pipelines`, scope `fh26`, `wh-agent`, experimento `/Shared/fh26/agente` |
 | `scripts/ensure-backend.sh` | crea `rg-tfstate-agent-bank-dev` / `sttfstateagentbankdev` / `tfstate` si no existen |
 
 Configuración en GitHub (Settings → Secrets and variables → Actions):
@@ -24,4 +24,5 @@ Configuración en GitHub (Settings → Secrets and variables → Actions):
 | variable | `BUDGET_AMOUNT`, `BUDGET_EMAILS`, `ADMIN_OBJECT_IDS` | opcionales; listas en formato `["a","b"]` |
 | secreto | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | opcionales; llaves del bucket de Factored |
 | variable | `FUNCTION_ALWAYS_READY` | `true` solo en la ventana de jurado |
-| variable | `DATABRICKS_CLIENT_ID`, `SQL_HTTP_PATH` | llegan del stack de Databricks |
+| variable | `DATABRICKS_CLIENT_ID`, `SQL_HTTP_PATH` | salidas del stack de Databricks (`sp_agent_ro_application_id`, `sql_http_path`) |
+| variable | `DATOS_USERS`, `IAML_USERS` | correos de Databricks de cada rol, formato `["a@b.com"]`; cada persona debe existir ya en el workspace |
