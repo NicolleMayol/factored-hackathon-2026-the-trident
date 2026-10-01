@@ -1,4 +1,4 @@
-# X1 · parte Azure. Unity Catalog, grants, SPs y scope van en infra/databricks (requiere account admin).
+# X1 · parte Azure. Unity Catalog, grants, SPs y scope van en infra/databricks.
 resource "azurerm_databricks_workspace" "main" {
   name                        = "dbw-agent-bank-dev"
   location                    = azurerm_resource_group.main.location
@@ -22,7 +22,9 @@ resource "azurerm_storage_account" "adls" {
 }
 
 resource "azurerm_storage_container" "adls" {
-  for_each              = toset(["unity-catalog", "ops-export", "landing"]) # landing: copia de S3 (workflow data-landing)
+  # landing: copia de S3 (workflow data-landing). bronze…ml-data: managed location de cada esquema (ADR-20).
+  # El esquema ml usa "ml-data": Azure pide nombres de container de 3 a 63 caracteres.
+  for_each              = toset(["unity-catalog", "ops-export", "landing", "bronze", "silver", "gold", "ref", "ops", "ml-data"])
   name                  = each.value
   storage_account_id    = azurerm_storage_account.adls.id
   container_access_type = "private"

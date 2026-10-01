@@ -1,6 +1,6 @@
 # 09-servicio
 
-Owner: Nicolle · v3 · 2026-09-29 (noche).
+Owner: Nicolle · v3.1 · 2026-09-30 (stack `infra/databricks`, ADR-20).
 
 ## ADR-19 · Plan de infraestructura en Terraform  ·  rol: servicio  ·  2026-09-29  ·  estado: cerrada
 
@@ -12,7 +12,8 @@ Owner: Nicolle · v3 · 2026-09-29 (noche).
 - Identidad de CI: el SP `sp-deploy-iac-hackathon` que entregó Eladio, con secreto en GitHub **temporal**. Pasa a OIDC cuando Nicolle tenga Cloud Application Administrator en Entra ID. Roles del SP en la suscripción: Contributor, Storage Blob Data Contributor, User Access Administrator (con condición ABAC: solo asigna ese mismo rol) y Role Based Access Control Administrator (sin condición, otorgado por Nicolle el 2026-09-29 para que Terraform asigne roles).
 - Secret scope `fh26` administrado por Databricks (no respaldado en Key Vault: ese tipo exige token de usuario y Terraform no corre desde una laptop). Terraform copia los valores desde Key Vault.
 - Ingesta: el dataset de Factored se copia de S3 a ADLS (`landing`) con `azcopy` en el workflow `data-landing`. Las llaves de AWS solo viven en GitHub; Databricks lee de ADLS con el Access Connector.
-- Desplegado el 2026-09-29: todo `infra/azure`. Pendiente: `infra/databricks` (requiere account admin de Databricks).
+- Desplegado el 2026-09-29: todo `infra/azure`. `infra/databricks` (2026-09-30): storage credential, 8 external locations (6 esquemas, `landing` y `unity-catalog` para el catálogo), catálogo, esquemas, volúmenes, grants por esquema, `sp-pipelines`, `sp-agent-ro`, `wh-agent`, scope `fh26`, experimento. Nicolle es account admin desde el 2026-09-29; el SP del pipeline entra como workspace admin y en un workspace con Unity Catalog automático eso basta.
+- Solo serverless en Databricks, por tres razones: no hay clusters que administrar ni políticas que mantener, arranca en segundos, y la única razón para cómputo clásico (llaves de S3 en la config de Spark) desapareció con la copia a `landing`. Lakeflow Connect pide cómputo clásico solo en el gateway de CDC de bases de datos, que no usamos.
 
 ### Reparto
 | Qué | Dueña/o |
@@ -36,7 +37,7 @@ Región: `eastus2` (Claude Sonnet 5 verificado por Nicolle el 2026-09-29). Nombr
 | Frontend | `swa-agent-bank-dev` | Static Web Apps Free | chat + vista `/handoff/{case_id}`; llama a la Function App desde el navegador (CORS) |
 | Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capability `EnableNoSQLVectorSearch` | ver "Cosmos" |
 | Databricks | `dbw-agent-bank-dev` | Premium trial (14 días), como en el diagrama | solo cómputo serverless |
-| ADLS Gen2 | `adlsagentbankdev` | Standard LRS, HNS | contenedores `unity-catalog` (storage del catálogo), `landing` (copia de S3), `ops-export` |
+| ADLS Gen2 | `adlsagentbankdev` | Standard LRS, HNS | contenedores `unity-catalog` (storage del catálogo), `landing` (copia de S3), `ops-export`, y uno por esquema: `bronze`, `silver`, `gold`, `ref`, `ops`, `ml-data` (el de `ml`; Azure pide 3 a 63 caracteres) (ADR-20) |
 | Access Connector | `acc-agent-bank-dev` | — | identidad de Databricks sobre ADLS |
 | SQL Warehouse | `wh-agent` | serverless 2X-Small, auto-stop 10 min | lectura de gold/ref |
 | Presupuesto | `budget-agent-bank-dev` | — | alertas al 50/80/100 % de `budget_usd` |
@@ -55,7 +56,7 @@ Cosmos no admite búsqueda vectorial en throughput compartido. Por eso cada cont
 infra/
   azure/        azurerm + azapi: rg, kv, log/appi, storage, cosmos, function, static web app, dbw, adls, access connector, budget  (desplegado)
   scripts/      ensure-backend.sh: storage del estado, idempotente
-  databricks/   (pendiente) provider databricks (host = output de azure/): storage credential, catálogo, esquemas, grants, sp-agent-ro, sp-pipelines, secret scope, wh-agent, experimento, serving
+  databricks/   provider databricks (lee el workspace por nombre): storage credential, external locations, catálogo, esquemas, volúmenes, grants, sp-agent-ro, sp-pipelines, secret scope, wh-agent, experimento; serving pendiente
 ```
 Dos stacks porque el provider de Databricks necesita la URL del workspace antes de configurarse.
 
@@ -133,7 +134,6 @@ Autenticación (temporal): SP `sp-deploy-iac-hackathon` con secreto `AZURE_CLIEN
 | SQL Warehouse serverless apagado | varios segundos de arranque (a medir) | la primera consulta de `get_customer_profile` puede pasar los 8 s y escalar. Propuesta abierta: copiar los datos de cliente que usa el agente a Cosmos |
 | Primer apply de la Function App | bug de azurerm 5.1: el bloque CORS depende de la URL de la Static Web App y falla la primera vez | volver a correr el apply; desde entonces planea bien |
 | FM APIs pay-per-token | límites por workspace | se miden en N7 |
-| Cuota de vCPU de la suscripción | depende de la cuenta | solo cómputo serverless en Databricks |
 | Lectura de S3 desde Azure Databricks serverless | Unity Catalog en Azure no toma llaves de S3 y serverless no deja ponerlas en la config de Spark | resuelto: copia S3 → ADLS `landing` (workflow `data-landing`); Auto Loader lee `abfss://landing@adlsagentbankdev.dfs.core.windows.net/factored-datathon/data/` |
 
 Carga (N7): k6 desde GitHub Actions con 10/25/50 usuarios; p50/p95 en caliente, cold start aparte, error rate, costo por caso.
@@ -160,7 +160,7 @@ Carga (N7): k6 desde GitHub Actions con 10/25/50 usuarios; p50/p95 en caliente, 
 | **Azure, subtotal** | | **≈ 5–6** |
 | Databricks (serverless SQL, jobs, Model Serving, tokens de FM APIs) | se mide a diario en `system.billing.usage` | a medir |
 
-Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El workspace usa el SKU `trial` del diagrama DEMO: DBU Premium sin costo por 14 días desde su creación (vence cerca del 13 oct). A verificar si cubre serverless, Model Serving y FM APIs, y qué pasa si la evaluación sigue después del vencimiento.
+Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El workspace usa el SKU `trial` del diagrama DEMO: DBU Premium sin costo por 14 días desde su creación (vence cerca del 13 oct). Serverless funciona en el trial (Premium + Unity Catalog + `eastus2`). Microsoft no documenta si el trial cubre esas DBUs: se mide en `system.billing.usage` desde la primera corrida. Después del vencimiento hay que pasar el workspace a Premium a mano.
 
 | Alternativas descartadas | Por qué |
 | --- | --- |
@@ -173,7 +173,7 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | Scope `fh26` respaldado en Key Vault | exige token de usuario; Terraform corre solo en el pipeline |
 | `infra/bootstrap` corrido desde una laptop | Terraform corre solo en el pipeline; el backend lo crea un script idempotente |
 | Cosmos con throughput compartido de 1.000 RU/s | no admite búsqueda vectorial |
-| Cómputo clásico en Databricks | usa cuota de vCPU de la suscripción y VMs a cargo del equipo |
+| Cómputo clásico en Databricks | VMs a cargo de la suscripción (el trial solo cubre DBUs), clusters y políticas que administrar, minutos de arranque; la razón que lo pedía (llaves de S3) ya no existe |
 | East US | East US 2 tiene Flex Consumption, FM APIs pay-per-token y Claude Sonnet 5 |
 
 **Impacto.**
