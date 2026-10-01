@@ -1,0 +1,47 @@
+# X2 · Asset Bundles de datos (data/). Cada carpeta con databricks.yml es un bundle.
+# PR: validate. Push a main: deploy al target de producción, que corre como sp-pipelines (run_as).
+# Sin aprobación de environment: a main solo llega lo que Nicolle mergea.
+name: bundles
+on:
+  pull_request:
+    paths: ["data/**", ".github/workflows/bundles.yml"]
+  push:
+    branches: [main]
+    paths: ["data/**", ".github/workflows/bundles.yml"]
+  workflow_dispatch:
+
+permissions: { contents: read }
+concurrency: { group: bundles, cancel-in-progress: false }
+
+env:
+  # El SP del pipeline entra al workspace como admin y tiene servicePrincipal.user sobre sp-pipelines.
+  DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+  DATABRICKS_AUTH_TYPE: azure-client-secret
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+  BUNDLE_TARGET: ${{ vars.BUNDLE_TARGET || 'prod' }}
+
+jobs:
+  bundles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: databricks/setup-cli@main
+      - name: validate / deploy
+        run: |
+          set -euo pipefail
+          mapfile -t dirs < <(find data -name databricks.yml -not -path '*/.databricks/*' -exec dirname {} \; | sort)
+          if [ ${#dirs[@]} -eq 0 ]; then
+            echo "::notice::No hay bundles en data/ todavía."
+            exit 0
+          fi
+          for d in "${dirs[@]}"; do
+            echo "::group::$d"
+            if [ "$GITHUB_EVENT_NAME" = "pull_request" ]; then
+              (cd "$d" && databricks bundle validate -t "$BUNDLE_TARGET")
+            else
+              (cd "$d" && databricks bundle deploy -t "$BUNDLE_TARGET")
+            fi
+            echo "::endgroup::"
+          done

@@ -49,14 +49,12 @@ resource "azurerm_key_vault_secret" "cosmos_key" {
   depends_on   = [time_sleep.kv_rbac]
 }
 
-# Lo llena el stack de Databricks (secreto OAuth de sp-agent-ro). Terraform de Azure no lo pisa.
-resource "azurerm_key_vault_secret" "databricks_client_secret" {
-  name         = "databricks-client-secret"
-  value        = "pendiente"
-  key_vault_id = azurerm_key_vault.main.id
-  depends_on   = [time_sleep.kv_rbac]
+# El secreto OAuth de sp-agent-ro lo crea y guarda infra/databricks como `sp-agent-ro-client-secret`.
+# Este stack deja de manejar el marcador "databricks-client-secret" sin borrarlo de Key Vault.
+removed {
+  from = azurerm_key_vault_secret.databricks_client_secret
 
   lifecycle {
-    ignore_changes = [value]
+    destroy = false
   }
 }
