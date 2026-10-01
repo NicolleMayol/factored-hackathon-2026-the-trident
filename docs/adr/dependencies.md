@@ -17,9 +17,9 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 ## Manuela ← Nicolle
 | # | Entregable | Fecha | Mock |
 | --- | --- | --- | --- |
-| N1 | Repo en NicolleMayol/factored-hackathon-2026-the-trident; workflow infra (plan en PR, apply con aprobación); OIDC hecho; pytest, eval y gitleaks pendientes; solo Nicolle mergea | Mié 30 | rama local |
-| N2 | Function App Flex Consumption 2048 MB + App Settings de contracts/infra.yaml v3 (+ APPLICATIONINSIGHTS_CONNECTION_STRING; secretos como referencias a Key Vault) | Mié 30 mañana | func start + local.settings.json |
-| N3 | Cosmos free tier: conversations, handoffs, policy_chunks (DiskANN), 400 RU/s dedicados por contenedor | Mar 29 | emulador / LanceDB |
+| N1 | Repo en NicolleMayol/factored-hackathon-2026-the-trident; workflow infra (plan en PR, apply con aprobación); OIDC hecho; pytest, eval y gitleaks pendientes; solo Nicolle mergea | hecho mié 30 | rama local |
+| N2 | Function App Flex Consumption 2048 MB + App Settings de contracts/infra.yaml v3 (+ APPLICATIONINSIGHTS_CONNECTION_STRING; secretos como referencias a Key Vault; credenciales de sp-agent-ro listas) | hecho mié 30 | func start + local.settings.json |
+| N3 | Cosmos free tier: conversations, handoffs, policy_chunks (DiskANN), 400 RU/s dedicados por contenedor | hecho mar 29 | emulador / LanceDB |
 | N4 | Identidad mock POST /session + 5 clientes de prueba | Mar 29 | JWT local |
 | N5 | Static Web Apps Free: chat + /handoff (ADR-19 v3; recurso creado) | Mié 30 | curl |
 | N6 | App Insights + export ops.infra_requests | Jue 1 | logs locales |
@@ -41,7 +41,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 ## Eladio ↔ Nicolle
 | # | Entregable | De → para | Fecha |
 | --- | --- | --- | --- |
-| X1 | Workspace Premium, ADLS + Access Connector, Key Vault + secret scope fh26 (llaves S3), storage credential, catálogo hackathon y esquemas bronze/silver/gold/ref/ops/ml, grants del equipo, sp-agent-ro, sp-pipelines, wh-agent con CAN_USE, experimento /Shared/fh26/agente con CAN_EDIT; y por ADR-20: un container por esquema con el mismo nombre, stg-credential-adlsagentbankdev, 7 external locations ext-loc-adlsagentbankdev-{esquema|landing}, grants por esquema (ALL PRIVILEGES en bronze/silver/gold/ref/ops, sin ml) para Eladio y sp-pipelines, READ FILES de sp-pipelines en la external location de landing, volúmenes managed hackathon.ref.policy_docs y hackathon.ref.fuentes, lectura del scope fh26 para sp-pipelines; todo en Terraform (ADR-19) (mock: CSV local; experimento personal de Manuela) | Nicolle → Eladio, Manuela | hecho mié 30 (22:00) |
+| X1 | Workspace Premium trial, ADLS + Access Connector, Key Vault + secret scope fh26 (cosmos-key; las llaves de S3 solo viven en GitHub), storage credential, catálogo hackathon y esquemas bronze/silver/gold/ref/ops/ml, grants del equipo, sp-agent-ro, sp-pipelines, wh-agent con CAN_USE, experimento /Shared/fh26/agente con CAN_EDIT; y por ADR-20: un container por esquema con el mismo nombre, stg-credential-adlsagentbankdev, 8 external locations ext-loc-adlsagentbankdev-{bronze,silver,gold,ref,ops,ml-data,landing,unity-catalog}, grants por esquema (ALL PRIVILEGES en bronze/silver/gold/ref/ops, sin ml) para Eladio y sp-pipelines, READ FILES de sp-pipelines en la external location de landing, volúmenes managed hackathon.ref.policy_docs y hackathon.ref.fuentes, lectura del scope fh26 para sp-pipelines; todo en Terraform (ADR-19) (mock: CSV local; experimento personal de Manuela) | Nicolle → Eladio, Manuela | hecho mié 30 (22:00) |
 | X2 | Asset Bundles desde GitHub Actions: bundles.yml con run_as = sp-pipelines | Nicolle → Eladio | hecho mié 30 (noche) |
 | X3 | Export App Insights → ops.infra_requests; tablero AI/BI con p95 en caliente y cold start por separado | Nicolle → Eladio | Vie 2 |
 
