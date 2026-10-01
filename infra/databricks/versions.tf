@@ -30,3 +30,12 @@ provider "databricks" {
   azure_workspace_resource_id = data.azurerm_databricks_workspace.main.id
   auth_type                   = "azure-client-secret"
 }
+
+# Nivel cuenta: metastore y su asignación al workspace. El SP del pipeline debe ser account admin
+# (lo asigna una vez un account admin en accounts.azuredatabricks.net).
+provider "databricks" {
+  alias      = "account"
+  host       = "https://accounts.azuredatabricks.net"
+  account_id = var.databricks_account_id
+  auth_type  = "azure-client-secret"
+}

@@ -25,4 +25,6 @@ Configuración en GitHub (Settings → Secrets and variables → Actions):
 | secreto | `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY` | opcionales; llaves del bucket de Factored |
 | variable | `FUNCTION_ALWAYS_READY` | `true` solo en la ventana de jurado |
 | variable | `DATABRICKS_CLIENT_ID`, `SQL_HTTP_PATH` | salidas del stack de Databricks (`sp_agent_ro_application_id`, `sql_http_path`) |
+| variable | `DATABRICKS_ACCOUNT_ID` | ID de la cuenta de Databricks; el SP del pipeline debe ser account admin |
+| variable | `DATABRICKS_METASTORE_ID` | opcional: solo si ya hay un metastore en eastus2; si falta, Terraform crea `metastore-eastus2` |
 | variable | `DATOS_USERS`, `IAML_USERS` | correos de Databricks de cada rol, formato `["a@b.com"]`; cada persona debe existir ya en el workspace |

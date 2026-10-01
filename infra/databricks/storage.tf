@@ -4,6 +4,7 @@ resource "databricks_storage_credential" "adls" {
   name           = "stg-credential-adlsagentbankdev"
   isolation_mode = "ISOLATION_MODE_ISOLATED"
   comment        = "Access Connector acc-agent-bank-dev · Terraform (ADR-20)"
+  depends_on     = [databricks_metastore_assignment.this, databricks_grant.metastore_sp]
 
   azure_managed_identity {
     access_connector_id = data.azurerm_databricks_access_connector.main.id
