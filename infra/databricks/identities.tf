@@ -3,13 +3,15 @@
 
 # run_as de los Asset Bundles de datos (X2).
 resource "databricks_service_principal" "pipelines" {
-  display_name = "sp-pipelines"
+  display_name          = "sp-pipelines"
+  databricks_sql_access = true # checks de calidad en wh-agent
 }
 
 # Identidad del agente (Function App): solo lectura de gold y ref. Entra con OAuth M2M; el secreto
 # va a Key Vault (secrets.tf) y la Function lo lee como DATABRICKS_CLIENT_SECRET.
 resource "databricks_service_principal" "agent_ro" {
-  display_name = "sp-agent-ro"
+  display_name          = "sp-agent-ro"
+  databricks_sql_access = true # consultas a gold y ref por wh-agent
 }
 
 resource "databricks_service_principal_secret" "agent_ro" {
@@ -39,7 +41,9 @@ resource "databricks_access_control_rule_set" "pipelines" {
 # a mano. Eladio no va aquí: ya existe y es admin del workspace. La persona debe existir en el
 # tenant de Entra ID de la suscripción (como invitada, si es de fuera).
 resource "databricks_user" "iaml" {
-  for_each  = toset(var.iaml_users)
-  user_name = each.key
-  force     = true
+  for_each              = toset(var.iaml_users)
+  user_name             = each.key
+  force                 = true
+  workspace_access      = true # sin esto no entra a la UI del workspace
+  databricks_sql_access = true
 }

@@ -28,6 +28,7 @@ Configuración en GitHub (Settings → Secrets and variables → Actions):
 | variable | `BUNDLE_TARGET` | opcional: target que despliega `bundles.yml` en `main` (por defecto `prod`) |
 | variable | `DATABRICKS_ACCOUNT_ID` | ID de la cuenta de Databricks; el SP del pipeline debe ser account admin |
 | variable | `DATABRICKS_METASTORE_ID` | opcional: solo si ya hay un metastore en eastus2; si falta, Terraform crea `metastore-eastus2` |
+| variable | `ADMIN_USERS` | usuarios de Databricks de servicio (Nicolle): `ALL PRIVILEGES` y `MANAGE` sobre el catálogo, `READ FILES` en `landing` |
 | variable | `DATOS_USERS`, `IAML_USERS` | correos de Databricks de cada rol, formato `["a@b.com"]`; cada persona debe existir ya en el workspace |
 
 ## Asset Bundles de datos (X2)

@@ -30,6 +30,15 @@ resource "databricks_volume" "ref" {
 resource "databricks_grants" "catalog" {
   catalog = databricks_catalog.hackathon.id
 
+  # servicio: ve y administra todo el catálogo (el dueño es el SP del pipeline).
+  dynamic "grant" {
+    for_each = var.admin_users
+    content {
+      principal  = grant.value
+      privileges = ["ALL_PRIVILEGES", "MANAGE"]
+    }
+  }
+
   dynamic "grant" {
     for_each = concat(local.writers, local.readers)
     content {
