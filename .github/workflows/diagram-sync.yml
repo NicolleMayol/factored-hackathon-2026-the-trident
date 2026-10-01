@@ -1,15 +1,21 @@
+# Diagrama de arquitectura.
+# PR: solo valida (sin commits del bot en la rama: un commit nuevo vuelve a disparar todos los workflows del PR).
+# main: exporta los PNG una vez, al mergear, y los sube con [skip ci] para no disparar nada.
 name: diagram-sync
 on:
   pull_request:
     paths: ["diagrams/**", "contracts/impact-map.yaml"]
-permissions: { contents: write, pull-requests: write }
+  push:
+    branches: [main]
+    paths: ["diagrams/**", "!diagrams/out/**"]
+
 jobs:
-  sync-and-export:
-    if: github.actor != 'github-actions[bot]'   # evita el bucle bot → push → bot
+  check:
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    permissions: { contents: read }
     steps:
       - uses: actions/checkout@v4
-        with: { ref: "${{ github.head_ref }}" }   # rama del PR, no HEAD suelto: así el push funciona
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install pyyaml
@@ -19,7 +25,15 @@ jobs:
             echo "El .drawio está comprimido: desmarca 'Comprimido' en draw.io y vuelve a guardar"; exit 1; fi
       - name: Coherencia diagrama ↔ impact-map
         run: python scripts/drawio_tool.py sync diagrams/arquitectura.drawio
-      - name: Exportar PNG/SVG
+
+  export:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions: { contents: write }
+    concurrency: { group: diagram-export, cancel-in-progress: true }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Exportar PNG
         uses: rlespinasse/drawio-export-action@v2
         with:
           path: diagrams
@@ -28,8 +42,8 @@ jobs:
           transparent: false
           scale: 2
           action-mode: all
-      - name: Subir exportes al PR
+      - name: Subir exportes a main
         run: |
           git config user.name "diagram-bot"; git config user.email "bot@users.noreply.github.com"
           git add diagrams/out
-          if git diff --cached --quiet; then echo "sin cambios"; else git commit -m "chore(diagrams): export" && git push; fi
+          if git diff --cached --quiet; then echo "sin cambios"; else git commit -m "chore(diagrams): export [skip ci]" && git push; fi
