@@ -161,6 +161,6 @@ elements:
   - {id: infra.databricks_workspace, file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: [dbw-agent-bank-dev Premium, solo serverless, DATABRICKS_HOST]}
 
   # --- añadidos 2026-09-30 por ADR-20 (plataforma de datos e ingesta) ---
-  - {id: infra.uc_external_locations, file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: ["stg-credential-adlsagentbankdev", "ext-loc-adlsagentbankdev-{bronze,silver,gold,ref,ops,ml,landing}", "managed location por esquema", "READ FILES de sp-pipelines sobre la de landing"]}
+  - {id: infra.uc_external_locations, file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: ["stg-credential-adlsagentbankdev", "ext-loc-adlsagentbankdev-{bronze,silver,gold,ref,ops,ml-data,landing,unity-catalog}", "managed location por esquema", "READ FILES de sp-pipelines sobre la de landing"]}
   - {id: infra.uc_volumes,            file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: ["hackathon.ref.policy_docs managed (E7)", "hackathon.ref.fuentes managed (E6)", "la escritura sale de los grants de ref"]}
   - {id: ml.embeddings_endpoint,      file: contracts/chunks.yaml, owner: ia-ml,   consumers: [datos, servicio], used_by: ["bge-m3 1024 dims de chunks.yaml; no existe en infra.fm_apis y no es modelo de FM APIs", "DECISIÓN ABIERTA (ADR-20): Model Serving propio o dentro del job de E7", bloquea E7]}
