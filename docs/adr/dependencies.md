@@ -17,7 +17,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 ## Manuela ← Nicolle
 | # | Entregable | Fecha | Mock |
 | --- | --- | --- | --- |
-| N1 | Repo en NicolleMayol/factored-hackathon-2026-the-trident; workflow infra (plan en PR, apply con aprobación); OIDC, pytest, eval y gitleaks pendientes; solo Nicolle mergea | Mié 30 | rama local |
+| N1 | Repo en NicolleMayol/factored-hackathon-2026-the-trident; workflow infra (plan en PR, apply con aprobación); OIDC hecho; pytest, eval y gitleaks pendientes; solo Nicolle mergea | Mié 30 | rama local |
 | N2 | Function App Flex Consumption 2048 MB + App Settings de contracts/infra.yaml v3 (+ APPLICATIONINSIGHTS_CONNECTION_STRING; secretos como referencias a Key Vault) | Mié 30 mañana | func start + local.settings.json |
 | N3 | Cosmos free tier: conversations, handoffs, policy_chunks (DiskANN), 400 RU/s dedicados por contenedor | Mar 29 | emulador / LanceDB |
 | N4 | Identidad mock POST /session + 5 clientes de prueba | Mar 29 | JWT local |

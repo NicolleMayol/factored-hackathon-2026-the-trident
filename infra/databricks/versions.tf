@@ -16,7 +16,7 @@ terraform {
   }
 }
 
-# Autenticación: ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_TENANT_ID, ARM_SUBSCRIPTION_ID (las pone el workflow).
+# Autenticación: OIDC de GitHub (ARM_USE_OIDC, ARM_CLIENT_ID, ARM_TENANT_ID, ARM_SUBSCRIPTION_ID; las pone el workflow).
 provider "azurerm" {
   features {}
   resource_provider_registrations = "none"
@@ -28,7 +28,7 @@ provider "azurerm" {
 provider "databricks" {
   host                        = "https://${data.azurerm_databricks_workspace.main.workspace_url}"
   azure_workspace_resource_id = data.azurerm_databricks_workspace.main.id
-  auth_type                   = "azure-client-secret"
+  auth_type                   = "github-oidc-azure" # ARM_CLIENT_ID y ARM_TENANT_ID del workflow
 }
 
 # Nivel cuenta: metastore y su asignación al workspace. El SP del pipeline debe ser account admin
@@ -37,5 +37,5 @@ provider "databricks" {
   alias      = "account"
   host       = "https://accounts.azuredatabricks.net"
   account_id = var.databricks_account_id
-  auth_type  = "azure-client-secret"
+  auth_type  = "github-oidc-azure"
 }
