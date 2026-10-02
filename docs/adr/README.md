@@ -21,6 +21,7 @@ Fuente de verdad del diseño. Se edita por PR con el skill `adr-hackathon` (`.cl
 | 14 | 18-agente-runtime.md (ADR-18: dónde corre el agente) | Manuela |
 | 15 | 21-ajustes-ia-ml.md (ADR-21: embeddings, scopes, frío, fuentes externas) | Manuela |
 | 16 | 22-esquemas-bronze-silver.md (ADR-22: contrato de bronze y silver, E9) | Eladio |
+| 17 | 23-verificacion-landing.md (ADR-23: el origen es CSV; corrige ADR-20 y ADR-22) | Eladio |
 
 ## Glosario
 | Término | Significado |

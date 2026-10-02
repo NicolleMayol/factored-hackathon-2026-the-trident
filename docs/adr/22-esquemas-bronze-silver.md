@@ -12,23 +12,25 @@ Cierra la decisión abierta 1 de ADR-20. El contrato de columnas sale del **dicc
 19.000.000 de filas, 13 tablas, México, Colombia y Argentina, del 2023-06-17 al 2026-06-17. Sintético, en español, con problemas de calidad deliberados: ~2 % de duplicados, ~5 % de nulos en campos opcionales, llegadas tardías y evolución de esquema.
 
 ### Bronze · las 13 tablas, 1:1
-Sin reglas de negocio, sin tipado más allá de lo que trae el Parquet, sin dedup. Una tabla de streaming por fuente, poblada por Auto Loader (ADR-20).
+Sin reglas de negocio y sin dedup. Una tabla de streaming por fuente, poblada por Auto Loader (ADR-20, corregido en ADR-23: el origen es CSV, así que el tipado de bronze sale de hints explícitos y no de un formato autodescriptivo).
 
-| Tabla origen | Filas | Partición en origen | ¿Pasa a silver? | Por qué |
+| Tabla origen | Filas (dicc.) | Formato y ruta reales (medido 2026-10-02) | ¿Pasa a silver? | Por qué |
 | --- | --- | --- | --- | --- |
-| `customers` | 150.000 | `monthly_snapshot` | sí | `gold.customer_360` |
-| `products` | 400.000 | `monthly_snapshot` | sí | `gold.customer_products` |
-| `transactions` | 5.000.000 | `daily` | sí | `gold.customer_behavior_12m` |
-| `call_center_interactions` | 800.000 | `daily` | sí | `gold.intent_labels`, `gold.contact_demand` |
-| `call_transcripts` | 200.000 | `daily` | sí | `gold.intent_labels` |
-| `satisfaction_surveys` | 250.000 | `daily` | sí | `gold.contact_demand` (CSAT) |
-| `daily_exchange_rates` | 3.000 | `daily` | sí | conversión a USD |
-| `branches` | 350 | `full_snapshot` | no | ninguna tabla gold del workflow 4 la usa |
-| `service_agents` | 1.200 | `monthly_snapshot` | no | ídem |
-| `marketing_campaigns` | 200 | `full_snapshot` | no | ídem |
-| `digital_events` | 10.000.000 | `daily` | no | ídem; es la tabla más grande y no aporta al workflow 4 |
-| `complaints` | 80.000 | `daily` | no | ídem |
-| `campaign_sends` | 2.000.000 | `daily` | no | ídem |
+| `customers` | 150.000 | `customers.csv` en la raíz · 44,7 MB | sí | `gold.customer_360` |
+| `products` | 400.000 | `products.csv` en la raíz · 65,1 MB | sí | `gold.customer_products` |
+| `daily_exchange_rates` | 3.000 | `daily_exchange_rates.csv` en la raíz · 0,7 MB | sí | conversión a USD |
+| `transactions` | 5.000.000 | `transactions/year=/month=/day=` · 1.097 archivos · 771 MB | sí | `gold.customer_behavior_12m` |
+| `call_center_interactions` | 800.000 | `call_center_interactions/…` · 1.097 archivos · 133 MB | sí | `gold.intent_labels`, `gold.contact_demand` |
+| `call_transcripts` | 200.000 (reales: 171.321) | `call_transcripts/…` · 1.097 archivos · 131 MB | sí | `gold.intent_labels` |
+| `satisfaction_surveys` | 250.000 | `satisfaction_surveys/…` · 1.097 archivos · 44 MB | sí | `gold.contact_demand` (CSAT) |
+| `branches` | 350 | `branches.csv` en la raíz · 0,09 MB | no | ninguna tabla gold del workflow 4 la usa |
+| `service_agents` | 1.200 | `service_agents.csv` en la raíz · 0,23 MB | no | ídem |
+| `marketing_campaigns` | 200 | `marketing_campaigns.csv` en la raíz · 0,03 MB | no | ídem |
+| `digital_events` | 10.000.000 | `digital_events/…` · 1.097 archivos · **3.583 MB** | no | ídem; el 70 % del dataset y no aporta al workflow 4 |
+| `complaints` | 80.000 | `complaints/…` · 1.097 archivos · 17 MB | no | ídem |
+| `campaign_sends` | 2.000.000 | `campaign_sends/…` · 1.083 archivos · 311 MB | no | ídem; arranca el 2023-07-01, no el 06-17 |
+
+Todo es CSV: no hay un solo Parquet. Los conteos cuadran con el manifiesto de `data-landing` (7.671 archivos, 5,1 GB). Las filas del diccionario son nominales: `call_transcripts` trae 171.321 reales. Ver ADR-23.
 
 Se ingieren las 13 aunque solo 7 sigan: bronze 1:1 es barato, deja evidencia de completitud frente al manifiesto de `data-landing` y evita reprocesar si el alcance cambia. Las 6 que no siguen no se transforman: `digital_events`, `campaign_sends` y `complaints` suman 12,08 M de filas y no alimentan ninguna tabla de `gold`.
 
