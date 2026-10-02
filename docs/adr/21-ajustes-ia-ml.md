@@ -1,6 +1,6 @@
 # 21-ajustes-ia-ml
 
-Owner: Manuela · v1.2 · 2026-10-02 (revisión del PR #18: `text_es`/`text_pt` para full-text en Cosmos; fuente de verdad del corpus repo → volumen; held-out desde `gold.intent_labels`) · v1.1 · 2026-10-01 (revisión de servicio en el PR #16: tolerancia al frío y costo del keep-warm; /healthz con estados; usuario `cliente_co_pt`; Eladio consumer de los usuarios de prueba).
+Owner: Manuela · v1.3 · 2026-10-02 (it. 3: credenciales por perfil OAuth, `main` = llama-3.3-70b, guardrail determinista antes del LLM, decisiones pedidas en ADR-22) · v1.2 · 2026-10-02 (revisión del PR #18: `text_es`/`text_pt` para full-text en Cosmos; fuente de verdad del corpus repo → volumen; held-out desde `gold.intent_labels`) · v1.1 · 2026-10-01 (revisión de servicio en el PR #16: tolerancia al frío y costo del keep-warm; /healthz con estados; usuario `cliente_co_pt`; Eladio consumer de los usuarios de prueba).
 
 ## ADR-21 · Ajustes de ia-ml tras ADR-19 y ADR-20  ·  rol: ia-ml  ·  2026-10-01  ·  estado: cerrada
 
@@ -63,6 +63,16 @@ Factored autorizó fuentes externas con dos condiciones: justificar explícitame
 | Full-text en Cosmos | `policy_chunks` lleva `text_es` y `text_pt` (uno con el texto, el otro `null`) para que cada path tenga su analizador; `text` sigue siendo el campo de cita. Query híbrida: RRF de `VectorDistance` y `FullTextScore` con filtro por `country`, `language`, `product_code` (`chunks.yaml` v2.1) |
 | Fuente de verdad del corpus | `data/policy_docs/` en el repo. `bundle sync` no escribe en volúmenes, así que `bundles.yml` añade tras el deploy `databricks fs cp -r data/policy_docs/docs/ dbfs:/Volumes/hackathon/ref/policy_docs/ --overwrite` (y `catalog.yaml` a `ref/fuentes/`); E7 lee del volumen y parte en chunks importando `build_corpus.py`, así los `chunk_id` son idénticos. Idioma del full-text en portugués: `pt-BR` |
 | Dev set vs held-out | Los 24 casos de retrieval y los 82 de acción son **dev set** (los escribió ia-ml; el stub se afinó sobre ellos). El **held-out** de ADR-10 son las transcripciones de `gold.intent_labels` con split temporal (últimos 3 meses a test, E3), con `expected_action` derivada de `action_label`; se corre una vez con prompts congelados (sáb 3) y ese es el número que se reporta |
+
+### 4c · Decisiones de la iteración 3 (acceso real, ADR-22)
+
+| Punto | Decisión |
+| --- | --- |
+| Credenciales Databricks | Un solo módulo `agent/adapters/dbx_auth.py`: `DATABRICKS_TOKEN` > `sp-agent-ro` (OAuth M2M, Azure) > perfil de la CLI (`databricks auth login --profile fh26`, local). Sin tokens personales en `.env` |
+| Modelo principal | `databricks-claude-sonnet-5` no existe en el workspace (A3, it. 3; SKU trial). `main` = `databricks-meta-llama-3-3-70b-instruct`, `small` = `llama-3.1-8b`; se compara con `gpt-oss-120b` en `eval/compare_models.py` y se elige con el número (`eval/models.md`). Se revisa Claude al pasar a Premium; cambio = `FM_ENDPOINT_MAIN` |
+| Guardrail en dos capas | Con el LLM real el IVR subió a 0,267 porque la detección de inyección dependía de Understand. Ahora `agent/guardrails.py` (regex es/pt/en, determinista) corre antes del modelo y, si dispara, no se llama al LLM; `guardrail_hits` del LLM es la segunda capa. Test: todos los adversariales del dev set disparan sin LLM |
+| Sin portugués en el dataset (ADR-22) | macro-F1 y AUC del clasificador (ADR-07) se reportan solo en ES sobre el held-out de Factored, con la limitación declarada en ADR-06 y ADR-11. PT se reporta como slice sintético fuera de la métrica principal: matriz de acción y Recall@5 sobre `eval/cases.jsonl` y el corpus sintético. PT es idioma del cliente, no país; en runtime lo resuelve el LLM |
+| `rate_kind` (ADR-22) | Se queda en `ref.regulator_rates` y entra al contrato con E6: `values: [ea, tna, cat, cft, usura]`. Tope por país: CO `usura`, MX `cat`, AR `cft` (`engine.CAP_KIND`); antes el motor solo miraba `usura` |
 
 ### 5 · Jev / TypeSafe AI → To-Be (cierra ADR-14)
 

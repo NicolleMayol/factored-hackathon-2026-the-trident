@@ -93,3 +93,11 @@ def test_tasa_sobre_tope_regulatorio_va_a_humano():
     r = engine.evaluate_eligibility({"credit_score": 800, "customer_status": "Active"}, {"max_days_past_due": 0}, "credit_card", None, None, "CO", CAT,
                                     [{"country": "CO", "product_type": "credit_card", "rate_kind": "usura", "rate_max": 20.0}])
     assert r["outcome"] == "Revisión humana" and "E11" in r["rules_fired"]
+
+
+def test_tope_por_pais_cat_mx_y_cft_ar():
+    rates = [{"country": "MX", "product_type": "credit_card", "rate_kind": "cat", "rate_max": 30.0}, {"country": "MX", "product_type": "credit_card", "rate_kind": "ea", "rate_max": 80.0},
+             {"country": "AR", "product_type": "credit_card", "rate_kind": "cft", "rate_max": 90.0}, {"country": "AR", "product_type": "credit_card", "rate_kind": "tna", "rate_max": 300.0}]
+    assert engine.regulatory_cap(rates, "MX", "credit_card") == 30.0
+    assert engine.regulatory_cap(rates, "AR", "credit_card") == 90.0
+    assert engine.regulatory_cap(rates, "CO", "credit_card") is None

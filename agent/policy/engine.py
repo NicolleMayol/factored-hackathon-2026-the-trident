@@ -105,6 +105,16 @@ def _eval_condition(cond: str, ctx: dict[str, Any]) -> bool:
 
 # ---------- elegibilidad (tool evaluate_eligibility) ----------
 
+# rate_kind que actúa como tope o referencia regulatoria por país (ref.regulator_rates, ADR-22 hallazgo rate_kind): CO usura (SFC), MX CAT (CONDUSEF), AR CFT (BCRA)
+CAP_KIND = {"CO": "usura", "MX": "cat", "AR": "cft"}
+
+
+def regulatory_cap(regulator_rates, country: str, product_type: str) -> float | None:
+    kind = CAP_KIND.get(country, "usura")
+    caps = [float(r["rate_max"]) for r in regulator_rates or [] if r.get("country") == country and r.get("product_type") == product_type and r.get("rate_kind", "usura") in (kind, "cap")]
+    return caps[-1] if caps else None
+
+
 @lru_cache(maxsize=4)
 def load_catalog(path: str) -> list[dict[str, Any]]:
     data = yaml.safe_load(open(path, encoding="utf-8"))
@@ -150,10 +160,7 @@ def evaluate_eligibility(profile: dict[str, Any], behavior: dict[str, Any], prod
         elif hi < 0.5 and outcome == "Elegible":
             rules.append("E10"); outcome = "Revisión humana"
     # techo regulatorio: la tasa del catálogo nunca supera el tope del país (Verify también lo revisa)
-    cap = None
-    for r in regulator_rates or []:
-        if r.get("country") == country and r.get("product_type") == product_type and r.get("rate_kind", "usura") in ("usura", "cap"):
-            cap = float(r["rate_max"])
+    cap = regulatory_cap(regulator_rates, country, product_type)
     if cap is not None and float(p["rate_max"]) > cap:
         rules.append("E11"); outcome = "Revisión humana"
     texts = {

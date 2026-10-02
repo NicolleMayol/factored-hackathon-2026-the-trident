@@ -156,8 +156,8 @@ class Nodes:
             if ev.get("product"):
                 p = ev["product"]
                 facts.append({"fact": f"tasa {p['rate_min']}–{p['rate_max']} % · monto {p['amount_min']}–{p['amount_max']} · plazo ≤ {p['term_months_max']} m", "source": f"catalog:{p['product_code']}"})
-                cap = [r for r in self.d.sql.query("regulator_rates", {"country": st["country"], "product_type": st.get("slots", {}).get("product_type", "personal_loan")}) if r.get("rate_kind", "usura") in ("usura", "cap")]
-                if cap and float(p["rate_max"]) > float(cap[-1]["rate_max"]):
+                cap = engine.regulatory_cap(self.d.sql.query("regulator_rates", {"country": st["country"], "product_type": st.get("slots", {}).get("product_type", "personal_loan")}), st["country"], st.get("slots", {}).get("product_type", "personal_loan"))
+                if cap is not None and float(p["rate_max"]) > cap:
                     notes.append("rate_above_cap")
         for name in ("get_prescore",):
             if name in tr:
