@@ -1,0 +1,22 @@
+# Pipeline declarativo del medallón (ADR-20: SDP, solo serverless).
+# Publica en varios esquemas del mismo catálogo con nombres completos en @dlt.table.
+resources:
+  pipelines:
+    medallon_pipeline:
+      name: fh26-medallon
+      catalog: ${var.catalog}
+      schema: bronze # esquema por defecto; silver y gold usan nombre completo
+      serverless: true
+      photon: true
+      continuous: false
+      development: false
+      channel: CURRENT
+
+      libraries:
+        - file: { path: ../src/bronze.py }
+        - file: { path: ../src/silver.py }
+        - file: { path: ../src/gold.py }
+
+      configuration:
+        medallon.catalog: ${var.catalog}
+        medallon.landing: ${var.landing}

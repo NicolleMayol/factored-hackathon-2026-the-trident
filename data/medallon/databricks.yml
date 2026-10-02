@@ -1,0 +1,39 @@
+# Asset Bundle del medallón (ADR-20, ADR-22, ADR-23) · owner: datos
+# Lo despliega .github/workflows/bundles.yml: validate en PR, deploy en main con target `prod`.
+bundle:
+  name: fh26-medallon
+
+variables:
+  catalog:
+    description: Catálogo de Unity Catalog (contracts/gold.yaml).
+    default: hackathon
+  landing:
+    description: Ruta de la copia del dataset en ADLS (ADR-20).
+    default: abfss://landing@adlsagentbankdev.dfs.core.windows.net/factored-datathon/data
+
+include:
+  - resources/*.yml
+
+targets:
+  # Para correr desde una laptop contra el workspace, sin tocar lo de producción.
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://adb-7405618141733267.7.azuredatabricks.net
+
+  # Lo que despliega CI desde main. run_as = sp-pipelines (X2, ADR-20).
+  prod:
+    mode: production
+    workspace:
+      host: https://adb-7405618141733267.7.azuredatabricks.net
+      root_path: /Workspace/Shared/fh26/medallon
+    run_as:
+      service_principal_name: sp-pipelines
+    permissions:
+      - service_principal_name: sp-pipelines
+        level: CAN_MANAGE
+      # /Workspace/Shared es visible para todo el workspace. Es intencional y se declara explícito:
+      # son tres personas y sigue la convención de /Shared/fh26/agente (ADR-18).
+      - group_name: users
+        level: CAN_MANAGE

@@ -1,0 +1,31 @@
+# Job del medallón: corre el pipeline y después los checks propios de calidad (ADR-20: DQ en dos vías).
+# Horario cada 6 h al minuto 50, 33 min después de data-landing (:17), para leer la copia ya cerrada.
+resources:
+  jobs:
+    medallon_job:
+      name: fh26-medallon
+      max_concurrent_runs: 1
+
+      schedule:
+        quartz_cron_expression: "0 50 0/6 * * ?"
+        timezone_id: UTC
+        pause_status: UNPAUSED
+
+      tasks:
+        - task_key: pipeline
+          pipeline_task:
+            pipeline_id: ${resources.pipelines.medallon_pipeline.id}
+
+        - task_key: dq
+          depends_on: [{ task_key: pipeline }]
+          environment_key: serverless
+          spark_python_task:
+            python_file: ../jobs/dq_checks.py
+            parameters: ["--catalog", "${var.catalog}"]
+
+      environments:
+        - environment_key: serverless
+          spec:
+            client: "3"
+
+      queue: { enabled: true }
