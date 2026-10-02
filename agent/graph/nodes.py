@@ -10,6 +10,7 @@ from agent.adapters import Deps
 from agent.config.settings import Settings
 from agent.graph.state import AgentState
 from agent.policy import engine
+from agent import guardrails
 from agent import tools as T
 
 REQUIRED_SLOTS = {"eligibility_simulation": ["product_type"]}
@@ -31,13 +32,21 @@ class Nodes:
     # 1 ------------------------------------------------------------------
     def understand(self, st: AgentState) -> AgentState:
         tmpl, ver = _prompt(self.s, "understand_v1.md")
+        pre = guardrails.scan(st["message"])  # capa 1: determinista, antes del modelo
+        if guardrails.blocks(pre):
+            lang = st.get("language") or ("pt" if st.get("locale", "").startswith("pt") else "es")
+            with self.d.trace.span("understand", guardrail="deterministic"):
+                pass
+            return {**st, "intent": "out_of_scope", "intent_confidence": 1.0, "slots": {}, "guardrail_hits": pre, "language": lang,
+                    "country": st.get("country") or COUNTRY_BY_LOCALE.get(st.get("locale", ""), "MX"),
+                    "node_path": st.get("node_path", []) + ["understand"], "prompt_version": ver, "_mixed_language": False}
         with self.d.trace.span("understand"):
             out = self.d.llm.complete(tmpl.replace("{{message}}", st["message"]), {"task": "understand"}, model="small")
         u = getattr(self.d.llm, "last_usage", {}) or {}
         st = {**st, "tokens_in": st.get("tokens_in", 0) + u.get("tokens_in", 0), "tokens_out": st.get("tokens_out", 0) + u.get("tokens_out", 0), "cost_usd": round(st.get("cost_usd", 0.0) + u.get("cost_usd", 0.0), 6)}
         lang = out.get("language") or st.get("language") or ("pt" if st.get("locale", "").startswith("pt") else "es")  # sin señal clara, idioma del perfil
         return {**st, "intent": out["intent"], "intent_confidence": float(out.get("intent_confidence", 0)),
-                "slots": out.get("slots", {}), "guardrail_hits": out.get("guardrail_hits", []), "language": lang,
+                "slots": out.get("slots", {}), "guardrail_hits": sorted(set(pre) | set(out.get("guardrail_hits", []))), "language": lang,
                 "country": st.get("country") or COUNTRY_BY_LOCALE.get(st.get("locale", ""), "MX"),
                 "node_path": st.get("node_path", []) + ["understand"], "prompt_version": ver,
                 "_mixed_language": bool(out.get("mixed_language"))}

@@ -44,7 +44,7 @@ class LLMFmApi:
             t0 = time.time()
             r = self._post(endpoint, {"messages": [{"role": "system", "content": system}, {"role": "user", "content": prompt}], "max_tokens": 1500 if "gpt-oss" in endpoint else 600, "temperature": 0})
             j = r.json()
-            text = j.get("choices", [{}])[0].get("message", {}).get("content", "") or ""
+            text = _content_text(j.get("choices", [{}])[0].get("message", {}).get("content", ""))
             usage = j.get("usage", {}) or {}
             pin, pout = PRICE_USD_PER_1K.get(endpoint, DEFAULT_PRICE["small" if model == "small" else "main"])
             self.last_usage = {"tokens_in": usage.get("prompt_tokens", 0), "tokens_out": usage.get("completion_tokens", 0),
@@ -55,6 +55,15 @@ class LLMFmApi:
             except ValueError as e:
                 last_err = e; prompt = prompt + "\n\nLa respuesta anterior no fue JSON válido. Devuelve solo el JSON."
         raise ValueError(f"FM APIs {endpoint}: salida no JSON tras 2 intentos: {last_err}")
+
+
+def _content_text(c) -> str:
+    """OpenAI-compatible: str, o lista de partes (gpt-oss: [{type: reasoning...}, {type: text, text: ...}])."""
+    if isinstance(c, str):
+        return c
+    if isinstance(c, list):
+        return "\n".join(p.get("text", "") for p in c if isinstance(p, dict) and p.get("type") in (None, "text", "output_text"))
+    return str(c or "")
 
 
 def _parse_json(text: str) -> dict[str, Any]:
