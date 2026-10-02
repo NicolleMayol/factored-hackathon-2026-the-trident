@@ -93,8 +93,8 @@ class Nodes:
                     elif tool == "get_customer_products":
                         results[tool] = T.run_tool(tool, lambda: T.get_customer_products(self.d, cid), self.d, self.s, cold_used=cold_used)
                     elif tool == "search_policy":
-                        q = st["message"] + " " + str(slots.get("product_type", ""))
-                        results[tool] = T.run_tool(tool, lambda: T.search_policy(self.d, q, country, lang), self.d, self.s, cold_used=cold_used)
+                        pcode = self._product_code(country, slots.get("product_type"))
+                        results[tool] = T.run_tool(tool, lambda: T.search_policy(self.d, st["message"], country, lang, pcode), self.d, self.s, cold_used=cold_used)
                     elif tool == "get_prescore":
                         results[tool] = T.run_tool(tool, lambda: T.get_prescore(self.d, cid), self.d, self.s, cold_used=cold_used)
                     elif tool == "evaluate_eligibility":
@@ -106,6 +106,15 @@ class Nodes:
         return {**st, "tool_results": results, "tools_called": called, "iterations": st.get("iterations", 0) + 1,
                 "node_path": st["node_path"] + ["act"], "_cold_used": list(cold_used)}
 
+    def _product_code(self, country: str, product_type: str | None) -> str | None:
+        if not product_type:
+            return None
+        from agent.policy.engine import load_catalog
+        for p in load_catalog(str(self.s.catalog_path)):
+            if p["country"] == country and p["product_type"] == product_type:
+                return p["product_code"]
+        return None
+
     # 4 ------------------------------------------------------------------
     def verify(self, st: AgentState) -> AgentState:
         """Groundedness determinista: toda cifra que vaya a la respuesta debe salir de un chunk, una regla o una tool.
@@ -116,8 +125,19 @@ class Nodes:
         cits: list[dict[str, str]] = []
         facts: list[dict[str, str]] = []
         notes: list[str] = []
-        for c in tr.get("search_policy", {}).get("chunks", [])[:3]:
+        sp = tr.get("search_policy", {})
+        routed = set(sp.get("sections_routed", []))
+        seen: set[str] = set()
+        for c in sp.get("chunks", []):
+            key = (c.get("product_code"), c.get("rule_id"))
+            if key in seen:
+                continue  # un chunk por producto y sección
+            seen.add(key)
             cits.append({"type": "chunk", "id": c["chunk_id"], "text": c["text"]})
+            if len(cits) >= 3:
+                break
+        if routed and not any(c["id"].endswith(tuple(f"-{r}" for r in routed)) for c in cits if c["type"] == "chunk"):
+            notes.append("no_citation")  # la pregunta pide una sección y ninguna cita la cubre
         ev = tr.get("evaluate_eligibility")
         if ev:
             for r in ev["rules_fired"]:
@@ -178,14 +198,31 @@ class Nodes:
                 reply = {"es": f"Resultado preliminar: {ev['outcome']}. Motivo: {expl}. {p.get('name_es','')}: tasa {p.get('rate_min')}–{p.get('rate_max')} % anual, plazo hasta {p.get('term_months_max')} meses. No es una oferta vinculante; la aprobación la hace un analista.",
                          "pt": f"Resultado preliminar: {ev['outcome']}. Motivo: {expl}. {p.get('name_pt','')}: taxa {p.get('rate_min')}–{p.get('rate_max')} % ao ano, prazo até {p.get('term_months_max')} meses. Não é uma oferta vinculante; a aprovação é feita por um analista."}[lang]
         else:
-            chunks = tr.get("search_policy", {}).get("chunks", [])[:2]
+            routed = set(tr.get("search_policy", {}).get("sections_routed", []))
+            chunks = [c for c in st.get("citations", []) if c["type"] == "chunk"]
+            if routed:
+                chunks = [c for c in chunks if c["id"].endswith(tuple(f"-{r}" for r in routed))] or chunks[:1]
+            chunks = chunks[:2]
             body = " ".join(c["text"] for c in chunks) if chunks else ""
+            term = T.jurisdiction_mismatch(st["message"], st.get("country", ""))
+            if term and body:
+                body = _jurisdiction_note(lang, st["country"], term) + " " + body
             reply = (body + ({"es": " Esta información es de referencia y no constituye una oferta.", "pt": " Esta informação é de referência e não constitui uma oferta."}[lang])) if body else {"es": "No encontré información verificable para responder; lo paso a un asesor.", "pt": "Não encontrei informação verificável para responder; vou encaminhar a um assessor."}[lang]
         reply = _redact_pii(reply)
         if tmpl and st.get("country") and a == "answer":
             reply += _disclosure(lang, st["country"])
         return {**st, "reply": reply, "prompt_version": f"{st.get('prompt_version','')}+{ver}", "model_version": getattr(self.d.llm, 'model_version', ''),
                 "node_path": st["node_path"] + ["respond"]}
+
+
+def _jurisdiction_note(lang: str, country: str, term: str) -> str:
+    own = {"CO": {"es": "tasa efectiva anual (EA) con tope de usura", "pt": "taxa efetiva anual (EA) com teto de usura"},
+           "MX": {"es": "CAT (Costo Anual Total)", "pt": "CAT (Custo Anual Total)"},
+           "AR": {"es": "TNA, TEA y CFT", "pt": "TNA, TEA e CFT"}}
+    where = {"CFT": "Argentina", "TNA": "Argentina", "TEA": "Argentina", "CAT": "México", "USURA": "Colombia"}[term]
+    cname = {"CO": ("Colombia", "na Colômbia"), "MX": ("México", "no México"), "AR": ("Argentina", "na Argentina")}[country]
+    return {"es": f"El {term} aplica en {where}; en {cname[0]} el costo se expresa como {own[country]['es']}.",
+            "pt": f"O {term} aplica-se na {where}; {cname[1]} o custo é expresso como {own[country]['pt']}."}[lang]
 
 
 def _disclosure(lang: str, country: str) -> str:
