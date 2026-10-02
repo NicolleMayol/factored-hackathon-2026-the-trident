@@ -1,0 +1,243 @@
+version: mock-0
+note: catálogo sintético de desarrollo; E5 lo reemplaza
+products:
+- product_code: CO-PL-01
+  country: CO
+  name_es: Préstamo personal
+  name_pt: Empréstimo pessoal
+  product_type: personal_loan
+  currency: COP
+  rate_min: 16
+  rate_max: 24
+  amount_min: 1000000
+  amount_max: 50000000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: CO-CC-02
+  country: CO
+  name_es: Tarjeta de crédito
+  name_pt: Cartão de crédito
+  product_type: credit_card
+  currency: COP
+  rate_min: 18
+  rate_max: 25
+  amount_min: 1000000
+  amount_max: 50000000
+  term_months_max: 36
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: CO-PL-03
+  country: CO
+  name_es: Crédito de libranza
+  name_pt: Crédito consignado
+  product_type: payroll_loan
+  currency: COP
+  rate_min: 12
+  rate_max: 20
+  amount_min: 1000000
+  amount_max: 50000000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: CO-LAC-04
+  country: CO
+  name_es: Crédito de bajo monto
+  name_pt: Crédito de baixo valor
+  product_type: low_amount_consumer
+  currency: COP
+  rate_min: 20
+  rate_max: 25.4
+  amount_min: 1000000
+  amount_max: 50000000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: CO-M-05
+  country: CO
+  name_es: Microcrédito
+  name_pt: Microcrédito
+  product_type: microcredit
+  currency: COP
+  rate_min: 22
+  rate_max: 25.4
+  amount_min: 1000000
+  amount_max: 5000000
+  term_months_max: 60
+  min_score: 550
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-PL-01
+  country: MX
+  name_es: Préstamo personal
+  name_pt: Empréstimo pessoal
+  product_type: personal_loan
+  currency: MXN
+  rate_min: 22
+  rate_max: 45
+  amount_min: 5000
+  amount_max: 500000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-CC-02
+  country: MX
+  name_es: Tarjeta de crédito
+  name_pt: Cartão de crédito
+  product_type: credit_card
+  currency: MXN
+  rate_min: 30
+  rate_max: 60
+  amount_min: 5000
+  amount_max: 500000
+  term_months_max: 36
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-PL-03
+  country: MX
+  name_es: Crédito de libranza
+  name_pt: Crédito consignado
+  product_type: payroll_loan
+  currency: MXN
+  rate_min: 18
+  rate_max: 35
+  amount_min: 5000
+  amount_max: 500000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-LAC-04
+  country: MX
+  name_es: Crédito de bajo monto
+  name_pt: Crédito de baixo valor
+  product_type: low_amount_consumer
+  currency: MXN
+  rate_min: 28
+  rate_max: 55
+  amount_min: 5000
+  amount_max: 500000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-M-05
+  country: MX
+  name_es: Microcrédito
+  name_pt: Microcrédito
+  product_type: microcredit
+  currency: MXN
+  rate_min: 30
+  rate_max: 58
+  amount_min: 5000
+  amount_max: 50000
+  term_months_max: 60
+  min_score: 550
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-PL-01
+  country: AR
+  name_es: Préstamo personal
+  name_pt: Empréstimo pessoal
+  product_type: personal_loan
+  currency: ARS
+  rate_min: 60
+  rate_max: 110
+  amount_min: 100000
+  amount_max: 15000000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-CC-02
+  country: AR
+  name_es: Tarjeta de crédito
+  name_pt: Cartão de crédito
+  product_type: credit_card
+  currency: ARS
+  rate_min: 70
+  rate_max: 120
+  amount_min: 100000
+  amount_max: 15000000
+  term_months_max: 36
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-PL-03
+  country: AR
+  name_es: Crédito de libranza
+  name_pt: Crédito consignado
+  product_type: payroll_loan
+  currency: ARS
+  rate_min: 55
+  rate_max: 95
+  amount_min: 100000
+  amount_max: 15000000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-LAC-04
+  country: AR
+  name_es: Crédito de bajo monto
+  name_pt: Crédito de baixo valor
+  product_type: low_amount_consumer
+  currency: ARS
+  rate_min: 65
+  rate_max: 115
+  amount_min: 100000
+  amount_max: 15000000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-M-05
+  country: AR
+  name_es: Microcrédito
+  name_pt: Microcrédito
+  product_type: microcredit
+  currency: ARS
+  rate_min: 70
+  rate_max: 118
+  amount_min: 100000
+  amount_max: 1500000
+  term_months_max: 60
+  min_score: 550
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
