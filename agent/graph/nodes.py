@@ -209,10 +209,14 @@ class Nodes:
                 body = _jurisdiction_note(lang, st["country"], term) + " " + body
             reply = (body + ({"es": " Esta información es de referencia y no constituye una oferta.", "pt": " Esta informação é de referência e não constitui uma oferta."}[lang])) if body else {"es": "No encontré información verificable para responder; lo paso a un asesor.", "pt": "Não encontrei informação verificável para responder; vou encaminhar a um assessor."}[lang]
         reply = _redact_pii(reply)
-        if tmpl and st.get("country") and a == "answer":
+        if tmpl and st.get("country") and a == "answer" and ("%" in reply or "R3" in routed_for_disclosure(st)):
             reply += _disclosure(lang, st["country"])
         return {**st, "reply": reply, "prompt_version": f"{st.get('prompt_version','')}+{ver}", "model_version": getattr(self.d.llm, 'model_version', ''),
                 "node_path": st["node_path"] + ["respond"]}
+
+
+def routed_for_disclosure(st: AgentState) -> set[str]:
+    return set(st.get("tool_results", {}).get("search_policy", {}).get("sections_routed", []))
 
 
 def _jurisdiction_note(lang: str, country: str, term: str) -> str:

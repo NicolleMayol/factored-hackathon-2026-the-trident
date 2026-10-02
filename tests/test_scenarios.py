@@ -99,3 +99,17 @@ def test_pregunta_de_seccion_sin_cita_que_la_cubra_escala(rt, users, deps):
             assert r["action"] == "escalate" and r["_state"]["escalate_reason"] == "no_citation"
     finally:
         deps.store.search_text = orig
+
+
+def test_prestamo_personal_no_enruta_a_revision_humana(rt, users):
+    r = handle("¿Cuál es la tasa de usura del préstamo personal?", users["cliente_co_ok"], rt=rt)
+    assert "reclamos" not in r["reply"].lower()
+    r = handle("Qual é o CFT do empréstimo pessoal?", users["cliente_co_pt"], rt=rt)
+    assert "reclamações" not in r["reply"].lower()
+
+
+def test_disclosure_de_tasa_solo_cuando_se_habla_de_tasa(rt, users):
+    r = handle("¿Cómo presento un reclamo por mi tarjeta?", users["cliente_co_ok"], rt=rt)
+    assert "usura" not in r["reply"].lower()
+    r = handle("¿Cuál es la tasa de la tarjeta de crédito?", users["cliente_co_ok"], rt=rt)
+    assert "usura" in r["reply"].lower()

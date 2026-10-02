@@ -54,12 +54,12 @@ def get_customer_products(deps: Deps, customer_id: str) -> dict[str, Any]:
 
 
 SECTION_HINTS = {  # ontología ligera: la plantilla R1–R8 es fija, así que la pregunta se enruta a su sección
-    "R2": r"requisit|necesito|piden|exigen|condicion|puntaje|pontua",
+    "R2": r"requisit|necesito|piden|exigen|\bcondicion|puntaje|pontua",
     "R3": r"\btasa|\btaxa|inter[eé]s|juros|\bcat\b|\bcft\b|\btea\b|\btna\b|\bcet\b|usura|costo|custo|\bea\b",
     "R4": r"monto|valor|plazo|prazo|cuota|parcela|m[aá]ximo|m[ií]nimo|cu[aá]nto|quanto",
     "R5": r"proceso|processo|c[oó]mo (pido|solicito|funciona)|pasos|etapas",
     "R6": r"datos|dados|consentim|privacid|autoriz",
-    "R7": r"reclam|queja|aprueba|aprova|humano|pessoa|persona|asesor|assessor",
+    "R7": r"reclam|queja|aprueba|aprova|\bhumano\b|\bpessoa\b|\bpersona\b|\basesor\b|\bassessor\b",
     "R8": r"significa|qu[eé] es (la )?mora|glosario|gloss[aá]rio|inadimpl",
     "R1": r"qu[eé] es|o que [eé]|para qui[eé]n|para quem",
 }
