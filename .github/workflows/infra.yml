@@ -33,11 +33,17 @@ env:
   TF_IN_AUTOMATION: "true"
   TF_INPUT: "false"
   STACKS: azure databricks # orden de aplicación
+  # El tfplan lleva secretos en claro y el repo es público: no va como artifact de GitHub. Va al
+  # storage del tfstate (privado, OIDC) y apply lo baja de ahí.
+  TFPLAN_ACCOUNT: sttfstateagentbankdev
+  TFPLAN_CONTAINER: tfplan
 
 jobs:
+  # PR: plan + comentario. main / manual: plan guardado (tfplan) que apply usa tal cual.
   plan:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.plan.outputs.changes }}
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -56,15 +62,25 @@ jobs:
         id: plan
         run: |
           set -o pipefail
+          changes=""
           for st in $STACKS; do
             echo "::group::infra/$st"
             cd "infra/$st"
             terraform init && terraform validate
-            terraform plan -no-color -lock-timeout=5m -out=tfplan | tee plan.txt
+            set +e
+            terraform plan -no-color -lock-timeout=5m -detailed-exitcode -out=tfplan | tee plan.txt
+            rc=${PIPESTATUS[0]}
+            set -e
+            case $rc in
+              0) ;;                          # sin cambios
+              2) changes="$changes $st" ;;   # hay cambios
+              *) exit "$rc" ;;
+            esac
             cd - >/dev/null
             echo "::endgroup::"
           done
-      - name: Resumen para el PR
+          echo "changes=${changes# }" >> "$GITHUB_OUTPUT"
+      - name: Resumen del plan
         if: always()
         run: |
           for st in $STACKS; do
@@ -85,14 +101,26 @@ jobs:
             fi
             echo
           done > comment.md
+          cat comment.md >> "$GITHUB_STEP_SUMMARY"
       - uses: marocchino/sticky-pull-request-comment@v2
-        if: always()
+        if: always() && github.event_name == 'pull_request'
         with: { header: infra-plan, path: comment.md }
+      - name: Guardar tfplan
+        if: github.event_name != 'pull_request' && steps.plan.outputs.changes != ''
+        run: |
+          az storage container create -n "$TFPLAN_CONTAINER" --account-name "$TFPLAN_ACCOUNT" --auth-mode login -o none
+          for st in ${{ steps.plan.outputs.changes }}; do
+            az storage blob upload --auth-mode login --account-name "$TFPLAN_ACCOUNT" -c "$TFPLAN_CONTAINER" \
+              -n "$GITHUB_RUN_ID/$st.tfplan" -f "infra/$st/tfplan" --overwrite -o none
+          done
 
+  # Aplica el tfplan de este mismo run, sin volver a planear. Si el estado cambió desde el plan,
+  # Terraform rechaza el tfplan ("Saved plan is stale") y hay que correr el workflow de nuevo.
   apply:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: plan
+    if: github.event_name != 'pull_request' && needs.plan.outputs.changes != ''
     runs-on: ubuntu-latest
-    environment: hackathon # exige la aprobación de Nicolle
+    environment: hackathon # exige la aprobación de Nicolle; el plan está en el resumen del job plan
     steps:
       - uses: actions/checkout@v4
       - uses: hashicorp/setup-terraform@v3
@@ -103,18 +131,23 @@ jobs:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: Backend del estado
-        run: bash infra/scripts/ensure-backend.sh
-      - name: init + apply
+      - name: init + apply del tfplan
         run: |
-          for st in $STACKS; do
+          for st in ${{ needs.plan.outputs.changes }}; do
             echo "::group::infra/$st"
             cd "infra/$st"
             terraform init
-            terraform apply -auto-approve -lock-timeout=5m
+            az storage blob download --auth-mode login --account-name "$TFPLAN_ACCOUNT" -c "$TFPLAN_CONTAINER" \
+              -n "$GITHUB_RUN_ID/$st.tfplan" -f tfplan -o none
+            terraform apply -lock-timeout=5m tfplan
             cd - >/dev/null
             echo "::endgroup::"
           done
+      - name: Borrar tfplan
+        if: success()
+        run: |
+          az storage blob delete-batch --auth-mode login --account-name "$TFPLAN_ACCOUNT" -s "$TFPLAN_CONTAINER" \
+            --pattern "$GITHUB_RUN_ID/*" -o none
       - name: Salidas
         if: always()
         run: |
