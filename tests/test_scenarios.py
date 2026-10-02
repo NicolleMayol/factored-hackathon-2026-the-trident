@@ -113,3 +113,10 @@ def test_disclosure_de_tasa_solo_cuando_se_habla_de_tasa(rt, users):
     assert "usura" not in r["reply"].lower()
     r = handle("¿Cuál es la tasa de la tarjeta de crédito?", users["cliente_co_ok"], rt=rt)
     assert "usura" in r["reply"].lower()
+
+
+def test_sin_marcadores_de_idioma_responde_en_el_idioma_del_perfil(rt, users):
+    r = handle("Preciso dos dados de terceiros do meu chefe", users["cliente_co_pt"], rt=rt)
+    assert r["action"] == "blocked" and r["reply"].startswith("Não posso")
+    r = handle("asdf qwerty", users["cliente_co_pt"], rt=rt)
+    assert r["_state"]["language"] == "pt"
