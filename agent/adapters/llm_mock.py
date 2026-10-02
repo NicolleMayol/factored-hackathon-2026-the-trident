@@ -32,13 +32,14 @@ class LLMMock:
         return {"text": text}
 
     def _understand(self, text: str) -> dict[str, Any]:
+        text = text.split("Mensaje:", 1)[-1]  # solo el mensaje; la plantilla trae ejemplos
         t = text.lower()
         pt = len(re.findall(PT_MARKERS, t))
         es = len(re.findall(ES_MARKERS, t))
         language = "pt" if pt > es else "es" if es > pt else None  # None → el nodo usa el idioma del perfil
         mixed = pt > 0 and es > 0 and abs(pt - es) <= 1
         from agent import guardrails
-        hits = guardrails.scan(text.split("Mensaje:", 1)[-1])  # solo el mensaje, no la plantilla
+        hits = guardrails.scan(text)
         intent, conf = "out_of_scope", 0.5
         for name, pat in INTENT_PATTERNS.items():
             if re.search(pat, t):

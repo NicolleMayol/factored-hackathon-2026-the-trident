@@ -25,6 +25,7 @@ class Settings:
     databricks_client_id: str = field(default_factory=lambda: _env("DATABRICKS_CLIENT_ID"))
     databricks_client_secret: str = field(default_factory=lambda: _env("DATABRICKS_CLIENT_SECRET"))
     sql_http_path: str = field(default_factory=lambda: _env("SQL_HTTP_PATH"))
+    understand_prompt: str = field(default_factory=lambda: _env("UNDERSTAND_PROMPT", "understand_v2.md"))  # v2: reglas + ejemplos (it. 3, 11 fallas del 70B)
     fm_endpoint_main: str = field(default_factory=lambda: _env("FM_ENDPOINT_MAIN", "databricks-meta-llama-3-3-70b-instruct"))
     fm_endpoint_small: str = field(default_factory=lambda: _env("FM_ENDPOINT_SMALL", "databricks-meta-llama-3-1-8b-instruct"))
     prescore_endpoint: str = field(default_factory=lambda: _env("PRESCORE_ENDPOINT", "prescore-lgbm"))

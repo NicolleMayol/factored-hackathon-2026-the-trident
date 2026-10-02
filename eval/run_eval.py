@@ -60,7 +60,7 @@ def run(limit: int | None = None, cases_path: Path | None = None, *, small: str 
     by_lang = {lang: metrics([x for x in rows if x["language"] == lang]) for lang in sorted({x["language"] for x in rows})}
     allm = metrics(rows)
     lat = [x["latency_ms"] for x in rows]
-    rep = {"ts": time.time(), "runtime": {"llm": getattr(deps.llm, "model_version", "?"), "embed": deps.embed.model_version, "retries_429": getattr(deps.llm, "retries_429", 0)},
+    rep = {"ts": time.time(), "runtime": {"llm": getattr(deps.llm, "model_version", "?"), "prompt": rt[0].understand_prompt, "embed": deps.embed.model_version, "retries_429": getattr(deps.llm, "retries_429", 0)},
            "all": allm, "by_language": by_lang,
            "groundedness": round(sum(x["verify_ok"] for x in rows if x["action"] == "answer") / max(1, sum(1 for x in rows if x["action"] == "answer")), 3),
            "latency_ms": {"p50": round(statistics.median(lat), 1), "p95": round(sorted(lat)[int(0.95 * (len(lat) - 1))], 1)},
@@ -75,7 +75,10 @@ def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--limit", type=int); ap.add_argument("--cases", help="jsonl alternativo (held-out)"); ap.add_argument("--out", default=str(ROOT / "eval" / "results" / "latest.json"))
     ap.add_argument("--small", help="endpoint FM para Understand (fuerza AGENT_LLM=real)"); ap.add_argument("--main", help="endpoint FM para Verify/Respond (it. 4)")
     ap.add_argument("--pause", type=float, default=0.0, help="segundos entre casos (cuota FM APIs)")
+    ap.add_argument("--prompt", help="plantilla de Understand (agent/prompts/), p. ej. understand_v1.md")
     a = ap.parse_args()
+    if a.prompt:
+        import os; os.environ["UNDERSTAND_PROMPT"] = a.prompt
     rep = run(a.limit, Path(a.cases) if a.cases else None, small=a.small, main=a.main, pause_s=a.pause)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(rep, ensure_ascii=False, indent=1), encoding="utf-8")

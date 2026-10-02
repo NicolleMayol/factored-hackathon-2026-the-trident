@@ -31,7 +31,7 @@ class Nodes:
 
     # 1 ------------------------------------------------------------------
     def understand(self, st: AgentState) -> AgentState:
-        tmpl, ver = _prompt(self.s, "understand_v1.md")
+        tmpl, ver = _prompt(self.s, self.s.understand_prompt)
         pre = guardrails.scan(st["message"])  # capa 1: determinista, antes del modelo
         if guardrails.blocks(pre):
             lang = st.get("language") or ("pt" if st.get("locale", "").startswith("pt") else "es")
