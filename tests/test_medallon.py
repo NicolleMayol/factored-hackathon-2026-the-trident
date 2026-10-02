@@ -77,10 +77,6 @@ MOCK_A_TABLA = {
 # (`string, values: [ea, tna, cat, cft, usura]`). Entra al contrato con E6 y esta excepción se borra.
 DERIVA_ACEPTADA = {("regulator_rates", "rate_kind")}
 
-# Columnas que el contrato ya declara y que el mock traerá al mergear el PR #27 de ia-ml
-# (ella la añadió en su última iteración). Esta excepción se borra en cuanto ese PR esté en main.
-PENDIENTE_EN_MOCK = {("customer_360", "country_code")}
-
 
 @pytest.mark.parametrize("mock,tabla", sorted(MOCK_A_TABLA.items()))
 def test_cabeceras_del_mock_coinciden_con_el_contrato(mock, tabla):
@@ -91,7 +87,7 @@ def test_cabeceras_del_mock_coinciden_con_el_contrato(mock, tabla):
     cabecera = next(csv.reader(csv_path.open(encoding="utf-8")))
     columnas = list(contrato["tables"][tabla]["columns"])
     sobran = [c for c in cabecera if c not in columnas and (mock, c) not in DERIVA_ACEPTADA]
-    faltan = [c for c in columnas if c not in cabecera and (mock, c) not in PENDIENTE_EN_MOCK]
+    faltan = [c for c in columnas if c not in cabecera]
     assert not sobran, f"{mock}.csv tiene columnas que {tabla} no declara: {sobran}"
     assert not faltan, f"{tabla} declara columnas que {mock}.csv no trae: {faltan}"
 
