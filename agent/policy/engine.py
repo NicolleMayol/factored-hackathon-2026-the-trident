@@ -151,7 +151,9 @@ def evaluate_eligibility(profile: dict[str, Any], behavior: dict[str, Any], prod
             rules.append("E06"); outcome = "No elegible" if outcome != "Revisión humana" else outcome
         elif amount < float(p["amount_min"]):
             rules.append("E07"); outcome = "Revisión humana" if outcome == "Elegible" else outcome
-        if income and amount > 0 and (amount / 12) > 0.4 * float(income):
+        if not income and amount > 0:  # ingreso ausente (20 % en customer_360, ADR-23): no se puede verificar capacidad de pago
+            rules.append("E12"); outcome = "Revisión humana" if outcome == "Elegible" else outcome
+        elif income and amount > 0 and (amount / 12) > 0.4 * float(income):
             rules.append("E08"); outcome = "Revisión humana" if outcome == "Elegible" else outcome
     if prescore:
         lo, hi = prescore.get("ci_low", 0), prescore.get("ci_high", 1)
@@ -175,6 +177,7 @@ def evaluate_eligibility(profile: dict[str, Any], behavior: dict[str, Any], prod
         "E09": ("tu perfil está en el límite y lo revisa una persona", "seu perfil está no limite e será revisado por uma pessoa"),
         "E10": ("tu perfil requiere revisión de una persona", "seu perfil requer revisão por uma pessoa"),
         "E11": ("la tasa del producto debe revisarse frente al tope regulatorio", "a taxa do produto deve ser revista frente ao teto regulatório"),
+        "E12": ("no tenemos tu ingreso registrado para verificar la cuota", "não temos sua renda registrada para verificar a parcela"),
     }
     es = "; ".join(texts[r][0] for r in rules) or "cumples las condiciones preliminares"
     pt = "; ".join(texts[r][1] for r in rules) or "você cumpre as condições preliminares"
