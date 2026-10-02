@@ -1,6 +1,6 @@
 # 08-datos
 
-Owner: Eladio · v2 · 2026-09-30 (revisado 2026-10-01 tras la revisión de servicio en el PR #8).
+Owner: Eladio · v3 · 2026-10-01 (revisión de servicio en el PR #8; ADR-22 cierra la decisión abierta 1 en `22-esquemas-bronze-silver.md`).
 
 ## ADR-20 · Plataforma de datos e ingesta  ·  rol: datos  ·  2026-09-30  ·  estado: cerrada
 
@@ -69,12 +69,15 @@ Corte 2025-06-30 en `gold.customer_behavior_12m`. Columnas prohibidas en feature
 Ninguna fuente se consulta en vivo (ADR-12). Ningún dato del dataset entra al repo: los snapshots de `ref` van a `hackathon.ref.fuentes` y los `policy_docs` a `hackathon.ref.policy_docs`.
 
 ### Decisiones abiertas
-| # | Qué | Dueño | Cuándo |
-| --- | --- | --- | --- |
-| 1 | Contrato de columnas de bronze y silver: se congela tras inspeccionar `landing` (E9) | datos | jue 1 |
-| 2 | `ml.embeddings_endpoint`: `contracts/chunks.yaml` fija bge-m3 de 1024 dims, no existe endpoint en `infra.yaml` `fm_apis` y bge-m3 no es un modelo de FM APIs | a definir con ia-ml | jue 1 |
+Ninguna. Las tres se cerraron:
 
-Cerrada en la revisión del PR #8: la cobertura del SKU `trial`. Serverless funciona (Premium + Unity Catalog + `eastus2`); lo que no está documentado es si el trial cubre esas DBUs, y se mide con `system.billing.usage` en la primera corrida.
+| # | Qué | Cómo se cerró |
+| --- | --- | --- |
+| 1 | Contrato de columnas de bronze y silver | **ADR-22** (`22-esquemas-bronze-silver.md`): 13 tablas 1:1 en bronze, 7 en silver, columnas del diccionario de Factored v1.0.0 |
+| 2 | `ml.embeddings_endpoint` | **ADR-21** (ia-ml): Model Serving `embed-bge-m3`, modelo `hackathon.ml.bge_m3`; E7 llama al endpoint y no embebe local |
+| 3 | Cobertura del SKU `trial` | revisión del PR #8: serverless funciona (Premium + Unity Catalog + `eastus2`); la cobertura de DBU se mide con `system.billing.usage` en la primera corrida |
+
+ADR-22 abre dos hallazgos del diccionario de datos, ambos de ia-ml: el dataset no tiene portugués y hay una deriva de `rate_kind` en `ref.regulator_rates`.
 
 | Alternativas descartadas | Por qué |
 | --- | --- |
