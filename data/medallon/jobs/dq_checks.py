@@ -99,6 +99,35 @@ def main() -> int:
                   beh.where(F.col("customer_id").startswith("TEST-")).count() == 0, nb, 0, None))
     filas.append(check(spark, cat, "gold.customer_behavior_12m", "declined_ratio_entre_0_y_1", "declined_ratio < 0 OR declined_ratio > 1", nb))
 
+    # ---- E5: catálogo sintético
+    cat_t = spark.table(f"{cat}.gold.credit_product_catalog")
+    nc = cat_t.count()
+    filas.append(("gold.credit_product_catalog", "18_productos", nc == 18, nc, abs(nc - 18), None))
+    filas.append(check(spark, cat, "gold.credit_product_catalog", "todo_sintetico", "es_sintetico = false OR es_sintetico IS NULL", nc))
+    filas.append(check(spark, cat, "gold.credit_product_catalog", "rangos_coherentes", "rate_min > rate_max OR amount_min > amount_max", nc))
+    # El join con los productos del cliente es lo que hace útil al catálogo: si product_type_dataset
+    # no casa con ningún valor real, evaluate_eligibility devuelve cero sin error.
+    reales = {r[0] for r in spark.table(f"{cat}.gold.customer_products").select("product_type").distinct().collect()}
+    declarados = {r[0] for r in cat_t.where(F.col("product_type_dataset").isNotNull()).select("product_type_dataset").distinct().collect()}
+    huerfanos = declarados - reales
+    filas.append(("gold.credit_product_catalog", "product_type_dataset_casa_con_customer_products",
+                  not huerfanos, len(declarados), len(huerfanos), None))
+
+    # ---- E6: tasas de regulador
+    rr = spark.table(f"{cat}.ref.regulator_rates")
+    nr = rr.count()
+    filas.append(check(spark, cat, "ref.regulator_rates", "rate_kind_en_dominio", "rate_kind NOT IN ('ea','tna','cat','cft','usura')", nr))
+    # Deuda visible: mientras alguna fila siga sin fuente real, este check falla a propósito.
+    pend = rr.where(F.col("source") == "PENDIENTE").count()
+    filas.append(("ref.regulator_rates", "sin_filas_PENDIENTE", pend == 0, nr, pend, None))
+    filas.append(check(spark, cat, "ref.regulator_rates", "fuente_y_url_presentes",
+                       "source IS NULL OR url IS NULL OR snapshot_date IS NULL", nr))
+    # Cada país necesita su techo: CO usura, MX cat, AR cft (decisión de ia-ml, PR #23).
+    techos = {r[0]: r[1] for r in rr.where(F.col("rate_kind").isin("usura", "cat", "cft"))
+              .groupBy("country").count().collect()}
+    faltan_techo = [p for p in ("CO", "MX", "AR") if techos.get(p, 0) == 0]
+    filas.append(("ref.regulator_rates", "techo_por_pais", not faltan_techo, nr, len(faltan_techo), None))
+
     # Columnas prohibidas: ninguna puede haber cruzado a gold (ADR-22).
     prohibidas = {"gender", "marital_status", "date_of_birth"}
     for t in ("customer_360", "customer_products", "customer_behavior_12m"):

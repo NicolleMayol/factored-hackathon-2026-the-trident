@@ -1,0 +1,328 @@
+version: v1
+generado: data/ref/build_catalog.py (E5, 2026-10-02)
+note: Catálogo sintético (ADR-12). AR del BCRA; CO y MX de percentiles del dataset. El techo legal vive en ref.regulator_rates (E6), no aquí.
+products:
+- product_code: CO-PL-01
+  country: CO
+  country_name: Colombia
+  name_es: Préstamo personal
+  name_pt: Empréstimo pessoal
+  product_type: personal_loan
+  product_type_dataset: Préstamo Personal
+  currency: COP
+  rate_min: 13.62
+  rate_max: 26.28
+  amount_min: 75534925
+  amount_max: 542588089
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: CO-CC-02
+  country: CO
+  country_name: Colombia
+  name_es: Tarjeta de crédito
+  name_pt: Cartão de crédito
+  product_type: credit_card
+  product_type_dataset: Tarjeta Crédito
+  currency: COP
+  rate_min: 20.66
+  rate_max: 42.33
+  amount_min: 23405438
+  amount_max: 180283078
+  term_months_max: 36
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: CO-MG-06
+  country: CO
+  country_name: Colombia
+  name_es: Crédito hipotecario
+  name_pt: Crédito habitacional
+  product_type: mortgage
+  product_type_dataset: Préstamo Hipotecario
+  currency: COP
+  rate_min: 6.56
+  rate_max: 11.41
+  amount_min: 76519585
+  amount_max: 539420007
+  term_months_max: 240
+  min_score: 680
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días; avalúo del inmueble; cuota ≤ 30 % del ingreso
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: CO-PRL-03
+  country: CO
+  country_name: Colombia
+  name_es: Crédito de libranza
+  name_pt: Crédito consignado
+  product_type: payroll_loan
+  product_type_dataset: null
+  currency: COP
+  rate_min: 10.21
+  rate_max: 19.71
+  amount_min: 60427940
+  amount_max: 434070471
+  term_months_max: 72
+  min_score: 580
+  requirements: relación laboral vigente; convenio de nómina con el empleador
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: CO-LAC-04
+  country: CO
+  country_name: Colombia
+  name_es: Crédito de bajo monto
+  name_pt: Crédito de baixo valor
+  product_type: low_amount_consumer
+  product_type_dataset: null
+  currency: COP
+  rate_min: 15.66
+  rate_max: 30.22
+  amount_min: 7553492
+  amount_max: 54258809
+  term_months_max: 24
+  min_score: 550
+  requirements: mayor de edad; ingreso demostrable
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: CO-MC-05
+  country: CO
+  country_name: Colombia
+  name_es: Microcrédito
+  name_pt: Microcrédito
+  product_type: microcredit
+  product_type_dataset: null
+  currency: COP
+  rate_min: 17.71
+  rate_max: 34.16
+  amount_min: 3776746
+  amount_max: 27129404
+  term_months_max: 36
+  min_score: 540
+  requirements: actividad productiva declarada; mayor de edad
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-PL-01
+  country: MX
+  country_name: México
+  name_es: Préstamo personal
+  name_pt: Empréstimo pessoal
+  product_type: personal_loan
+  product_type_dataset: Préstamo Personal
+  currency: USD
+  rate_min: 13.54
+  rate_max: 26.5
+  amount_min: 20311
+  amount_max: 135395
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-CC-02
+  country: MX
+  country_name: México
+  name_es: Tarjeta de crédito
+  name_pt: Cartão de crédito
+  product_type: credit_card
+  product_type_dataset: Tarjeta Crédito
+  currency: USD
+  rate_min: 20.69
+  rate_max: 42.34
+  amount_min: 5911
+  amount_max: 45210
+  term_months_max: 36
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-MG-06
+  country: MX
+  country_name: México
+  name_es: Crédito hipotecario
+  name_pt: Crédito habitacional
+  product_type: mortgage
+  product_type_dataset: Préstamo Hipotecario
+  currency: USD
+  rate_min: 6.58
+  rate_max: 11.41
+  amount_min: 19786
+  amount_max: 134138
+  term_months_max: 240
+  min_score: 680
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días; avalúo del inmueble; cuota ≤ 30 % del ingreso
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-PRL-03
+  country: MX
+  country_name: México
+  name_es: Crédito de libranza
+  name_pt: Crédito consignado
+  product_type: payroll_loan
+  product_type_dataset: null
+  currency: USD
+  rate_min: 10.15
+  rate_max: 19.88
+  amount_min: 16249
+  amount_max: 108316
+  term_months_max: 72
+  min_score: 580
+  requirements: relación laboral vigente; convenio de nómina con el empleador
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-LAC-04
+  country: MX
+  country_name: México
+  name_es: Crédito de bajo monto
+  name_pt: Crédito de baixo valor
+  product_type: low_amount_consumer
+  product_type_dataset: null
+  currency: USD
+  rate_min: 15.57
+  rate_max: 30.47
+  amount_min: 2031
+  amount_max: 13540
+  term_months_max: 24
+  min_score: 550
+  requirements: mayor de edad; ingreso demostrable
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: MX-MC-05
+  country: MX
+  country_name: México
+  name_es: Microcrédito
+  name_pt: Microcrédito
+  product_type: microcredit
+  product_type_dataset: null
+  currency: USD
+  rate_min: 17.6
+  rate_max: 34.45
+  amount_min: 1016
+  amount_max: 6770
+  term_months_max: 36
+  min_score: 540
+  requirements: actividad productiva declarada; mayor de edad
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-PL-01
+  country: AR
+  country_name: Argentina
+  name_es: Préstamo personal
+  name_pt: Empréstimo pessoal
+  product_type: personal_loan
+  product_type_dataset: Préstamo Personal
+  currency: ARS
+  rate_min: 66.0
+  rate_max: 132.05
+  amount_min: 450000
+  amount_max: 40000000
+  term_months_max: 60
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-CC-02
+  country: AR
+  country_name: Argentina
+  name_es: Tarjeta de crédito
+  name_pt: Cartão de crédito
+  product_type: credit_card
+  product_type_dataset: Tarjeta Crédito
+  currency: ARS
+  rate_min: 61.67
+  rate_max: 116.76
+  amount_min: 2069104
+  amount_max: 15809487
+  term_months_max: 36
+  min_score: 600
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-MG-06
+  country: AR
+  country_name: Argentina
+  name_es: Crédito hipotecario
+  name_pt: Crédito habitacional
+  product_type: mortgage
+  product_type_dataset: Préstamo Hipotecario
+  currency: ARS
+  rate_min: 7.76
+  rate_max: 14.0
+  amount_min: 300000000
+  amount_max: 372113275
+  term_months_max: 240
+  min_score: 680
+  requirements: mayor de edad; ingreso demostrable; sin mora > 30 días; avalúo del inmueble; cuota ≤ 30 % del ingreso
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-PRL-03
+  country: AR
+  country_name: Argentina
+  name_es: Crédito de libranza
+  name_pt: Crédito consignado
+  product_type: payroll_loan
+  product_type_dataset: null
+  currency: ARS
+  rate_min: 49.5
+  rate_max: 99.04
+  amount_min: 360000
+  amount_max: 32000000
+  term_months_max: 72
+  min_score: 580
+  requirements: relación laboral vigente; convenio de nómina con el empleador
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-LAC-04
+  country: AR
+  country_name: Argentina
+  name_es: Crédito de bajo monto
+  name_pt: Crédito de baixo valor
+  product_type: low_amount_consumer
+  product_type_dataset: null
+  currency: ARS
+  rate_min: 75.9
+  rate_max: 151.86
+  amount_min: 45000
+  amount_max: 4000000
+  term_months_max: 24
+  min_score: 550
+  requirements: mayor de edad; ingreso demostrable
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true
+- product_code: AR-MC-05
+  country: AR
+  country_name: Argentina
+  name_es: Microcrédito
+  name_pt: Microcrédito
+  product_type: microcredit
+  product_type_dataset: null
+  currency: ARS
+  rate_min: 85.8
+  rate_max: 171.67
+  amount_min: 22500
+  amount_max: 2000000
+  term_months_max: 36
+  min_score: 540
+  requirements: actividad productiva declarada; mayor de edad
+  valid_from: '2025-07-01'
+  valid_to: '2026-12-31'
+  es_sintetico: true

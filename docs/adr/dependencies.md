@@ -1,4 +1,4 @@
-# Dependencias entre roles · v7 · 2026-10-02 (ADR-23: E9 cierra del todo; E1, E2 cambian · ADR-22: E9 cierra; E1, E3, E6 cambian · ADR-19 v3.3: N3 cambia · ADR-21: M3, E7 cambian; M9, N9, N10, E10 nuevas · ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5 · ADR-20: X1, X2, E1, E7, E8 cambian; E9 nueva)
+# Dependencias entre roles · v8 · 2026-10-02 (ADR-24: E5 cierra; E6 parcial; M10 nueva · ADR-23: E9 cierra del todo; E1, E2 cambian · ADR-22: E9 cierra; E1, E3, E6 cambian · ADR-19 v3.3: N3 cambia · ADR-21: M3, E7 cambian; M9, N9, N10, E10 nuevas · ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5 · ADR-20: X1, X2, E1, E7, E8 cambian; E9 nueva)
 Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega, el receptor trabaja con mock. Integraciones: mié 30 sep y sáb 3 oct.
 
 ## Manuela ← Eladio
@@ -8,8 +8,8 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | E2 | customer_360, customer_products, customer_behavior_12m (corte 2025-06-30); + perfil de nulos: credit_score 14,99 % y estimated_monthly_income 20,02 % (ADR-23) | Delta; wh-agent; sp-agent-ro | Vie 2 | CSV |
 | E3 | intent_labels con split temporal; sin portugués real: el dataset es solo español (ADR-22, hallazgo 1) | Delta | Vie 2 | 300 filas manuales |
 | E4 | contact_demand + notebook "por qué workflow 4" | Delta | Jue 1 | — |
-| E5 | credit_product_catalog sintético 3×5 | Delta + policy/catalog.yaml | Mar 29 noche | 5 productos inventados |
-| E6 | ref.regulator_rates con fuente y fecha; + columna "Por qué" por fuente (ADR-21) y decisión sobre rate_kind (ADR-22, hallazgo 2) | Delta + volumen hackathon.ref.fuentes | Vie 2 | rangos aprox. |
+| E5 | credit_product_catalog sintético 3×6 (+ hipotecario), generado por data/ref/build_catalog.py; + product_type_dataset y min_score | Delta + policy/catalog.yaml | hecho jue 2 | el mock se genera del mismo catálogo |
+| E6 | ref.regulator_rates con rate_kind, fuente, url y snapshot_date; AR real por API del BCRA; CO (SFC) y MX (Banxico) a transcribir a mano | data/ref/regulator_rates_<fecha>.csv + Delta | AR hecho jue 2; CO y MX vie 2 | 6 filas source = PENDIENTE con DQ en rojo |
 | E7 | Pipeline policy_docs ES+PT → policy_chunks (+JSONL Cosmos); depende de ml.embeddings_endpoint (abierta) y de lectura del scope fh26 | Asset Bundle | Jue 1 | 10 docs manuales |
 | E8 | ops.dq_results por dos vías (expectativas SDP + checks propios) + fixture de llegada tardía desde el manifiesto de data-landing | Delta | Vie 2 | — |
 | E9 | Contrato de columnas de bronze y silver (cerrado en ADR-22: 13 tablas en bronze, 7 en silver, columnas del diccionario de Factored v1.0.0; verificación contra landing ejecutada el 2026-10-02: el origen es CSV, ver ADR-23) | docs/adr/22-esquemas-bronze-silver.md + docs/adr/23-verificacion-landing.md + contracts/gold.yaml v4 | hecho jue 2 | esquemas abiertos |
@@ -40,6 +40,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | M7 | eval/metrics.md + eval/cases.jsonl | Nicolle | Vie 2 |
 | M8 | contracts/ops.yaml v3 (+ escalate_reason) | Eladio, Nicolle | hecho jue 1 |
 | M9 | modelo hackathon.ml.bge_m3 (bge-m3 int8 ONNX) registrado en UC | Nicolle | Jue 1 noche |
+| M10 | R1–R8 para mortgage, low_amount_consumer y microcredit, o ruteo a escalamiento: hoy search_policy devuelve cero para los tres (ADR-24) | Eladio | Vie 2 |
 
 ## Eladio ↔ Nicolle
 | # | Entregable | De → para | Fecha |

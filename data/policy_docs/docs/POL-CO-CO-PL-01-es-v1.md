@@ -10,11 +10,11 @@ Requisitos de Préstamo personal: ser mayor de edad; ingreso mensual demostrable
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Préstamo personal: entre 16 % y 24 % anual según perfil. La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera; el tope vigente para esta modalidad es 25.5 % EA. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Préstamo personal: entre 13.62 % y 26.28 % anual según perfil. La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera; el tope vigente para esta modalidad es 25.5 % EA. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: Ley 1328/2009 (CO) · tasa de usura SFC -->
 
 ## R4
-Montos y plazos de Préstamo personal: desde 1.000.000 hasta 50.000.000 pesos colombianos; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 933.333 pesos colombianos al mes.
+Montos y plazos de Préstamo personal: desde 75.534.925 hasta 542.588.089 pesos colombianos; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 10.231.402 pesos colombianos al mes.
 <!-- source: catálogo sintético -->
 
 ## R5

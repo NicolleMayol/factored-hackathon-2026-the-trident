@@ -10,11 +10,11 @@ Requisitos de Tarjeta de crédito: ser mayor de edad; ingreso mensual demostrabl
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Tarjeta de crédito: entre 18 % y 25 % anual según perfil. La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera; el tope vigente para esta modalidad es 25.5 % EA. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Tarjeta de crédito: entre 20.66 % y 42.33 % anual según perfil. La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera; el tope vigente para esta modalidad es 25.5 % EA. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: Ley 1328/2009 (CO) · tasa de usura SFC -->
 
 ## R4
-Montos y plazos de Tarjeta de crédito: desde 1.000.000 hasta 50.000.000 pesos colombianos; plazo hasta 36 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 1.562.500 pesos colombianos al mes.
+Montos y plazos de Tarjeta de crédito: desde 23.405.438 hasta 180.283.078 pesos colombianos; plazo hasta 36 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 6.067.777 pesos colombianos al mes.
 <!-- source: catálogo sintético -->
 
 ## R5

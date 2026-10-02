@@ -2,7 +2,7 @@
 
     python data/policy_docs/build_corpus.py            # escribe data/policy_docs/docs/*.md y data/mock/policy_chunks.jsonl
 
-Fuente de cifras: data/mock/catalog.yaml (E5 lo reemplaza) y data/mock/regulator_rates.csv (E6). Fuentes normativas: docs/adr/12-fuentes-externas.md.
+Fuente de cifras: policy/catalog.yaml (E5) y data/mock/regulator_rates.csv (E6, pendiente de apuntar al snapshot de data/ref/). Fuentes normativas: docs/adr/12-fuentes-externas.md.
 E7 (datos) reproduce esta misma lógica como job y escribe gold.policy_chunks; el agente no distingue uno de otro.
 """
 from __future__ import annotations
@@ -19,7 +19,7 @@ VALID = ("2025-07-01", "2026-12-31")
 SNAPSHOT = "2025-06-30"
 
 COUNTRY = {"CO": {"es": "Colombia", "pt": "Colômbia"}, "MX": {"es": "México", "pt": "México"}, "AR": {"es": "Argentina", "pt": "Argentina"}}
-CUR_NAME = {"COP": {"es": "pesos colombianos", "pt": "pesos colombianos"}, "MXN": {"es": "pesos mexicanos", "pt": "pesos mexicanos"}, "ARS": {"es": "pesos argentinos", "pt": "pesos argentinos"}}
+CUR_NAME = {"COP": {"es": "pesos colombianos", "pt": "pesos colombianos"}, "MXN": {"es": "pesos mexicanos", "pt": "pesos mexicanos"}, "ARS": {"es": "pesos argentinos", "pt": "pesos argentinos"}, "USD": {"es": "dólares", "pt": "dólares"}}  # USD: los productos de México en el dataset son USD, no MXN (ADR-23)
 
 # Normas citadas en source (ADR-12 v2). URLs exactas; no se cargan en tabla.
 SOURCES = {
@@ -81,7 +81,7 @@ def sections(p: dict, lang: str, cap: float | None) -> dict[str, str]:
 
 
 def build() -> list[dict]:
-    cat = yaml.safe_load(open(MOCK / "catalog.yaml", encoding="utf-8"))["products"]
+    cat = yaml.safe_load(open(ROOT / "policy" / "catalog.yaml", encoding="utf-8"))["products"]
     rates = list(csv.DictReader(open(MOCK / "regulator_rates.csv", encoding="utf-8")))
     OUT_DOCS.mkdir(parents=True, exist_ok=True)
     chunks = []

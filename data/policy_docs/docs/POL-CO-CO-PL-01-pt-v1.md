@@ -10,11 +10,11 @@ Requisitos de Empréstimo pessoal: ser maior de idade; renda mensal comprovável
 <!-- source: catálogo sintético -->
 
 ## R3
-Taxa de juros de Empréstimo pessoal: entre 16 % e 24 % ao ano conforme o perfil. A taxa é efetiva anual (EA) e nunca supera a taxa de usura vigente certificada pela Superintendência Financeira; o teto vigente para esta modalidade é 25.5 % EA. A taxa definitiva é fixada na aprovação e não no chat.
+Taxa de juros de Empréstimo pessoal: entre 13.62 % e 26.28 % ao ano conforme o perfil. A taxa é efetiva anual (EA) e nunca supera a taxa de usura vigente certificada pela Superintendência Financeira; o teto vigente para esta modalidade é 25.5 % EA. A taxa definitiva é fixada na aprovação e não no chat.
 <!-- source: Ley 1328/2009 (CO) · tasa de usura SFC -->
 
 ## R4
-Valores e prazos de Empréstimo pessoal: de 1.000.000 até 50.000.000 pesos colombianos; prazo até 60 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 933.333 pesos colombianos por mês.
+Valores e prazos de Empréstimo pessoal: de 75.534.925 até 542.588.089 pesos colombianos; prazo até 60 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 10.231.402 pesos colombianos por mês.
 <!-- source: catálogo sintético -->
 
 ## R5

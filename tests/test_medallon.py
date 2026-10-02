@@ -108,3 +108,57 @@ def test_el_contrato_dice_csv_no_parquet():
     landing = contrato["source"]["landing"]
     assert landing["format"] == "csv"
     assert landing["format_opts"]["multiLine"] is True
+
+
+# --------------------------------------------------------------------------- E5 · catálogo
+def test_catalogo_generado_coincide_con_el_contrato():
+    cat = yaml.safe_load((ROOT / "policy" / "catalog.yaml").read_text(encoding="utf-8"))
+    contrato = yaml.safe_load((ROOT / "contracts" / "gold.yaml").read_text(encoding="utf-8"))
+    cols = set(contrato["tables"]["gold.credit_product_catalog"]["columns"])
+    assert cat["version"] == "v1" and len(cat["products"]) == 18
+    for p in cat["products"]:
+        faltan = cols - set(p) - {"_ingested_at"}
+        assert not faltan, f"{p['product_code']} no trae {faltan}"
+        assert p["es_sintetico"] is True
+        assert p["rate_min"] <= p["rate_max"] and p["amount_min"] <= p["amount_max"]
+
+
+def test_product_type_dataset_usa_los_valores_reales_del_origen():
+    """Es la llave de join con gold.customer_products. Si no casa, evaluate_eligibility devuelve
+    cero sin error (mismo patrón que country_code)."""
+    reales = {"Préstamo Personal", "Tarjeta Crédito", "Préstamo Hipotecario"}  # medido en landing, ADR-23
+    cat = yaml.safe_load((ROOT / "policy" / "catalog.yaml").read_text(encoding="utf-8"))
+    declarados = {p["product_type_dataset"] for p in cat["products"] if p["product_type_dataset"]}
+    assert declarados <= reales, f"valores que no existen en el dataset: {declarados - reales}"
+    assert declarados == reales, "los tres productos de crédito del dataset deben tener contraparte"
+
+
+def test_el_catalogo_vive_en_policy_y_el_agente_lo_lee_de_ahi():
+    assert (ROOT / "policy" / "catalog.yaml").exists()
+    settings = (ROOT / "agent" / "config" / "settings.py").read_text(encoding="utf-8")
+    assert '"policy" / "catalog.yaml"' in settings
+
+
+# --------------------------------------------------------------------------- E6 · tasas
+RATE_KINDS = {"ea", "tna", "cat", "cft", "usura"}
+
+
+def test_snapshot_de_tasas_respeta_dominio_y_grano():
+    snaps = sorted((ROOT / "data" / "ref").glob("regulator_rates_*.csv"))
+    assert snaps, "falta el snapshot de E6"
+    filas = list(csv.DictReader(snaps[-1].open(encoding="utf-8")))
+    contrato = yaml.safe_load((ROOT / "contracts" / "gold.yaml").read_text(encoding="utf-8"))
+    assert set(filas[0]) == set(contrato["tables"]["ref.regulator_rates"]["columns"])
+    assert {f["rate_kind"] for f in filas} <= RATE_KINDS
+    llaves = [(f["country"], f["product_type"], f["rate_kind"]) for f in filas]
+    assert len(llaves) == len(set(llaves)), "grano roto: país × producto × rate_kind debe ser único"
+
+
+def test_cada_pais_tiene_su_techo_legal():
+    """CO usura, MX cat, AR cft (decisión de ia-ml en el PR #23). Sin techo, el motor no puede
+    acotar una simulación y citaría una tasa sin límite legal."""
+    snaps = sorted((ROOT / "data" / "ref").glob("regulator_rates_*.csv"))
+    filas = list(csv.DictReader(snaps[-1].open(encoding="utf-8")))
+    techo = {"CO": "usura", "MX": "cat", "AR": "cft"}
+    for pais, kind in techo.items():
+        assert any(f["country"] == pais and f["rate_kind"] == kind for f in filas), f"falta el techo de {pais}"

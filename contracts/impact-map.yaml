@@ -28,7 +28,7 @@ elements:
     file: contracts/gold.yaml
     owner: datos
     consumers: [ia-ml]
-    used_by: [policy/catalog.yaml, search_policy, evaluate_eligibility]
+    used_by: ["policy/catalog.yaml generado por data/ref/build_catalog.py (ADR-24)", search_policy, evaluate_eligibility, "product_type_dataset: join con gold.customer_products"]
   - id: gold.policy_chunks
     file: contracts/chunks.yaml
     owner: ia-ml
@@ -48,7 +48,7 @@ elements:
     file: contracts/gold.yaml
     owner: datos
     consumers: [ia-ml]
-    used_by: [groundedness rate check, catalog calibration]
+    used_by: [groundedness rate check, catalog calibration, "rate_kind [ea,tna,cat,cft,usura]; techo CO usura / MX cat / AR cft (ADR-24)", "snapshot versionado en data/ref/ (ADR-12)"]
   # --- tools y política (ia-ml) ---
   - id: tools.*
     file: contracts/tools.yaml

@@ -1,0 +1,12 @@
+country,product_type,rate_kind,rate_min,rate_max,source,url,snapshot_date
+AR,personal_loan,ea,66.00,337.30,BCRA Régimen de Transparencia (n=1018),https://api.bcra.gob.ar/transparencia/v1.0/Prestamos/Personales,2026-10-02
+AR,personal_loan,cft,86.74,372.00,BCRA Régimen de Transparencia (n=967),https://api.bcra.gob.ar/transparencia/v1.0/Prestamos/Personales,2026-10-02
+AR,mortgage,ea,7.76,28.19,BCRA Régimen de Transparencia (n=285),https://api.bcra.gob.ar/transparencia/v1.0/Prestamos/Hipotecarios,2026-10-02
+AR,mortgage,cft,8.06,28.28,BCRA Régimen de Transparencia (n=285),https://api.bcra.gob.ar/transparencia/v1.0/Prestamos/Hipotecarios,2026-10-02
+AR,credit_card,ea,61.67,129.46,BCRA Régimen de Transparencia (n=482),https://api.bcra.gob.ar/transparencia/v1.0/TarjetasCredito,2026-10-02
+CO,personal_loan,usura,,,PENDIENTE,https://www.superfinanciera.gov.co/publicaciones/10116142/superfinanciera-certifica-el-interes-bancario-corriente/,
+CO,credit_card,usura,,,PENDIENTE,https://www.superfinanciera.gov.co/publicaciones/10116142/superfinanciera-certifica-el-interes-bancario-corriente/,
+CO,mortgage,usura,,,PENDIENTE,https://www.superfinanciera.gov.co/publicaciones/10116142/superfinanciera-certifica-el-interes-bancario-corriente/,
+MX,personal_loan,cat,,,PENDIENTE,https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=18&accion=consultarCuadro&idCuadro=CF303&locale=es,
+MX,credit_card,cat,,,PENDIENTE,https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=18&accion=consultarCuadro&idCuadro=CF303&locale=es,
+MX,mortgage,cat,,,PENDIENTE,https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=18&accion=consultarCuadro&idCuadro=CF303&locale=es,
