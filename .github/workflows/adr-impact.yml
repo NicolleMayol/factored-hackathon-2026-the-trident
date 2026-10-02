@@ -17,6 +17,19 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - run: pip install pyyaml
+      - name: Contratos YAML válidos
+        run: |
+          python - <<'PY'
+          import glob, sys, yaml
+          bad = 0
+          for f in sorted(glob.glob("contracts/*.yaml") + glob.glob("policy/*.yaml")):
+              try:
+                  yaml.safe_load(open(f, encoding="utf-8"))
+              except yaml.YAMLError as e:
+                  bad += 1
+                  print(f"::error file={f}::no es YAML válido: {e}")
+          sys.exit(1 if bad else 0)
+          PY
       - name: Archivos cambiados
         run: git diff --name-only origin/${{ github.base_ref }}...HEAD > changed.txt
       - name: Rol del autor (por CODEOWNERS del área principal del PR)
