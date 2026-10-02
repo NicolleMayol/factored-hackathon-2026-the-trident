@@ -2,7 +2,9 @@
 
     python eval/run_eval.py                 # mocks (AGENT_*=mock)
     python eval/run_eval.py --limit 20      # muestra
-    AGENT_LLM=real python eval/run_eval.py  # it. 4: mismo harness con FM APIs
+    AGENT_LLM=real python eval/run_eval.py  # mismo harness con FM APIs
+    python eval/run_eval.py --small databricks-gpt-oss-20b --limit 20   # fuerza AGENT_LLM=real y el endpoint de Understand
+    python eval/compare_models.py           # tabla llama vs gpt-oss (eval/models.md)
 
 Escribe eval/results/latest.json y sale con 1 si una métrica queda bajo umbral (eval/metrics.py THRESHOLDS).
 """
@@ -23,8 +25,16 @@ from agent.handle import handle, runtime  # noqa: E402
 from eval.metrics import check, metrics, render_confusion  # noqa: E402
 
 
-def run(limit: int | None = None, cases_path: Path | None = None) -> dict:
-    rt = runtime()
+def run(limit: int | None = None, cases_path: Path | None = None, *, small: str | None = None, main: str | None = None, pause_s: float = 0.0) -> dict:
+    if small or main:
+        import os
+        os.environ["AGENT_LLM"] = "real"
+        if small:
+            os.environ["FM_ENDPOINT_SMALL"] = small
+        if main:
+            os.environ["FM_ENDPOINT_MAIN"] = main
+    from agent.config.settings import Settings
+    rt = runtime(Settings()) if (small or main) else runtime()
     _, deps, _ = rt
     cases = [json.loads(l) for l in open(cases_path or ROOT / "eval" / "cases.jsonl", encoding="utf-8")]
     if limit:
@@ -32,6 +42,8 @@ def run(limit: int | None = None, cases_path: Path | None = None) -> dict:
     rows = []
     node_ms: dict[str, list[float]] = defaultdict(list)
     for c in cases:
+        if pause_s:
+            time.sleep(pause_s)  # cuota por minuto de FM APIs en workspace trial
         n0 = len(deps.trace.spans) if hasattr(deps.trace, "spans") else 0
         t0 = time.perf_counter()
         r = handle(c["message"], {**USERS[c["user"]], "expected_action": c["expected_action"]}, rt=rt)
@@ -44,11 +56,11 @@ def run(limit: int | None = None, cases_path: Path | None = None) -> dict:
         rows.append({**{k: c[k] for k in ("case_id", "category", "pair_id", "language", "expected_action", "message")}, "atlas": c.get("atlas"),
                      "action": r["action"], "escalate_reason": st.get("escalate_reason", "none"), "rules_fired": st.get("rules_fired", []),
                      "informed": informed, "verify_ok": bool(st.get("verify_ok", True)), "citations": len(r["citations"]),
-                     "latency_ms": round(ms, 1), "cost_usd": r.get("cost_usd", 0.0)})
+                     "latency_ms": round(ms, 1), "cost_usd": r.get("cost_usd", 0.0), "tokens": getattr(deps.llm, "last_usage", {}).get("tokens_in", 0) + getattr(deps.llm, "last_usage", {}).get("tokens_out", 0)})
     by_lang = {lang: metrics([x for x in rows if x["language"] == lang]) for lang in sorted({x["language"] for x in rows})}
     allm = metrics(rows)
     lat = [x["latency_ms"] for x in rows]
-    rep = {"ts": time.time(), "runtime": {"llm": getattr(deps.llm, "model_version", "?"), "embed": deps.embed.model_version},
+    rep = {"ts": time.time(), "runtime": {"llm": getattr(deps.llm, "model_version", "?"), "embed": deps.embed.model_version, "retries_429": getattr(deps.llm, "retries_429", 0)},
            "all": allm, "by_language": by_lang,
            "groundedness": round(sum(x["verify_ok"] for x in rows if x["action"] == "answer") / max(1, sum(1 for x in rows if x["action"] == "answer")), 3),
            "latency_ms": {"p50": round(statistics.median(lat), 1), "p95": round(sorted(lat)[int(0.95 * (len(lat) - 1))], 1)},
@@ -61,8 +73,10 @@ def run(limit: int | None = None, cases_path: Path | None = None) -> dict:
 
 def main():
     ap = argparse.ArgumentParser(); ap.add_argument("--limit", type=int); ap.add_argument("--cases", help="jsonl alternativo (held-out)"); ap.add_argument("--out", default=str(ROOT / "eval" / "results" / "latest.json"))
+    ap.add_argument("--small", help="endpoint FM para Understand (fuerza AGENT_LLM=real)"); ap.add_argument("--main", help="endpoint FM para Verify/Respond (it. 4)")
+    ap.add_argument("--pause", type=float, default=0.0, help="segundos entre casos (cuota FM APIs)")
     a = ap.parse_args()
-    rep = run(a.limit, Path(a.cases) if a.cases else None)
+    rep = run(a.limit, Path(a.cases) if a.cases else None, small=a.small, main=a.main, pause_s=a.pause)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(rep, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"Eval · {rep['all']['n']} casos · llm={rep['runtime']['llm']} embed={rep['runtime']['embed']}")
