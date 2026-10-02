@@ -138,7 +138,7 @@ Cerrada en la revisión del PR #8: la cobertura del SKU `trial`. Serverless func
 | --- | --- | --- | --- | --- | --- |
 | X1 (cambia) | + containers y external locations por esquema con nomenclatura fija, `stg-credential-adlsagentbankdev`, grants por esquema para Eladio y `sp-pipelines`, `READ FILES` en la external location de `landing`, volúmenes `hackathon.ref.policy_docs` y `hackathon.ref.fuentes`, `CAN_USE` en `wh-agent` | Nicolle → Eladio, Manuela | Terraform `infra/databricks` | jue 1 | CSV local |
 | X2 (cambia) | `bundles.yml` con `run_as = sp-pipelines` | Nicolle → Eladio | GitHub Actions | jue 1 (vencida desde mar 29) | `databricks bundle deploy` local |
-| E1 (cambia) | esquema congelado de las 7 tablas gold; bronze y silver pasan a decisión abierta (E9) | Eladio → Manuela | `contracts/gold.yaml` v2 + tablas vacías | jue 1 | CSV 50 filas |
+| E1 (cambia) | esquema congelado de las 7 tablas gold; bronze y silver pasan a decisión abierta (E9); + 5 filas sintéticas `TEST-*` en `gold.customer_360` (ADR-21) | Eladio → Manuela | `contracts/gold.yaml` v2 + tablas vacías | jue 1 | CSV 50 filas |
 | E7 (cambia) | + depende de `ml.embeddings_endpoint` (abierta) y de lectura del scope `fh26` | Eladio → Manuela | Asset Bundle | jue 1 | 10 docs manuales |
 | E8 (cambia) | `ops.dq_results` por dos vías + fixture de llegada tardía desde el manifiesto | Eladio → Nicolle | Delta | vie 2 | — |
 | E9 (nueva) | contrato de columnas de bronze y silver tras inspeccionar `landing` | Eladio → Manuela | `contracts/gold.yaml` | jue 1 | esquemas abiertos |

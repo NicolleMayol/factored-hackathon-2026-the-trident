@@ -1,4 +1,4 @@
-# Contrato de tools del agente · owner: ia-ml (Manuela) · consumers: datos, servicio · v1 · 2026-09-28
+# Contrato de tools del agente · owner: ia-ml (Manuela) · consumers: datos, servicio · v2 · 2026-10-01 (revisión PR #16: tolerancia al frío; avisar servicio)
 # customer_id SIEMPRE sale del JWT, nunca del texto del usuario.
 tools:
   get_customer_profile:   {scope: customer:read,   reads: gold.customer_360,          writes: none, side_effect: false}
@@ -8,3 +8,4 @@ tools:
   evaluate_eligibility:   {scope: credit:simulate, requires_user_confirmation: true, reads: [policy/policy.yaml, policy/catalog.yaml], returns: [outcome: "Elegible|No elegible|Revisión humana", rules_fired, explanation_es, explanation_pt]}
   create_handoff:         {scope: always,          writes: cosmos.handoffs, idempotency_key: conversation_id, schema: contracts/handoff.schema.json}
 limits: {max_tool_iterations_per_turn: 2, tool_timeout_s: 8, retries: 2, circuit_breaker_failures: 5, fallback: escalate}
+cold_start: {source: /healthz estado por dependencia, when_cold: "timeout extendido 25 s, una sola vez por dependencia y conversation_id; mensaje intermedio al cliente (estoy consultando); si vence, escalate_reason = timeout_tool", keep_warm: "ping a /healthz cada 5 min solo en demos anunciadas (~2 h/día); nunca 24 h (ADR-21 v1.1)"}
