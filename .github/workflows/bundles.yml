@@ -1,5 +1,6 @@
 # X2 · Asset Bundles de datos (data/). Cada carpeta con databricks.yml es un bundle.
-# PR: validate. Push a main: deploy al target de producción, que corre como sp-pipelines (run_as).
+# PR: validate. Push a main: deploy al target de producción, que corre como sp-pipelines (run_as),
+# y copia de policy_docs y catalog.yaml a los volúmenes de ref.
 # Sin aprobación de environment: a main solo llega lo que Nicolle mergea.
 name: bundles
 on:
@@ -44,3 +45,17 @@ jobs:
             fi
             echo "::endgroup::"
           done
+
+      # Insumos de ref (ADR-21 v1.2): el repo es la fuente de verdad y los volúmenes son la copia que
+      # leen E7 (chunks de policy_docs) y E5 + el motor de reglas (catalog.yaml). Solo en main.
+      - name: copiar insumos a volúmenes de ref
+        if: github.event_name != 'pull_request'
+        run: |
+          set -euo pipefail
+          if [ -d data/policy_docs/docs ]; then
+            databricks fs cp -r data/policy_docs/docs/ dbfs:/Volumes/hackathon/ref/policy_docs/ --overwrite
+            databricks fs ls dbfs:/Volumes/hackathon/ref/policy_docs/
+          else
+            echo "::notice::Sin data/policy_docs/docs todavía."
+          fi
+          databricks fs cp data/mock/catalog.yaml dbfs:/Volumes/hackathon/ref/fuentes/catalog.yaml --overwrite
