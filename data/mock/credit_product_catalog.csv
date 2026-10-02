@@ -1,16 +1,16 @@
 product_code,country,name_es,name_pt,product_type,currency,rate_min,rate_max,amount_min,amount_max,term_months_max,requirements,valid_from,valid_to,es_sintetico
 CO-PL-01,CO,Préstamo personal,Empréstimo pessoal,personal_loan,COP,16,24,1000000,50000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
 CO-CC-02,CO,Tarjeta de crédito,Cartão de crédito,credit_card,COP,18,25,1000000,50000000,36,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-CO-PL-03,CO,Crédito de libranza,Crédito consignado,payroll_loan,COP,12,20,1000000,50000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+CO-PRL-03,CO,Crédito de libranza,Crédito consignado,payroll_loan,COP,12,20,1000000,50000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
 CO-LAC-04,CO,Crédito de bajo monto,Crédito de baixo valor,low_amount_consumer,COP,20,25.4,1000000,50000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-CO-M-05,CO,Microcrédito,Microcrédito,microcredit,COP,22,25.4,1000000,5000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+CO-MC-05,CO,Microcrédito,Microcrédito,microcredit,COP,22,25.4,1000000,5000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
 MX-PL-01,MX,Préstamo personal,Empréstimo pessoal,personal_loan,MXN,22,45,5000,500000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
 MX-CC-02,MX,Tarjeta de crédito,Cartão de crédito,credit_card,MXN,30,60,5000,500000,36,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-MX-PL-03,MX,Crédito de libranza,Crédito consignado,payroll_loan,MXN,18,35,5000,500000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+MX-PRL-03,MX,Crédito de libranza,Crédito consignado,payroll_loan,MXN,18,35,5000,500000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
 MX-LAC-04,MX,Crédito de bajo monto,Crédito de baixo valor,low_amount_consumer,MXN,28,55,5000,500000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-MX-M-05,MX,Microcrédito,Microcrédito,microcredit,MXN,30,58,5000,50000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+MX-MC-05,MX,Microcrédito,Microcrédito,microcredit,MXN,30,58,5000,50000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
 AR-PL-01,AR,Préstamo personal,Empréstimo pessoal,personal_loan,ARS,60,110,100000,15000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
 AR-CC-02,AR,Tarjeta de crédito,Cartão de crédito,credit_card,ARS,70,120,100000,15000000,36,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-AR-PL-03,AR,Crédito de libranza,Crédito consignado,payroll_loan,ARS,55,95,100000,15000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+AR-PRL-03,AR,Crédito de libranza,Crédito consignado,payroll_loan,ARS,55,95,100000,15000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
 AR-LAC-04,AR,Crédito de bajo monto,Crédito de baixo valor,low_amount_consumer,ARS,65,115,100000,15000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-AR-M-05,AR,Microcrédito,Microcrédito,microcredit,ARS,70,118,100000,1500000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+AR-MC-05,AR,Microcrédito,Microcrédito,microcredit,ARS,70,118,100000,1500000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
