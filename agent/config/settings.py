@@ -25,7 +25,7 @@ class Settings:
     databricks_client_id: str = field(default_factory=lambda: _env("DATABRICKS_CLIENT_ID"))
     databricks_client_secret: str = field(default_factory=lambda: _env("DATABRICKS_CLIENT_SECRET"))
     sql_http_path: str = field(default_factory=lambda: _env("SQL_HTTP_PATH"))
-    fm_endpoint_main: str = field(default_factory=lambda: _env("FM_ENDPOINT_MAIN", "databricks-claude-sonnet-5"))
+    fm_endpoint_main: str = field(default_factory=lambda: _env("FM_ENDPOINT_MAIN", "databricks-meta-llama-3-3-70b-instruct"))
     fm_endpoint_small: str = field(default_factory=lambda: _env("FM_ENDPOINT_SMALL", "databricks-meta-llama-3-1-8b-instruct"))
     prescore_endpoint: str = field(default_factory=lambda: _env("PRESCORE_ENDPOINT", "prescore-lgbm"))
     embed_endpoint: str = field(default_factory=lambda: _env("EMBED_ENDPOINT", "embed-bge-m3"))
