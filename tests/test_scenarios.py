@@ -72,3 +72,44 @@ def test_import_agent_es_liviano():
     import importlib, sys, time
     t0 = time.perf_counter(); importlib.import_module("agent.handle"); dt = time.perf_counter() - t0
     assert dt < 2 and not any(m.startswith(("torch", "onnxruntime", "sentence_transformers")) for m in sys.modules)
+
+
+def test_filtra_por_producto_y_enruta_a_la_seccion(rt, users):
+    r = handle("¿Cuál es la tasa de usura del préstamo personal?", users["cliente_co_ok"], rt=rt)
+    ids = [c["id"] for c in r["citations"] if c["type"] == "chunk"]
+    assert ids[0] == "POL-CO-CO-PL-01-es-v1-R3" and all("-PL-01-" in i for i in ids)
+    assert "libranza" not in r["reply"].lower()
+
+
+def test_termino_de_otra_jurisdiccion_se_aclara(rt, users):
+    r = handle("Qual é o CFT do empréstimo pessoal?", users["cliente_co_pt"], rt=rt)
+    assert r["reply"].startswith("O CFT aplica-se na Argentina") and "usura" in r["reply"]
+    assert [c["id"] for c in r["citations"]][0].endswith("-pt-v1-R3")
+
+
+def test_pregunta_de_seccion_sin_cita_que_la_cubra_escala(rt, users, deps):
+    """Verify exige que alguna cita cubra la sección pedida; si no, re-Act una vez y luego escala con no_citation."""
+    orig = deps.store.search_text
+    deps.store.search_text = lambda q, f, k=5: []   # sin léxico, solo el embedding mock
+    try:
+        r = handle("¿Qué requisitos piden para el préstamo personal?", users["cliente_co_ok"], rt=rt)
+        if r["action"] == "answer":
+            assert any(c["id"].endswith("-R2") for c in r["citations"])
+        else:
+            assert r["action"] == "escalate" and r["_state"]["escalate_reason"] == "no_citation"
+    finally:
+        deps.store.search_text = orig
+
+
+def test_prestamo_personal_no_enruta_a_revision_humana(rt, users):
+    r = handle("¿Cuál es la tasa de usura del préstamo personal?", users["cliente_co_ok"], rt=rt)
+    assert "reclamos" not in r["reply"].lower()
+    r = handle("Qual é o CFT do empréstimo pessoal?", users["cliente_co_pt"], rt=rt)
+    assert "reclamações" not in r["reply"].lower()
+
+
+def test_disclosure_de_tasa_solo_cuando_se_habla_de_tasa(rt, users):
+    r = handle("¿Cómo presento un reclamo por mi tarjeta?", users["cliente_co_ok"], rt=rt)
+    assert "usura" not in r["reply"].lower()
+    r = handle("¿Cuál es la tasa de la tarjeta de crédito?", users["cliente_co_ok"], rt=rt)
+    assert "usura" in r["reply"].lower()

@@ -1,6 +1,9 @@
 """Vector store y handoffs en local: policy_chunks.jsonl de data/mock + coseno en memoria; handoffs en un dict. Misma interfaz que store_cosmos."""
 from __future__ import annotations
 import json
+import math
+import re
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -33,8 +36,45 @@ class StoreLocal:
         out.sort(key=lambda x: -x["score"])
         return out[:k]
 
+    def search_text(self, query: str, filters: dict[str, Any], k: int = 5) -> list[dict[str, Any]]:
+        """BM25 sobre los chunks filtrados; en Cosmos esto es la búsqueda de texto completo (hybrid search)."""
+        rows = [r for r in self._load() if not any(filters.get(f) and r.get(f) != filters[f] for f in ("country", "language", "product_code"))]
+        docs = [_tok(r["text"]) for r in rows]
+        if not docs:
+            return []
+        avg = sum(map(len, docs)) / len(docs); df: Counter = Counter()
+        for d in docs:
+            df.update(set(d))
+        q = _tok(query); out = []
+        for r, d in zip(rows, docs):
+            tf = Counter(d); s = 0.0
+            for w in q:
+                if w in tf:
+                    idf = math.log(1 + (len(docs) - df[w] + 0.5) / (df[w] + 0.5))
+                    s += idf * tf[w] * 2.5 / (tf[w] + 1.5 * (0.25 + 0.75 * len(d) / avg))
+            if s > 0:
+                out.append({**{kk: vv for kk, vv in r.items() if kk != "embedding"}, "score": round(s, 4)})
+        out.sort(key=lambda x: -x["score"])
+        return out[:k]
+
     def put_handoff(self, doc: dict[str, Any]) -> None:
         self._handoffs[doc["case_id"]] = doc
 
     def get_handoff(self, case_id: str) -> dict[str, Any] | None:
         return self._handoffs.get(case_id)
+
+
+_STOP = set("de la el los las del en y a para por con un una que es o al lo mi me se su sus qué cuál cuánto cómo o do da dos das em e um uma que é ou ao no na nos nas o meu minha qual quanto como".split())
+
+
+def _tok(t: str) -> list[str]:
+    out = []
+    for w in re.findall(r"\w+", t.lower()):
+        if w in _STOP or len(w) < 2:
+            continue
+        if len(w) > 4 and w.endswith("es"):
+            w = w[:-2]
+        elif len(w) > 3 and w.endswith("s"):
+            w = w[:-1]
+        out.append(w)
+    return out
