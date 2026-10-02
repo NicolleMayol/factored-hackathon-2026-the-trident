@@ -1,18 +1,18 @@
-# Dependencias entre roles · v5 · 2026-10-01 (ADR-21: M3, E7 cambian; M9, N9, N10, E10 nuevas · ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5 · ADR-20: X1, X2, E1, E7, E8 cambian; E9 nueva)
+# Dependencias entre roles · v6 · 2026-10-01 (ADR-22: E9 cierra; E1, E3, E6 cambian · ADR-21: M3, E7 cambian; M9, N9, N10, E10 nuevas · ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5 · ADR-20: X1, X2, E1, E7, E8 cambian; E9 nueva)
 Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega, el receptor trabaja con mock. Integraciones: mié 30 sep y sáb 3 oct.
 
 ## Manuela ← Eladio
 | # | Entregable | Formato / acceso | Fecha | Mock |
 | --- | --- | --- | --- | --- |
-| E1 | Esquema congelado 7 tablas gold; bronze y silver pasan a decisión abierta (E9); + 5 filas sintéticas TEST-* en gold.customer_360 (ADR-21 v1.1) | contracts/gold.yaml v2 + tablas vacías hackathon.gold | Jue 1 (depende de X1) | CSV 50 filas |
+| E1 | Esquema congelado 7 tablas gold; bronze y silver cerrados en ADR-22; + 5 filas sintéticas TEST-* en gold.customer_360 (ADR-21 v1.1), solo en gold; + verificación del esquema inferido por read_files() contra ADR-22 antes de cerrar | contracts/gold.yaml v3 + tablas vacías hackathon.gold | Jue 1 (depende de X1) | CSV 50 filas |
 | E2 | customer_360, customer_products, customer_behavior_12m (corte 2025-06-30) | Delta; wh-agent; sp-agent-ro | Mié 30 mediodía (depende de X1) | CSV |
-| E3 | intent_labels con split temporal | Delta | Mié 30 noche | 300 filas manuales |
+| E3 | intent_labels con split temporal; sin portugués real: el dataset es solo español (ADR-22, hallazgo 1) | Delta | Vie 2 | 300 filas manuales |
 | E4 | contact_demand + notebook "por qué workflow 4" | Delta | Jue 1 | — |
 | E5 | credit_product_catalog sintético 3×5 | Delta + policy/catalog.yaml | Mar 29 noche | 5 productos inventados |
-| E6 | ref.regulator_rates con fuente y fecha | Delta + data/ref/ | Mar 29 | rangos aprox. |
+| E6 | ref.regulator_rates con fuente y fecha; + columna "Por qué" por fuente (ADR-21) y decisión sobre rate_kind (ADR-22, hallazgo 2) | Delta + volumen hackathon.ref.fuentes | Vie 2 | rangos aprox. |
 | E7 | Pipeline policy_docs ES+PT → policy_chunks (+JSONL Cosmos); depende de ml.embeddings_endpoint (abierta) y de lectura del scope fh26 | Asset Bundle | Jue 1 | 10 docs manuales |
 | E8 | ops.dq_results por dos vías (expectativas SDP + checks propios) + fixture de llegada tardía desde el manifiesto de data-landing | Delta | Vie 2 | — |
-| E9 | Contrato de columnas de bronze y silver tras inspeccionar landing | contracts/gold.yaml | Jue 1 | esquemas abiertos |
+| E9 | Contrato de columnas de bronze y silver (cerrado en ADR-22: 13 tablas en bronze, 7 en silver, columnas del diccionario de Factored v1.0.0; verificación contra landing con test antes de cerrar E1) | docs/adr/22-esquemas-bronze-silver.md + contracts/gold.yaml v3 | hecho jue 1 | esquemas abiertos |
 
 ## Manuela ← Nicolle
 | # | Entregable | Fecha | Mock |

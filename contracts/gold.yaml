@@ -1,11 +1,14 @@
-# Contrato de tablas gold/ref · owner: datos (Eladio) · consumers: ia-ml · v2 · 2026-09-30
+# Contrato de tablas gold/ref · owner: datos (Eladio) · consumers: ia-ml · v3 · 2026-10-01
+# v3 (ADR-22): bronze y silver dejan de ser decisión abierta: 13 tablas 1:1 en bronze, 7 en silver, columnas del diccionario de Factored v1.0.0; clientes TEST-* solo en gold; hallazgos del diccionario (sin portugués, rate_kind). Avisar: ia-ml.
 # v2 (ADR-20): + bloque source (la ingesta lee la copia en ADLS, no S3); esquemas de bronze y silver como decisión abierta (E9). Avisar: ia-ml.
 catalog: hackathon
 schemas: [bronze, silver, gold, ref, ops, ml]   # un container homónimo en adlsagentbankdev y una external location ext-loc-adlsagentbankdev-<esquema> (ADR-20)
 source:
   landing: {path: "abfss://landing@adlsagentbankdev.dfs.core.windows.net/factored-datathon/data/", format: parquet, copy: "workflow data-landing (azcopy, cada 6 h al minuto 17)", carga_inicial: "2026-09-30: 7.671 archivos, 5.349.322.481 bytes", external_location: ext-loc-adlsagentbankdev-landing}
   ingest: {tool: "Auto Loader en SDP", discovery: "directory listing (file events queda en To-Be: exige una cola y una suscripción de Event Grid fuera de Terraform)", checkpoint: "lo gestiona el pipeline; no se configura a mano", schema_evolution: "addNewColumns + _rescued_data", schedule: "cada 6 h al minuto 50", partition: none}
-  bronze_silver: "decisión abierta (ADR-20): el contrato de columnas se congela en E9, tras inspeccionar landing"
+  bronze_silver: {adr: ADR-22, doc: docs/adr/22-esquemas-bronze-silver.md, diccionario: "LATAM Bank Complete Data Dictionary v1.0.0 (Factored, sep 2026)", bronze: "13 tablas 1:1 + _ingested_at, _source_file, _rescued_data", silver: "7 tablas: customers, products, transactions, call_center_interactions, call_transcripts, satisfaction_surveys, daily_exchange_rates", solo_bronze: "branches, service_agents, marketing_campaigns, digital_events, complaints, campaign_sends (12,08 M de filas; no alimentan gold)", verificacion: "test: esquema de read_files() vs ADR-22, antes de cerrar E1"}
+  test_users: "los 5 clientes TEST-* de docs/test-users.md (M3) se inyectan solo en gold.customer_360, nunca en bronze ni silver, y quedan fuera de toda agregación y métrica (ADR-22)"
+  hallazgos: {sin_portugues: "el dataset es solo español (MX/CO/AR): gold.intent_labels no tiene PT real y el clasificador de ADR-07 no se puede medir en PT con dato de Factored; decisión de ia-ml", rate_kind: "data/mock/regulator_rates.csv tiene rate_kind y este contrato no; se resuelve en E6 con test de cabeceras"}
   volumes: {policy_docs: hackathon.ref.policy_docs, fuentes: hackathon.ref.fuentes, tipo: managed}
   ops_write: "datos solo escribe ops.dq_results; agent_turns y ml_inference son de ia-ml, infra_requests de servicio"
 tables:
