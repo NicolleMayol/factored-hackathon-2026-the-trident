@@ -50,6 +50,8 @@ class AgentState(TypedDict, total=False):
     # telemetría
     node_path: list[str]
     cost_usd: float
+    reply_source: str  # template | llm | template_fallback
+    _respond_fallback: str
     tokens_in: int
     tokens_out: int
     prompt_version: str
