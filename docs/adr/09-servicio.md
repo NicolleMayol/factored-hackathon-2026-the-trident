@@ -35,7 +35,7 @@ Región: `eastus2` (Claude Sonnet 5 verificado por Nicolle el 2026-09-29). Nombr
 | Storage de la Function | `stfuncagentbankdev` | Standard LRS | `AzureWebJobsStorage` y contenedor de deploy |
 | Function App | `func-agent-bank-dev` | Flex Consumption, Linux, python3.11, 2048 MB | máx. 10 instancias; always-ready 0 (1 en ventana de jurado); identidad administrada |
 | Frontend | `swa-agent-bank-dev` | Static Web Apps Free | chat + vista `/handoff/{case_id}`; llama a la Function App desde el navegador (CORS) |
-| Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capabilities `EnableNoSQLVectorSearch` y full-text (portal; Terraform las ignora) | ver "Cosmos" |
+| Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capabilities `EnableNoSQLVectorSearch`, `EnableNoSQLFullTextSearch` y `EnableNoSQLFullTextSearchPreviewFeatures` (`azapi`) | ver "Cosmos" |
 | Databricks | `dbw-agent-bank-dev` | Premium trial (14 días), como en el diagrama | solo cómputo serverless |
 | ADLS Gen2 | `adlsagentbankdev` | Standard LRS, HNS | contenedores `unity-catalog` (storage del catálogo), `landing` (copia de S3), `ops-export`, y uno por esquema: `bronze`, `silver`, `gold`, `ref`, `ops`, `ml-data` (el de `ml`; Azure pide 3 a 63 caracteres) (ADR-20) |
 | Access Connector | `acc-agent-bank-dev` | — | identidad de Databricks sobre ADLS |
@@ -49,7 +49,7 @@ Región: `eastus2` (Claude Sonnet 5 verificado por Nicolle el 2026-09-29). Nombr
 | `handoffs` | `/case_id` | 400 RU/s dedicado | — | por defecto |
 | `policy_chunks` | `/country` | 400 RU/s dedicado | — | vector `/embedding`, diskANN, 1024, cosine; full-text `/text_es` (es-ES) y `/text_pt` (pt-BR) |
 
-Cosmos no admite búsqueda vectorial en throughput compartido. Por eso cada contenedor tiene throughput propio: 1.200 RU/s, de los que el free tier cubre 1.000. Con menos de 1.000 vectores, diskANN hace full scan (más RU por consulta). El vector policy y el full-text policy se crean con `azapi`, porque `azurerm` no los expone. La búsqueda híbrida (RRF) usa un campo por idioma, porque Cosmos fija el idioma por path. es-ES y pt-BR están en preview y piden activar "New features for full-text search" en el portal. `azurerm` reemplaza la cuenta si cambian esas capabilities, así que Terraform las ignora y la cuenta lleva `prevent_destroy`.
+Cosmos no admite búsqueda vectorial en throughput compartido. Por eso cada contenedor tiene throughput propio: 1.200 RU/s, de los que el free tier cubre 1.000. Con menos de 1.000 vectores, diskANN hace full scan (más RU por consulta). El vector policy y el full-text policy se crean con `azapi`, porque `azurerm` no los expone. La búsqueda híbrida (RRF) usa un campo por idioma, porque Cosmos fija el idioma por path. `azurerm` reemplaza la cuenta si cambian esas capabilities, así que las ignora y las maneja `azapi_update_resource`; la cuenta lleva `prevent_destroy`. es-ES y pt-BR están en preview y piden `EnableNoSQLFullTextSearchPreviewFeatures` ("New features for full-text search" en el portal).
 
 ### Estructura de Terraform
 ```
