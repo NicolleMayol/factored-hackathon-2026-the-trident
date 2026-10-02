@@ -32,9 +32,10 @@ resource "azurerm_cosmosdb_account" "main" {
 }
 
 # Capabilities de búsqueda sin recrear la cuenta (GET + PUT de ARM sobre la cuenta existente).
-# La lista es completa: lo que no esté aquí se quita. Nombres en Features del portal:
-# EnableNoSQLFullTextSearch = "Full Text & Hybrid Search for NoSQL API";
+# La lista es completa: lo que no esté aquí se quita.
 # EnableNoSQLFullTextSearchPreviewFeatures = "New features for full-text search" (es-ES, pt-BR en preview).
+# EnableNoSQLFullTextSearch no va: Azure acepta el PUT pero no la guarda, y el plan quedaba con drift.
+# El full-text de policy_chunks funciona sin ella.
 resource "azapi_update_resource" "cosmos_capabilities" {
   type        = "Microsoft.DocumentDB/databaseAccounts@2025-10-15"
   resource_id = azurerm_cosmosdb_account.main.id
@@ -43,7 +44,6 @@ resource "azapi_update_resource" "cosmos_capabilities" {
     properties = {
       capabilities = [
         { name = "EnableNoSQLVectorSearch" },
-        { name = "EnableNoSQLFullTextSearch" },
         { name = "EnableNoSQLFullTextSearchPreviewFeatures" },
       ]
     }

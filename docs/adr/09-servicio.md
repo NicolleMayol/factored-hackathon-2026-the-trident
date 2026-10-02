@@ -35,7 +35,7 @@ Región: `eastus2` (Claude Sonnet 5 verificado por Nicolle el 2026-09-29). Nombr
 | Storage de la Function | `stfuncagentbankdev` | Standard LRS | `AzureWebJobsStorage` y contenedor de deploy |
 | Function App | `func-agent-bank-dev` | Flex Consumption, Linux, python3.11, 2048 MB | máx. 10 instancias; always-ready 0 (1 en ventana de jurado); identidad administrada |
 | Frontend | `swa-agent-bank-dev` | Static Web Apps Free | chat + vista `/handoff/{case_id}`; llama a la Function App desde el navegador (CORS) |
-| Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capabilities `EnableNoSQLVectorSearch`, `EnableNoSQLFullTextSearch` y `EnableNoSQLFullTextSearchPreviewFeatures` (`azapi`) | ver "Cosmos" |
+| Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capabilities `EnableNoSQLVectorSearch` y `EnableNoSQLFullTextSearchPreviewFeatures` (`azapi`) | ver "Cosmos" |
 | Databricks | `dbw-agent-bank-dev` | Premium trial (14 días), como en el diagrama | solo cómputo serverless |
 | ADLS Gen2 | `adlsagentbankdev` | Standard LRS, HNS | contenedores `unity-catalog` (storage del catálogo), `landing` (copia de S3), `ops-export`, y uno por esquema: `bronze`, `silver`, `gold`, `ref`, `ops`, `ml-data` (el de `ml`; Azure pide 3 a 63 caracteres) (ADR-20) |
 | Access Connector | `acc-agent-bank-dev` | — | identidad de Databricks sobre ADLS |
