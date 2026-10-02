@@ -1,6 +1,6 @@
 # 09-servicio
 
-Owner: Nicolle · v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
+Owner: Nicolle · v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
 
 ## ADR-19 · Plan de infraestructura en Terraform  ·  rol: servicio  ·  2026-09-29  ·  estado: cerrada
 
