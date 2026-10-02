@@ -1,0 +1,12 @@
+# Runtime del agente (Function App python3.11). Sin modelos locales: el embedding va por Model Serving (ADR-21).
+azure-functions>=1.21
+langgraph>=0.2
+pyjwt>=2.8
+pyyaml>=6
+jsonschema>=4.21
+pydantic>=2
+# reales (se activan con AGENT_*=real)
+databricks-sql-connector>=3.4
+azure-cosmos>=4.7
+mlflow-skinny>=2.16
+requests>=2.32
