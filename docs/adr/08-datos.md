@@ -4,7 +4,7 @@ Owner: Eladio · v3 · 2026-10-01 (revisión de servicio en el PR #8; ADR-22 cie
 
 ## ADR-20 · Plataforma de datos e ingesta  ·  rol: datos  ·  2026-09-30  ·  estado: cerrada
 
-**Decisión.** El medallón corre en Spark Declarative Pipelines sobre Unity Catalog, con un container y una external location por esquema, y la ingesta es Auto Loader con directory listing desde el contenedor `landing` (Parquet), con calidad en dos vías hacia `ops.dq_results`.
+**Decisión.** El medallón corre en Spark Declarative Pipelines sobre Unity Catalog, con un container y una external location por esquema, y la ingesta es Auto Loader con directory listing desde el contenedor `landing` (CSV con `multiLine`, corregido en ADR-23), con calidad en dos vías hacia `ops.dq_results`.
 
 ### Qué pide esta decisión a servicio
 Datos no crea recursos (ADR-19). Esta es la lista completa de lo que hace falta para que exista el medallón.
@@ -28,9 +28,15 @@ Nicolle tiene account admin de Databricks desde el 2026-09-29, así que `infra/d
 ### Ingesta
 Fuente efectiva: `abfss://landing@adlsagentbankdev.dfs.core.windows.net/factored-datathon/data/`, que puebla el workflow `data-landing` con `azcopy` cada 6 h al minuto 17. Carga inicial del 2026-09-30: 7.671 archivos, 5.349.322.481 bytes, 0 fallas. Databricks no lee S3: Unity Catalog en Azure no toma llaves de S3 y serverless no deja ponerlas en la config de Spark (ADR-19).
 
+Corregido el 2026-10-02 contra `landing` (ADR-23): el dataset **no es Parquet, es CSV**, y no está en una sola forma. Son 6 archivos sueltos en la raíz (las 5 dimensiones y `daily_exchange_rates`) y 7 carpetas particionadas estilo Hive (`<tabla>/year=YYYY/month=MM/day=DD/`) para los hechos. 7.671 archivos y 5,1 GB, que cuadran con el manifiesto de `data-landing`.
+
 | Parámetro | Valor | Por qué |
 | --- | --- | --- |
-| `cloudFiles.format` | `parquet` | formato del dataset; autodescriptivo, sin schema hints |
+| `cloudFiles.format` | `csv` | medido: los 7.671 archivos son `.csv`; no hay un solo Parquet |
+| `header` | `true` | todos traen cabecera y los nombres coinciden uno a uno con el diccionario |
+| `multiLine` | `true` | **obligatorio**: sin él `call_transcripts` devuelve 548.336 filas en vez de 171.321, con JSON de `mentioned_entities` desbordado en `detected_language`. Los textos en español traen comas y saltos de línea entre comillas |
+| Hints de tipo | explícitos por tabla | la inferencia no da los tipos del contrato: `credit_score` y `days_past_due` salen `DOUBLE` donde `gold.yaml` dice `int`, y `call_transcripts.duration_seconds` sale `STRING` |
+| Rutas | dos: raíz para los 6 CSV, `<tabla>/` para los 7 particionados | `year`, `month` y `day` entran como columnas de partición solo en los hechos |
 | Descubrimiento | directory listing | listar 7.671 archivos cada 6 h toma segundos; file events exige una cola y una suscripción de Event Grid que Databricks crea fuera de Terraform |
 | Checkpoint y schema location | los gestiona el pipeline | con Auto Loader en SDP no se configuran a mano: un full refresh no limpia esos directorios |
 | Evolución de esquema | `addNewColumns` + `_rescued_data` preservada en bronze | una columna nueva en origen no detiene la corrida y queda registrada |
@@ -60,7 +66,7 @@ Corte 2025-06-30 en `gold.customer_behavior_12m`. Columnas prohibidas en feature
 ### Fuentes externas
 | Fuente | URL | Formato | Licencia | Llave | `es_sintetico` |
 | --- | --- | --- | --- | --- | --- |
-| Dataset de Factored (S3) | `https://factored-datathon-2026-s3-157725502942-us-east-2-an.s3.us-east-2.amazonaws.com/data` | Parquet | dataset del reto, uso limitado al hackathon | sí: `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, solo como secretos de GitHub | false |
+| Dataset de Factored (S3) | `https://factored-datathon-2026-s3-157725502942-us-east-2-an.s3.us-east-2.amazonaws.com/data` | CSV (medido; ADR-23) | dataset del reto, uso limitado al hackathon | sí: `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, solo como secretos de GitHub | false |
 | SFC Colombia | pendiente de registrar con fecha de snapshot (E6) | — | publicación pública | no | false |
 | Banxico y CONDUSEF México | pendiente de registrar con fecha de snapshot (E6) | — | publicación pública | no | false |
 | BCRA Argentina | pendiente de registrar con fecha de snapshot (E6) | — | publicación pública | no | false |
@@ -102,12 +108,12 @@ ADR-22 abre dos hallazgos del diccionario de datos, ambos de ia-ml: el dataset n
 | `infra.key_vault` | cambia: lectura del scope `fh26` (`cosmos-key`) para `sp-pipelines` | servicio | datos, ia-ml | Nicolle: grant de lectura | jue 1 |
 | `infra.ci_cd` | cambia: `bundles.yml` con `run_as = sp-pipelines` | servicio | datos, ia-ml | Nicolle: crear el workflow | jue 1 |
 | `data.source_s3` | cambia: Databricks ya no lee S3; la fuente efectiva es `landing` | datos | — | nada | — |
-| `data.ingest_s3` | cambia: Auto Loader en SDP desde `landing`, Parquet, directory listing | datos | — | nada | — |
+| `data.ingest_s3` | cambia: Auto Loader en SDP desde `landing`, CSV con `header` y `multiLine`, directory listing (ADR-23) | datos | — | nada | — |
 | `data.pipeline_medallon` | cambia: SDP declarativo en las tres capas; DQ en dos vías | datos | ia-ml | Manuela: nada en código; el contrato de gold no cambia | — |
 | `ops.dq_results` | cambia: se puebla desde expectativas de SDP y checks propios; esquema sin cambio | datos | servicio | Nicolle: la alerta `dq_failed = 1` sigue igual | vie 2 |
 | `ml.embeddings_endpoint` | nuevo, **abierta**: bge-m3 de `chunks.yaml` no existe en `fm_apis` | a definir | datos, servicio | Manuela: decidir si va en Model Serving o dentro del job de E7 | jue 1 |
 | `gold.*` (7 tablas) | existe, sin cambio de esquema | datos | ia-ml | nada | — |
-| `contracts/gold.yaml` v1 → v2 | cambia: añade el bloque `source` (landing, Parquet, Auto Loader, horario) y la decisión abierta de bronze/silver | datos | ia-ml | Manuela: ninguna acción; las columnas de gold son las mismas | — |
+| `contracts/gold.yaml` v1 → v2 | cambia: añade el bloque `source` (landing, formato, Auto Loader, horario) y la decisión abierta de bronze/silver | datos | ia-ml | Manuela: ninguna acción; las columnas de gold son las mismas | — |
 
 **Cómo se prueba.**
 
