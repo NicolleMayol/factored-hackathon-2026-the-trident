@@ -43,3 +43,12 @@ def test_run_tool_timeout_cold_una_vez(deps, settings):
     T.run_tool("get_customer_profile", lambda: time.sleep(0.01) or 1, deps, settings, cold_used=used)
     assert used == {"sql"}
     deps.health["sql"] = "ok"
+
+
+def test_country_code_iso2_desde_perfil_o_fallback():
+    from agent.tools import get_customer_profile, COUNTRY_ISO
+    from agent.adapters import build_deps
+    from agent.config.settings import Settings
+    d = build_deps(Settings())
+    assert get_customer_profile(d, "TEST-CO-001")["country_code"] == "CO"
+    assert COUNTRY_ISO["México"] == "MX"

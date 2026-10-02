@@ -11,4 +11,4 @@ Los emite `POST /session` (servicio) como JWT HS256 con `customer_id`, `scopes` 
 | `cliente_solo_lectura` | `TEST-MX-005` | MX | es | `customer:read` | cualquiera | sin `credit:simulate`: informa, no pre-evalúa; pide escalar si insiste |
 | `analista` | `AGENT-001` | — | es | `handoff:read` | agente humano | `GET /handoff/{case_id}` y `GET /trace/{trace_id}`; sin acceso a `/chat` como cliente |
 
-Los `customer_id` `TEST-*` existen en `gold.customer_360` como filas sintéticas (`es_sintetico = true`) con los perfiles de la tabla; las carga datos con E1 (jue 1). En local, en `data/mock/customer_360.csv`.
+Los `customer_id` `TEST-*` existen en `gold.customer_360` como filas sintéticas identificadas por el prefijo `TEST-` (ADR-22: solo en gold, fuera de agregaciones; sin columna `es_sintetico`) con los perfiles de la tabla; las carga datos con E1 (jue 1). En local, en `data/mock/customer_360.csv`.

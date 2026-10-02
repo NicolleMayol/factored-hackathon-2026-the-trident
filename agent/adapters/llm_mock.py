@@ -12,7 +12,6 @@ INTENT_PATTERNS = {  # orden = prioridad; "proceso/cómo" e "hasta cuánto" son 
 }
 PT_MARKERS = r"\b(você|vocês|não|obrigad[oa]|empréstimo|cartão|juros|taxa|quero|posso|tenho|consigo|parcelas|prazo|qual|quanto|preciso|dados|meu|minha|terceiros|aprova)\b"
 ES_MARKERS = r"\b(usted|gracias|préstamo|tarjeta|interés|tasa|quiero|puedo|tengo|cuotas|plazo|cuál|cuánto|qué|hola)\b"
-INJECTION = r"(ignore (all )?(previous|above) instructions|ignora (todas )?(las|as) instru[cç][oõi]+(nes|es)?|system prompt|revela(r)? (el|tu|o) prompt|act as|act[uú]a como (admin|sistema)|aprova meu|dame (los )?datos de (otro|otra) cliente|datos de terceros|dados de (outro|outra) cliente|dados de terceiros|customer list)"
 
 
 class LLMMock:
@@ -33,16 +32,14 @@ class LLMMock:
         return {"text": text}
 
     def _understand(self, text: str) -> dict[str, Any]:
+        text = text.split("Mensaje:", 1)[-1]  # solo el mensaje; la plantilla trae ejemplos
         t = text.lower()
         pt = len(re.findall(PT_MARKERS, t))
         es = len(re.findall(ES_MARKERS, t))
         language = "pt" if pt > es else "es" if es > pt else None  # None → el nodo usa el idioma del perfil
         mixed = pt > 0 and es > 0 and abs(pt - es) <= 1
-        hits = []
-        if re.search(INJECTION, t):
-            hits.append("injection")
-        if re.search(r"\b\d{3}[-.]?\d{3}[-.]?\d{4}\b|\b[\w.+-]+@[\w-]+\.[\w.]+\b", t):
-            hits.append("pii")
+        from agent import guardrails
+        hits = guardrails.scan(text)
         intent, conf = "out_of_scope", 0.5
         for name, pat in INTENT_PATTERNS.items():
             if re.search(pat, t):

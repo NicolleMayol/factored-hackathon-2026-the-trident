@@ -39,13 +39,19 @@ def run_tool(name: str, fn: Callable[[], Any], deps: Deps, settings, *, cold_use
     raise last  # type: ignore[misc]
 
 
+COUNTRY_ISO = {"Mexico": "MX", "México": "MX", "Colombia": "CO", "Argentina": "AR"}  # fallback si gold.customer_360 aún no trae country_code (ADR-22/#27)
+
+
 def get_customer_profile(deps: Deps, customer_id: str) -> dict[str, Any]:
     rows = deps.sql.query("customer_profile", {"customer_id": customer_id})
     if not rows:
         return {"found": False}
     r = rows[0]
     # nunca se devuelven columnas excluidas ni documento
-    return {"found": True, **{k: r.get(k) for k in ("customer_id", "country", "segment", "credit_score", "estimated_monthly_income", "customer_status", "detected_accent")}}
+    out = {"found": True, **{k: r.get(k) for k in ("customer_id", "country", "segment", "credit_score", "estimated_monthly_income", "customer_status", "detected_accent")}}
+    # dos convenciones de país en gold (nombre en customer_360, ISO-2 en catálogo/tasas/chunks): la tool entrega la llave ISO-2 en un solo sitio
+    out["country_code"] = r.get("country_code") or COUNTRY_ISO.get(str(r.get("country", "")).strip(), "")
+    return out
 
 
 def get_customer_products(deps: Deps, customer_id: str) -> dict[str, Any]:
