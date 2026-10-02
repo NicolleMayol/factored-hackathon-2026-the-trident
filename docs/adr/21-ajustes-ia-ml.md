@@ -61,7 +61,7 @@ Factored autorizó fuentes externas con dos condiciones: justificar explícitame
 | Punto | Decisión |
 | --- | --- |
 | Full-text en Cosmos | `policy_chunks` lleva `text_es` y `text_pt` (uno con el texto, el otro `null`) para que cada path tenga su analizador; `text` sigue siendo el campo de cita. Query híbrida: RRF de `VectorDistance` y `FullTextScore` con filtro por `country`, `language`, `product_code` (`chunks.yaml` v2.1) |
-| Fuente de verdad del corpus | `data/policy_docs/` en el repo. El bundle copia los `.md` al volumen `hackathon.ref.policy_docs`; E7 parte en chunks importando `build_corpus.py`, así los `chunk_id` son idénticos y no hay dos implementaciones |
+| Fuente de verdad del corpus | `data/policy_docs/` en el repo. `bundle sync` no escribe en volúmenes, así que `bundles.yml` añade tras el deploy `databricks fs cp -r data/policy_docs/docs/ dbfs:/Volumes/hackathon/ref/policy_docs/ --overwrite` (y `catalog.yaml` a `ref/fuentes/`); E7 lee del volumen y parte en chunks importando `build_corpus.py`, así los `chunk_id` son idénticos. Idioma del full-text en portugués: `pt-BR` |
 | Dev set vs held-out | Los 24 casos de retrieval y los 82 de acción son **dev set** (los escribió ia-ml; el stub se afinó sobre ellos). El **held-out** de ADR-10 son las transcripciones de `gold.intent_labels` con split temporal (últimos 3 meses a test, E3), con `expected_action` derivada de `action_label`; se corre una vez con prompts congelados (sáb 3) y ese es el número que se reporta |
 
 ### 5 · Jev / TypeSafe AI → To-Be (cierra ADR-14)
