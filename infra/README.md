@@ -5,7 +5,7 @@ Terraform corre solo en GitHub Actions (`.github/workflows/infra.yml`), nunca de
 | Evento | Job | Qué hace |
 | --- | --- | --- |
 | PR que toca `infra/**` | `plan` | crea el backend si falta; `init`, `validate`, `plan` de `azure` y luego de `databricks`; comenta los dos planes en el PR |
-| push a `main` | `apply` | espera la aprobación del environment `hackathon`; `apply` de `azure` y luego de `databricks` |
+| push a `main` | `plan` → `apply` | `plan` guarda el tfplan de cada stack con cambios (storage del tfstate, container `tfplan`); `apply` espera la aprobación del environment `hackathon` y aplica ese tfplan, `azure` y luego `databricks` |
 
 | Carpeta | Contenido |
 | --- | --- |

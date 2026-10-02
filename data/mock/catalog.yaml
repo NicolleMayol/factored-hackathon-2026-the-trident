@@ -33,7 +33,7 @@ products:
   valid_from: '2025-07-01'
   valid_to: '2026-12-31'
   es_sintetico: true
-- product_code: CO-PL-03
+- product_code: CO-PRL-03
   country: CO
   name_es: Crédito de libranza
   name_pt: Crédito consignado
@@ -65,7 +65,7 @@ products:
   valid_from: '2025-07-01'
   valid_to: '2026-12-31'
   es_sintetico: true
-- product_code: CO-M-05
+- product_code: CO-MC-05
   country: CO
   name_es: Microcrédito
   name_pt: Microcrédito
@@ -113,7 +113,7 @@ products:
   valid_from: '2025-07-01'
   valid_to: '2026-12-31'
   es_sintetico: true
-- product_code: MX-PL-03
+- product_code: MX-PRL-03
   country: MX
   name_es: Crédito de libranza
   name_pt: Crédito consignado
@@ -145,7 +145,7 @@ products:
   valid_from: '2025-07-01'
   valid_to: '2026-12-31'
   es_sintetico: true
-- product_code: MX-M-05
+- product_code: MX-MC-05
   country: MX
   name_es: Microcrédito
   name_pt: Microcrédito
@@ -193,7 +193,7 @@ products:
   valid_from: '2025-07-01'
   valid_to: '2026-12-31'
   es_sintetico: true
-- product_code: AR-PL-03
+- product_code: AR-PRL-03
   country: AR
   name_es: Crédito de libranza
   name_pt: Crédito consignado
@@ -225,7 +225,7 @@ products:
   valid_from: '2025-07-01'
   valid_to: '2026-12-31'
   es_sintetico: true
-- product_code: AR-M-05
+- product_code: AR-MC-05
   country: AR
   name_es: Microcrédito
   name_pt: Microcrédito

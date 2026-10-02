@@ -1,4 +1,4 @@
-# Dependencias entre roles · v6 · 2026-10-01 (ADR-22: E9 cierra; E1, E3, E6 cambian · ADR-21: M3, E7 cambian; M9, N9, N10, E10 nuevas · ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5 · ADR-20: X1, X2, E1, E7, E8 cambian; E9 nueva)
+# Dependencias entre roles · v6 · 2026-10-01 (ADR-22: E9 cierra; E1, E3, E6 cambian · ADR-19 v3.3: N3 cambia · ADR-21: M3, E7 cambian; M9, N9, N10, E10 nuevas · ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5 · ADR-20: X1, X2, E1, E7, E8 cambian; E9 nueva)
 Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega, el receptor trabaja con mock. Integraciones: mié 30 sep y sáb 3 oct.
 
 ## Manuela ← Eladio
@@ -19,7 +19,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | --- | --- | --- | --- |
 | N1 | Repo en NicolleMayol/factored-hackathon-2026-the-trident; workflow infra (plan en PR, apply con aprobación); OIDC hecho; pytest, eval y gitleaks pendientes; solo Nicolle mergea | hecho mié 30 | rama local |
 | N2 | Function App Flex Consumption 2048 MB + App Settings de contracts/infra.yaml v3 (+ APPLICATIONINSIGHTS_CONNECTION_STRING; secretos como referencias a Key Vault; credenciales de sp-agent-ro listas) | hecho mié 30 | func start + local.settings.json |
-| N3 | Cosmos free tier: conversations, handoffs, policy_chunks (DiskANN), 400 RU/s dedicados por contenedor | hecho mar 29 | emulador / LanceDB |
+| N3 | Cosmos free tier: conversations, handoffs, policy_chunks (DiskANN + full-text `text_es` es-ES / `text_pt` pt-BR), 400 RU/s dedicados por contenedor | hecho mar 29; full-text jue 1 | emulador / LanceDB |
 | N4 | Identidad mock POST /session + 5 clientes de prueba | Mar 29 | JWT local |
 | N5 | Static Web Apps Free: chat + /handoff (ADR-19 v3; recurso creado) | Mié 30 | curl |
 | N6 | App Insights + export ops.infra_requests | Jue 1 | logs locales |

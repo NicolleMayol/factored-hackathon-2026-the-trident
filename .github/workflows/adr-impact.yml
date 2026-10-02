@@ -1,7 +1,10 @@
 name: adr-impact
 on:
   pull_request:
+    # edited: el aviso vive en la descripción del PR; sin esto, editarla no vuelve a correr el check.
+    types: [opened, synchronize, reopened, edited]
     paths: ["contracts/**", "policy/**", "docs/adr/**", "eval/**"]
+concurrency: { group: "adr-impact-${{ github.event.pull_request.number }}", cancel-in-progress: true }
 permissions:
   pull-requests: write
   contents: read

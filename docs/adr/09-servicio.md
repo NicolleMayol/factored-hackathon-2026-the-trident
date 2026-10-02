@@ -1,6 +1,6 @@
 # 09-servicio
 
-Owner: Nicolle · v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
+Owner: Nicolle · v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
 
 ## ADR-19 · Plan de infraestructura en Terraform  ·  rol: servicio  ·  2026-09-29  ·  estado: cerrada
 
@@ -35,7 +35,7 @@ Región: `eastus2` (Claude Sonnet 5 verificado por Nicolle el 2026-09-29). Nombr
 | Storage de la Function | `stfuncagentbankdev` | Standard LRS | `AzureWebJobsStorage` y contenedor de deploy |
 | Function App | `func-agent-bank-dev` | Flex Consumption, Linux, python3.11, 2048 MB | máx. 10 instancias; always-ready 0 (1 en ventana de jurado); identidad administrada |
 | Frontend | `swa-agent-bank-dev` | Static Web Apps Free | chat + vista `/handoff/{case_id}`; llama a la Function App desde el navegador (CORS) |
-| Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capability `EnableNoSQLVectorSearch` | ver "Cosmos" |
+| Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capabilities `EnableNoSQLVectorSearch` y `EnableNoSQLFullTextSearchPreviewFeatures` (`azapi`) | ver "Cosmos" |
 | Databricks | `dbw-agent-bank-dev` | Premium trial (14 días), como en el diagrama | solo cómputo serverless |
 | ADLS Gen2 | `adlsagentbankdev` | Standard LRS, HNS | contenedores `unity-catalog` (storage del catálogo), `landing` (copia de S3), `ops-export`, y uno por esquema: `bronze`, `silver`, `gold`, `ref`, `ops`, `ml-data` (el de `ml`; Azure pide 3 a 63 caracteres) (ADR-20) |
 | Access Connector | `acc-agent-bank-dev` | — | identidad de Databricks sobre ADLS |
@@ -47,9 +47,9 @@ Región: `eastus2` (Claude Sonnet 5 verificado por Nicolle el 2026-09-29). Nombr
 | --- | --- | --- | --- | --- |
 | `conversations` | `/conversation_id` | 400 RU/s dedicado | 86400 s | por defecto |
 | `handoffs` | `/case_id` | 400 RU/s dedicado | — | por defecto |
-| `policy_chunks` | `/country` | 400 RU/s dedicado | — | vector `/embedding`, diskANN, 1024, cosine |
+| `policy_chunks` | `/country` | 400 RU/s dedicado | — | vector `/embedding`, diskANN, 1024, cosine; full-text `/text_es` (es-ES) y `/text_pt` (pt-BR) |
 
-Cosmos no admite búsqueda vectorial en throughput compartido. Por eso cada contenedor tiene throughput propio: 1.200 RU/s, de los que el free tier cubre 1.000. Con menos de 1.000 vectores, diskANN hace full scan (más RU por consulta). El vector policy se crea con `azapi` si `azurerm` no lo expone.
+Cosmos no admite búsqueda vectorial en throughput compartido. Por eso cada contenedor tiene throughput propio: 1.200 RU/s, de los que el free tier cubre 1.000. Con menos de 1.000 vectores, diskANN hace full scan (más RU por consulta). El vector policy y el full-text policy se crean con `azapi`, porque `azurerm` no los expone. La búsqueda híbrida (RRF) usa un campo por idioma, porque Cosmos fija el idioma por path. `azurerm` reemplaza la cuenta si cambian esas capabilities, así que las ignora y las maneja `azapi_update_resource`; la cuenta lleva `prevent_destroy`. es-ES y pt-BR están en preview y piden `EnableNoSQLFullTextSearchPreviewFeatures` ("New features for full-text search" en el portal).
 
 ### Estructura de Terraform
 ```
@@ -116,7 +116,7 @@ El chat (Static Web App) llama a la Function App desde el navegador con el JWT. 
 ### CI/CD
 | Workflow | Disparo | Qué hace |
 | --- | --- | --- |
-| `infra.yml` | PR y push a `main` en `infra/**` | PR: backend, `init`, `validate`, `plan`, comentario en el PR. `main`: `apply` tras aprobar el environment `hackathon` |
+| `infra.yml` | PR y push a `main` en `infra/**` | PR: backend, `init`, `validate`, `plan`, comentario en el PR. `main`: `plan` con tfplan guardado en el storage del tfstate y `apply` de ese mismo tfplan tras aprobar el environment `hackathon` |
 | `data-landing.yml` | cada 6 h (cron `17 */6 * * *`) y manual; sin aprobación (solo lee S3 y escribe en `landing`) | `azcopy` S3 → `adlsagentbankdev/landing/factored-datathon/data/`, incremental (`ifSourceNewer`); sube `_manifest/manifest-<fecha>.json` con inventario (archivos, bytes, MD5) y diferencias contra la corrida anterior (nuevos, cambiados). Carga inicial 2026-09-30: 7.671 archivos, 5,35 GB, 0 fallas |
 | `ci.yml` (pendiente) | PR | pytest, eval-harness (cuando exista M7), gitleaks |
 | `deploy.yml` (pendiente) | push a `main` | deploy de la Function App y de la Static Web App (el token de deploy se pide con `az staticwebapp secrets list`), smoke `/chat` (N8) |

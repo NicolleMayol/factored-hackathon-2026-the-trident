@@ -97,7 +97,7 @@ elements:
     file: contracts/infra.yaml
     owner: servicio
     consumers: [ia-ml, datos]
-    used_by: [conversations, handoffs, policy_chunks vector index 1024 cosine, 3 × 400 RU/s dedicados, E7 JSONL load]
+    used_by: [conversations, handoffs, policy_chunks vector index 1024 cosine, "policy_chunks full-text /text_es (es-ES) y /text_pt (pt-BR)", 3 × 400 RU/s dedicados, E7 JSONL load]
   - id: infra.databricks_access
     file: contracts/infra.yaml
     owner: servicio
@@ -162,7 +162,7 @@ elements:
 
   # --- añadidos 2026-09-30 por ADR-20 (plataforma de datos e ingesta) ---
   - {id: infra.uc_external_locations, file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: ["stg-credential-adlsagentbankdev", "ext-loc-adlsagentbankdev-{bronze,silver,gold,ref,ops,ml-data,landing,unity-catalog}", "managed location por esquema", "READ FILES de sp-pipelines sobre la de landing"]}
-  - {id: infra.uc_volumes,            file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: ["hackathon.ref.policy_docs managed (E7)", "hackathon.ref.fuentes managed (E6)", "la escritura sale de los grants de ref"]}
+  - {id: infra.uc_volumes,            file: contracts/infra.yaml, owner: servicio, consumers: [datos, ia-ml], used_by: ["hackathon.ref.policy_docs managed (E7)", "hackathon.ref.fuentes managed (E6)", "la escritura sale de los grants de ref", "bundles.yml copia data/policy_docs/docs/ y data/mock/catalog.yaml en main"]}
   - {id: ml.embeddings_endpoint,      file: contracts/chunks.yaml, owner: ia-ml,   consumers: [datos, servicio], used_by: ["CERRADA (ADR-21): Model Serving embed-bge-m3, modelo hackathon.ml.bge_m3 int8 ONNX 1024 dims", "E7 y nodo Act usan el mismo endpoint", EMBED_ENDPOINT]}
 
   # --- añadidos 2026-10-01 por ADR-21 (ajustes de ia-ml tras ADR-19 y ADR-20) ---
