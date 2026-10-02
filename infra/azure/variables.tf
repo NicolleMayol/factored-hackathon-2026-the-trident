@@ -41,9 +41,9 @@ variable "sql_http_path" {
 }
 
 variable "fm_endpoint_main" {
-  description = "Endpoint de FM APIs para el LLM principal (ADR-02)."
+  description = "Endpoint de FM APIs para el LLM principal (ADR-02). Claude no aparece en el workspace trial; se revisa al pasar a Premium."
   type        = string
-  default     = "databricks-claude-sonnet-5"
+  default     = "databricks-meta-llama-3-3-70b-instruct"
 }
 
 variable "fm_endpoint_small" {
