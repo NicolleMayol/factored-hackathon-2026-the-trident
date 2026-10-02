@@ -1,4 +1,7 @@
-# Contrato de tablas gold/ref · owner: datos (Eladio) · consumers: ia-ml · v4 · 2026-10-02
+# Contrato de tablas gold/ref · owner: datos (Eladio) · consumers: ia-ml · v5 · 2026-10-02
+# v5 (PR #27, opción 2 acordada con ia-ml): + gold.customer_360.country_code (MX|CO|AR). Quita la traducción entre
+#     la convención de customer_360/contact_demand (nombre completo) y la de catalog/regulator_rates/policy_chunks (ISO-2).
+#     get_customer_profile lo devuelve; tools.yaml mapea por nombre solo si falta. Avisar: ia-ml.
 # v4 (ADR-23, verificado contra landing): source.landing.format parquet -> csv; + format_opts (header, multiLine, schema_hints) y layout; nulos reales de customer_360 (credit_score 14,99 %, estimated_monthly_income 20,02 %). Avisar: ia-ml.
 # v3 (ADR-22): bronze y silver dejan de ser decisión abierta: 13 tablas 1:1 en bronze, 7 en silver, columnas del diccionario de Factored v1.0.0; clientes TEST-* solo en gold; hallazgos del diccionario (sin portugués, rate_kind). Avisar: ia-ml.
 # v2 (ADR-20): + bloque source (la ingesta lee la copia en ADLS, no S3); esquemas de bronze y silver como decisión abierta (E9). Avisar: ia-ml.
@@ -20,6 +23,7 @@ tables:
     columns:
       customer_id: {type: string, nullable: false}
       country: {type: string, nullable: false, values: [Mexico, Colombia, Argentina]}
+      country_code: {type: string, nullable: false, values: [MX, CO, AR]}   # llave de join con credit_product_catalog, ref.regulator_rates y policy_chunks
       segment: {type: string, nullable: false}
       credit_score: {type: int, nullable: true, range: [300, 850]}
       estimated_monthly_income: {type: decimal(12,2), nullable: true}

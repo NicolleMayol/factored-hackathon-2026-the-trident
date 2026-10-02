@@ -52,6 +52,10 @@ HINTS = {
     "daily_exchange_rates": "exchange_rate DECIMAL(12,6), buy_rate DECIMAL(12,6), sell_rate DECIMAL(12,6)",
 }
 
+# Las tablas del agente usan ISO-2 (credit_product_catalog, ref.regulator_rates, policy_chunks) y
+# customer_360 usa el nombre completo. country_code elimina la traducción (PR #27, opción 2 de ia-ml).
+CODIGO_PAIS = {"Mexico": "MX", "Colombia": "CO", "Argentina": "AR"}
+
 # Llave de negocio por fuente: la usa la dedup de silver y el check de grano de DQ.
 LLAVES = {
     "customers": ["customer_id"],

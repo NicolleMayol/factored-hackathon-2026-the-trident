@@ -27,13 +27,20 @@ targets:
     mode: production
     workspace:
       host: https://adb-7405618141733267.7.azuredatabricks.net
-      root_path: /Workspace/Shared/fh26/medallon
+      # Fuera de /Workspace/Shared a propósito: esa ruta es escribible por todo el workspace a nivel
+      # de filesystem, al margen de los permisos del bundle, y este código corre como sp-pipelines
+      # (ALL PRIVILEGES en 5 esquemas, lee cosmos-key). Se fija a la carpeta de sp-pipelines y no a
+      # la de quien despliega, para que CI y una corrida manual escriban la misma copia (revisión de #28).
+      root_path: /Workspace/Users/0bad9ec7-e458-4fe0-8043-50b7847dd194/.bundle/${bundle.name}/${bundle.target}
     run_as:
-      service_principal_name: sp-pipelines
+      service_principal_name: 0bad9ec7-e458-4fe0-8043-50b7847dd194   # sp-pipelines
     permissions:
-      - service_principal_name: sp-pipelines
+      # Quien pueda editar este bundle edita código que corre como sp-pipelines, que tiene
+      # ALL PRIVILEGES en 5 esquemas y lee cosmos-key del scope fh26. Por eso CAN_MANAGE es solo
+      # para el SP y para datos, y el resto del workspace ve sin poder tocar (revisión de #28).
+      - service_principal_name: 0bad9ec7-e458-4fe0-8043-50b7847dd194 # sp-pipelines
         level: CAN_MANAGE
-      # /Workspace/Shared es visible para todo el workspace. Es intencional y se declara explícito:
-      # son tres personas y sigue la convención de /Shared/fh26/agente (ADR-18).
+      - user_name: yovera.eladio@hotmail.com
+        level: CAN_MANAGE
       - group_name: users
-        level: CAN_MANAGE
+        level: CAN_VIEW

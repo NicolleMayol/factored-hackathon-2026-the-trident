@@ -14,6 +14,8 @@ Reglas que vienen del contrato y de los ADR:
 import dlt
 from pyspark.sql import functions as F
 
+import schemas
+
 CATALOG = spark.conf.get("medallon.catalog", "hackathon")  # noqa: F821
 
 CORTE = "2025-06-30"                    # contracts/gold.yaml · gold.customer_behavior_12m.cutoff_date
@@ -23,11 +25,11 @@ PREFIJO_PRUEBA = "TEST-"                # ADR-22: así se reconocen y así se ex
 # Los 5 clientes de prueba de docs/test-users.md (M3). Van literales porque son el contrato con
 # ia-ml y servicio, no un dato del origen; el dataset no los contiene.
 CLIENTES_PRUEBA = [
-    ("TEST-CO-001", "Colombia", "Premium", 780, 9_500_000.00, "Active", "2021-03-01", "colombian"),
-    ("TEST-MX-002", "Mexico", "Plus", 650, 18_000.00, "Active", "2021-03-01", "mexican"),
-    ("TEST-AR-003", "Argentina", "Plus", 590, 900_000.00, "Active", "2021-03-01", "argentine"),
-    ("TEST-CO-004", "Colombia", "Premium", 760, 8_200_000.00, "Active", "2021-03-01", "colombian"),
-    ("TEST-MX-005", "Mexico", "Basic", 700, 15_000.00, "Active", "2021-03-01", "mexican"),
+    ("TEST-CO-001", "Colombia", "CO", "Premium", 780, 9_500_000.00, "Active", "2021-03-01", "colombian"),
+    ("TEST-MX-002", "Mexico", "MX", "Plus", 650, 18_000.00, "Active", "2021-03-01", "mexican"),
+    ("TEST-AR-003", "Argentina", "AR", "Plus", 590, 900_000.00, "Active", "2021-03-01", "argentine"),
+    ("TEST-CO-004", "Colombia", "CO", "Premium", 760, 8_200_000.00, "Active", "2021-03-01", "colombian"),
+    ("TEST-MX-005", "Mexico", "MX", "Basic", 700, 15_000.00, "Active", "2021-03-01", "mexican"),
 ]
 
 
@@ -37,10 +39,13 @@ CLIENTES_PRUEBA = [
 )
 @dlt.expect_or_fail("customer_id_no_nulo", "customer_id IS NOT NULL")
 @dlt.expect("pais_normalizado", "country IN ('Mexico', 'Colombia', 'Argentina')")
+@dlt.expect("country_code_valido", "country_code IN ('MX', 'CO', 'AR')")
 def gold_customer_360():
+    codigo = F.create_map([F.lit(x) for kv in schemas.CODIGO_PAIS.items() for x in kv])
     reales = dlt.read(f"{CATALOG}.silver.customers").select(
         F.col("customer_id").cast("string"),
         F.col("country").cast("string"),
+        codigo[F.col("country")].alias("country_code"),
         F.col("segment").cast("string"),
         F.col("credit_score").cast("int"),
         F.col("estimated_monthly_income").cast("decimal(12,2)"),
@@ -52,7 +57,7 @@ def gold_customer_360():
     prueba = (
         spark.createDataFrame(  # noqa: F821
             CLIENTES_PRUEBA,
-            "customer_id string, country string, segment string, credit_score int, "
+            "customer_id string, country string, country_code string, segment string, credit_score int, "
             "estimated_monthly_income decimal(12,2), customer_status string, registration_date string, detected_accent string",
         )
         .withColumn("registration_date", F.to_timestamp("registration_date"))

@@ -78,6 +78,14 @@ def main() -> int:
     n360 = g360.count()
     filas.append(check(spark, cat, "gold.customer_360", "pais_normalizado", "country NOT IN ('Mexico','Colombia','Argentina')", n360))
     filas.append(check(spark, cat, "gold.customer_360", "credit_score_en_rango", "credit_score IS NOT NULL AND credit_score NOT BETWEEN 300 AND 850", n360))
+    filas.append(check(spark, cat, "gold.customer_360", "country_code_en_dominio", "country_code NOT IN ('MX','CO','AR')", n360))
+    # El par country/country_code tiene que ser coherente: si se desalinean, el agente busca chunks
+    # de un país y lee el perfil de otro (PR #27, opción 2).
+    filas.append(check(
+        spark, cat, "gold.customer_360", "country_code_coherente_con_country",
+        "NOT ((country = 'Mexico' AND country_code = 'MX') OR (country = 'Colombia' AND country_code = 'CO') "
+        "OR (country = 'Argentina' AND country_code = 'AR'))", n360,
+    ))
     prueba = g360.where(F.col("customer_id").startswith("TEST-")).count()
     filas.append(("gold.customer_360", "cinco_clientes_de_prueba", prueba == 5, n360, abs(prueba - 5), None))
     # Los nulos se reportan, no se cortan: ia-ml los usa como señal (ADR-23).
