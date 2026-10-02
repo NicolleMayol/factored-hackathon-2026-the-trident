@@ -33,6 +33,8 @@ class Nodes:
         tmpl, ver = _prompt(self.s, "understand_v1.md")
         with self.d.trace.span("understand"):
             out = self.d.llm.complete(tmpl.replace("{{message}}", st["message"]), {"task": "understand"}, model="small")
+        u = getattr(self.d.llm, "last_usage", {}) or {}
+        st = {**st, "tokens_in": st.get("tokens_in", 0) + u.get("tokens_in", 0), "tokens_out": st.get("tokens_out", 0) + u.get("tokens_out", 0), "cost_usd": round(st.get("cost_usd", 0.0) + u.get("cost_usd", 0.0), 6)}
         lang = out.get("language") or st.get("language") or ("pt" if st.get("locale", "").startswith("pt") else "es")  # sin señal clara, idioma del perfil
         return {**st, "intent": out["intent"], "intent_confidence": float(out.get("intent_confidence", 0)),
                 "slots": out.get("slots", {}), "guardrail_hits": out.get("guardrail_hits", []), "language": lang,
