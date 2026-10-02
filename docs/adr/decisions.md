@@ -3,7 +3,7 @@
 | ADR | Rol | Decisión | Alternativas descartadas | Criterio | Estado |
 | --- | --- | --- | --- | --- | --- |
 | 01 | ia-ml | Orquestación LangGraph: Understand → Decide → Act → Verify → Escalate | ReAct libre; framework propio | Explicita dónde no actuar; traza por nodo; test por nodo | cerrada |
-| 02 | ia-ml | LLM vía Databricks Foundation Model APIs (Claude Sonnet; Llama 8B para clasificación) | Azure OpenAI; API Anthropic directa | Un plano de gobierno; sin salida del tenant | cerrada |
+| 02 | ia-ml | LLM vía Databricks Foundation Model APIs pay-per-token: main `llama-3.3-70b` (Claude Sonnet no disponible en el workspace, it. 3; se revisa al pasar a Premium), small `llama-3.1-8b` para Understand; alternativa `gpt-oss-120b` se decide con `eval/compare_models.py` | Azure OpenAI; API Anthropic directa | Un plano de gobierno; sin salida del tenant; cambiable por `FM_ENDPOINT_*` | cerrada |
 | 03 | ia-ml | RAG sobre corpus sintético de políticas y catálogo, chunk por regla con metadatos | Solo tabla products | El dataset no trae reglas; el reto exige política sintética etiquetada | cerrada |
 | 04 | ia-ml | Vector store: Cosmos DB NoSQL free tier (DiskANN), versión C; Vector Search solo si sobran créditos; respaldo LanceDB/FAISS | Vector Search siempre; Qdrant; AI Search | < 2.000 chunks; un componente ya existente; 0 USD | cerrada |
 | 05 | ia-ml | Motor de elegibilidad determinista: reglas YAML en Python; Elegible / No / Revisión humana | Reglas en el prompt | Decisión reproducible y auditable | cerrada |

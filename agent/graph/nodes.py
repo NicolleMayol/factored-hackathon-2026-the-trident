@@ -10,12 +10,35 @@ from agent.adapters import Deps
 from agent.config.settings import Settings
 from agent.graph.state import AgentState
 from agent.policy import engine
+from agent import guardrails
 from agent import tools as T
 
 REQUIRED_SLOTS = {"eligibility_simulation": ["product_type"]}
 COUNTRY_BY_LOCALE = {"es-MX": "MX", "es-CO": "CO", "es-AR": "AR", "pt-BR": "BR"}
 COUNTRY_BY_NAME = {"Mexico": "MX", "Colombia": "CO", "Argentina": "AR", "Brasil": "BR", "Brazil": "BR"}
 PCT_RE = re.compile(r"\d+(?:[.,]\d+)?\s?%")
+NUM_RE = re.compile(r"\d[\d.,]*")
+FORBIDDEN = re.compile(r"(aprobad[oa]|garantiz|te aprueb|aprovad[oa]|garanti[dr]|pré-aprovad|preaprobad)", re.I)
+
+
+CITE_RE = re.compile(r"\[[^\]]{3,60}\]")
+
+
+def _nums(text: str) -> set[str]:
+    text = CITE_RE.sub(" ", text or "")  # los ids citados ([POL-CO-PL-01-es-v1-R3]) no son cifras
+    return {n.strip(".,").replace(".", "").replace(",", "") for n in NUM_RE.findall(text)} - {""}
+
+
+def llm_reply_grounded(reply: str, allowed_text: str) -> tuple[bool, str]:
+    """Toda cifra de la respuesta del LLM debe existir en citas/hechos/borrador; sin promesas de aprobación."""
+    extra = _nums(reply) - _nums(allowed_text)
+    if extra:
+        return False, f"numbers_not_in_facts:{sorted(extra)[:3]}"
+    if FORBIDDEN.search(reply):
+        return False, "forbidden_phrase"
+    if len(reply.strip()) < 20:
+        return False, "too_short"
+    return True, ""
 
 
 def _prompt(settings: Settings, name: str) -> tuple[str, str]:
@@ -30,12 +53,22 @@ class Nodes:
 
     # 1 ------------------------------------------------------------------
     def understand(self, st: AgentState) -> AgentState:
-        tmpl, ver = _prompt(self.s, "understand_v1.md")
+        tmpl, ver = _prompt(self.s, self.s.understand_prompt)
+        pre = guardrails.scan(st["message"])  # capa 1: determinista, antes del modelo
+        if guardrails.blocks(pre):
+            lang = st.get("language") or ("pt" if st.get("locale", "").startswith("pt") else "es")
+            with self.d.trace.span("understand", guardrail="deterministic"):
+                pass
+            return {**st, "intent": "out_of_scope", "intent_confidence": 1.0, "slots": {}, "guardrail_hits": pre, "language": lang,
+                    "country": st.get("country") or COUNTRY_BY_LOCALE.get(st.get("locale", ""), "MX"),
+                    "node_path": st.get("node_path", []) + ["understand"], "prompt_version": ver, "_mixed_language": False}
         with self.d.trace.span("understand"):
             out = self.d.llm.complete(tmpl.replace("{{message}}", st["message"]), {"task": "understand"}, model="small")
+        u = getattr(self.d.llm, "last_usage", {}) or {}
+        st = {**st, "tokens_in": st.get("tokens_in", 0) + u.get("tokens_in", 0), "tokens_out": st.get("tokens_out", 0) + u.get("tokens_out", 0), "cost_usd": round(st.get("cost_usd", 0.0) + u.get("cost_usd", 0.0), 6)}
         lang = out.get("language") or st.get("language") or ("pt" if st.get("locale", "").startswith("pt") else "es")  # sin señal clara, idioma del perfil
         return {**st, "intent": out["intent"], "intent_confidence": float(out.get("intent_confidence", 0)),
-                "slots": out.get("slots", {}), "guardrail_hits": out.get("guardrail_hits", []), "language": lang,
+                "slots": out.get("slots", {}), "guardrail_hits": sorted(set(pre) | set(out.get("guardrail_hits", []))), "language": lang,
                 "country": st.get("country") or COUNTRY_BY_LOCALE.get(st.get("locale", ""), "MX"),
                 "node_path": st.get("node_path", []) + ["understand"], "prompt_version": ver,
                 "_mixed_language": bool(out.get("mixed_language"))}
@@ -69,7 +102,7 @@ class Nodes:
         if action == "block":
             esc = "guardrail"
         # el país es el del perfil del cliente (jurisdicción), no el del idioma
-        country = COUNTRY_BY_NAME.get(prof.get("country", ""), st.get("country"))
+        country = prof.get("country_code") or COUNTRY_BY_NAME.get(prof.get("country", ""), st.get("country"))
         return {**st, "country": country, "action": engine.ACTION_TO_API[action], "_policy_action": action, "rules_fired": dec.rules_fired,
                 "reason_code": reason or "out_of_scope", "allowed_tools": dec.allowed_tools, "escalate_reason": esc,
                 "node_path": st["node_path"] + ["decide"], "_profile": prof, "_products": prods}
@@ -145,8 +178,8 @@ class Nodes:
             if ev.get("product"):
                 p = ev["product"]
                 facts.append({"fact": f"tasa {p['rate_min']}–{p['rate_max']} % · monto {p['amount_min']}–{p['amount_max']} · plazo ≤ {p['term_months_max']} m", "source": f"catalog:{p['product_code']}"})
-                cap = [r for r in self.d.sql.query("regulator_rates", {"country": st["country"], "product_type": st.get("slots", {}).get("product_type", "personal_loan")}) if r.get("rate_kind", "usura") in ("usura", "cap")]
-                if cap and float(p["rate_max"]) > float(cap[-1]["rate_max"]):
+                cap = engine.regulatory_cap(self.d.sql.query("regulator_rates", {"country": st["country"], "product_type": st.get("slots", {}).get("product_type", "personal_loan")}), st["country"], st.get("slots", {}).get("product_type", "personal_loan"))
+                if cap is not None and float(p["rate_max"]) > cap:
                     notes.append("rate_above_cap")
         for name in ("get_prescore",):
             if name in tr:
@@ -174,7 +207,7 @@ class Nodes:
     # 6 ------------------------------------------------------------------
     def respond(self, st: AgentState) -> AgentState:
         lang = st.get("language", "es")
-        tmpl, ver = _prompt(self.s, f"respond_{lang}_v1.md")
+        tmpl, ver = _prompt(self.s, f"respond_{lang}_{self.s.respond_prompt_version}.md")
         a = st.get("action")
         tr = st.get("tool_results", {})
         if a == "blocked":
@@ -211,10 +244,29 @@ class Nodes:
             if term and body:
                 body = _jurisdiction_note(lang, st["country"], term) + " " + body
             reply = (body + ({"es": " Esta información es de referencia y no constituye una oferta.", "pt": " Esta informação é de referência e não constitui uma oferta."}[lang])) if body else {"es": "No encontré información verificable para responder; lo paso a un asesor.", "pt": "Não encontrei informação verificável para responder; vou encaminhar a um assessor."}[lang]
+        source, fallback = "template", ""
+        use_llm = self.s.respond_llm == "on" or (self.s.respond_llm == "auto" and self.s.agent_llm == "real")
+        llm_eligible = a == "answer" or (st.get("intent") == "eligibility_simulation" and tr.get("evaluate_eligibility") and not (a == "confirm" and not st.get("_confirmed")))
+        if use_llm and llm_eligible and "{{facts}}" in tmpl:
+            facts_txt = "\n".join([f"[{c['id']}] {c['text']}" for c in st.get("citations", []) if c.get("text")] + [f"[{f['source']}] {f['fact']}" for f in st.get("verified_facts", [])])
+            prompt = tmpl.replace("{{message}}", st["message"]).replace("{{facts}}", facts_txt or "(sin hechos)").replace("{{draft}}", reply)
+            try:
+                with self.d.trace.span("respond_llm"):
+                    out = self.d.llm.complete(prompt, {"task": "respond"}, model="main")
+                u = getattr(self.d.llm, "last_usage", {}) or {}
+                st = {**st, "tokens_in": st.get("tokens_in", 0) + u.get("tokens_in", 0), "tokens_out": st.get("tokens_out", 0) + u.get("tokens_out", 0), "cost_usd": round(st.get("cost_usd", 0.0) + u.get("cost_usd", 0.0), 6)}
+                cand = str(out.get("reply", "")).strip()
+                ok, why = llm_reply_grounded(cand, facts_txt + " " + reply)
+                if ok:
+                    reply, source = cand, "llm"
+                else:
+                    source, fallback = "template_fallback", why
+            except Exception as e:  # noqa: BLE001  — el LLM nunca bloquea la respuesta
+                source, fallback = "template_fallback", type(e).__name__
         reply = _redact_pii(reply)
         if tmpl and st.get("country") and a == "answer" and ("%" in reply or "R3" in routed_for_disclosure(st)):
             reply += _disclosure(lang, st["country"])
-        return {**st, "reply": reply, "prompt_version": f"{st.get('prompt_version','')}+{ver}", "model_version": getattr(self.d.llm, 'model_version', ''),
+        return {**st, "reply": reply, "reply_source": source, "_respond_fallback": fallback, "prompt_version": f"{st.get('prompt_version','')}+{ver}", "model_version": getattr(self.d.llm, 'model_version', ''),
                 "node_path": st["node_path"] + ["respond"]}
 
 
