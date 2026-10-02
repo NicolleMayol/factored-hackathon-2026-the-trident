@@ -1,6 +1,6 @@
 # 21-ajustes-ia-ml
 
-Owner: Manuela · v1.1 · 2026-10-01 (revisión de servicio en el PR #16: tolerancia al frío y costo del keep-warm; /healthz con estados; usuario `cliente_co_pt`; Eladio consumer de los usuarios de prueba).
+Owner: Manuela · v1.2 · 2026-10-02 (revisión del PR #18: `text_es`/`text_pt` para full-text en Cosmos; fuente de verdad del corpus repo → volumen; held-out desde `gold.intent_labels`) · v1.1 · 2026-10-01 (revisión de servicio en el PR #16: tolerancia al frío y costo del keep-warm; /healthz con estados; usuario `cliente_co_pt`; Eladio consumer de los usuarios de prueba).
 
 ## ADR-21 · Ajustes de ia-ml tras ADR-19 y ADR-20  ·  rol: ia-ml  ·  2026-10-01  ·  estado: cerrada
 
@@ -55,6 +55,14 @@ Factored autorizó fuentes externas con dos condiciones: justificar explícitame
 | Fuera de entrenamiento | ninguna columna de `ref.*` en `features` de `contracts/gold.yaml`; test en CI | `eval/test_external_guard.py` (M7) |
 | Fuera de evaluación | macro-F1 y AUC solo sobre el dataset de Factored; `eval/cases.jsonl` solo con los clientes de prueba y el catálogo sintético; `ref.*` entra únicamente como contexto del RAG y techo del motor de reglas | `docs/adr/06-evaluacion.md`, `eval/metrics.md` |
 | Trazabilidad | `source`, `url`, `snapshot_date`, `es_sintetico` por fila y por chunk; la respuesta cita la fuente | `contracts/gold.yaml`, `contracts/chunks.yaml` |
+
+### 4b · Corpus y evaluación tras la revisión del PR #18
+
+| Punto | Decisión |
+| --- | --- |
+| Full-text en Cosmos | `policy_chunks` lleva `text_es` y `text_pt` (uno con el texto, el otro `null`) para que cada path tenga su analizador; `text` sigue siendo el campo de cita. Query híbrida: RRF de `VectorDistance` y `FullTextScore` con filtro por `country`, `language`, `product_code` (`chunks.yaml` v2.1) |
+| Fuente de verdad del corpus | `data/policy_docs/` en el repo. El bundle copia los `.md` al volumen `hackathon.ref.policy_docs`; E7 parte en chunks importando `build_corpus.py`, así los `chunk_id` son idénticos y no hay dos implementaciones |
+| Dev set vs held-out | Los 24 casos de retrieval y los 82 de acción son **dev set** (los escribió ia-ml; el stub se afinó sobre ellos). El **held-out** de ADR-10 son las transcripciones de `gold.intent_labels` con split temporal (últimos 3 meses a test, E3), con `expected_action` derivada de `action_label`; se corre una vez con prompts congelados (sáb 3) y ese es el número que se reporta |
 
 ### 5 · Jev / TypeSafe AI → To-Be (cierra ADR-14)
 

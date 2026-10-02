@@ -23,10 +23,10 @@ from agent.handle import handle, runtime  # noqa: E402
 from eval.metrics import check, metrics, render_confusion  # noqa: E402
 
 
-def run(limit: int | None = None) -> dict:
+def run(limit: int | None = None, cases_path: Path | None = None) -> dict:
     rt = runtime()
     _, deps, _ = rt
-    cases = [json.loads(l) for l in open(ROOT / "eval" / "cases.jsonl", encoding="utf-8")]
+    cases = [json.loads(l) for l in open(cases_path or ROOT / "eval" / "cases.jsonl", encoding="utf-8")]
     if limit:
         cases = cases[:limit]
     rows = []
@@ -60,9 +60,9 @@ def run(limit: int | None = None) -> dict:
 
 
 def main():
-    ap = argparse.ArgumentParser(); ap.add_argument("--limit", type=int); ap.add_argument("--out", default=str(ROOT / "eval" / "results" / "latest.json"))
+    ap = argparse.ArgumentParser(); ap.add_argument("--limit", type=int); ap.add_argument("--cases", help="jsonl alternativo (held-out)"); ap.add_argument("--out", default=str(ROOT / "eval" / "results" / "latest.json"))
     a = ap.parse_args()
-    rep = run(a.limit)
+    rep = run(a.limit, Path(a.cases) if a.cases else None)
     Path(a.out).parent.mkdir(parents=True, exist_ok=True)
     Path(a.out).write_text(json.dumps(rep, ensure_ascii=False, indent=1), encoding="utf-8")
     print(f"Eval · {rep['all']['n']} casos · llm={rep['runtime']['llm']} embed={rep['runtime']['embed']}")

@@ -97,7 +97,7 @@ def build() -> list[dict]:
             for rid, text in secs.items():
                 src = SOURCES[cc].get(rid, ("catálogo sintético", ""))
                 md += [f"## {rid}", text, f"<!-- source: {src[0]} -->", ""]
-                chunks.append({"chunk_id": f"{doc_id}-{rid}", "doc_id": doc_id, "text": text, "language": lang, "country": cc, "product_code": p["product_code"],
+                chunks.append({"chunk_id": f"{doc_id}-{rid}", "doc_id": doc_id, "text": text, "text_es": text if lang == "es" else None, "text_pt": text if lang == "pt" else None, "language": lang, "country": cc, "product_code": p["product_code"],
                                "rule_id": rid, "version": VERSION, "valid_from": VALID[0], "valid_to": VALID[1], "source": src[0], "url": src[1],
                                "snapshot_date": SNAPSHOT, "es_sintetico": True, "embedding_model_version": "pending"})
             (OUT_DOCS / f"{doc_id}.md").write_text("\n".join(md), encoding="utf-8")
