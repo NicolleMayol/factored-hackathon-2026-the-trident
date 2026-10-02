@@ -33,7 +33,7 @@ class Nodes:
         tmpl, ver = _prompt(self.s, "understand_v1.md")
         with self.d.trace.span("understand"):
             out = self.d.llm.complete(tmpl.replace("{{message}}", st["message"]), {"task": "understand"}, model="small")
-        lang = out.get("language") or ("pt" if st.get("locale", "").startswith("pt") else "es")
+        lang = out.get("language") or st.get("language") or ("pt" if st.get("locale", "").startswith("pt") else "es")  # sin señal clara, idioma del perfil
         return {**st, "intent": out["intent"], "intent_confidence": float(out.get("intent_confidence", 0)),
                 "slots": out.get("slots", {}), "guardrail_hits": out.get("guardrail_hits", []), "language": lang,
                 "country": st.get("country") or COUNTRY_BY_LOCALE.get(st.get("locale", ""), "MX"),
@@ -181,6 +181,9 @@ class Nodes:
             reply = {"es": "No puedo atender esa solicitud.", "pt": "Não posso atender essa solicitação."}[lang]
         elif a == "reject":
             reply = {"es": "Tu sesión no es válida. Inicia sesión de nuevo.", "pt": "Sua sessão não é válida. Entre novamente."}[lang]
+        elif st.get("_policy_action") == "abstain":
+            reply = {"es": "Puedo ayudarte con información y pre-evaluación de productos de crédito: préstamo personal, tarjeta de crédito y crédito de libranza. ¿Sobre cuál quieres saber?",
+                     "pt": "Posso ajudar com informação e pré-avaliação de produtos de crédito: empréstimo pessoal, cartão de crédito e crédito consignado. Sobre qual você quer saber?"}[lang]
         elif a == "clarify":
             reply = {"es": "¿Sobre qué producto quieres información: préstamo personal, tarjeta de crédito o crédito de libranza?",
                      "pt": "Sobre qual produto você quer informação: empréstimo pessoal, cartão de crédito ou crédito consignado?"}[lang]

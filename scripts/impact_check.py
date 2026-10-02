@@ -39,7 +39,7 @@ def main():
             lines.append("El cambio solo afecta elementos que consume el mismo autor.")
     open("impact.md", "w").write("\n".join(lines))
     body = os.environ.get("PR_BODY", "")
-    missing = [r for r in impacted if roles[r]["github"] not in body]
+    missing = [r for r in impacted if roles[r]["github"].lower() not in body.lower()]  # los @handles de GitHub no distinguen mayúsculas
     if missing:
         print("Falta aviso en el PR a:", ", ".join(roles[r]["name"] for r in missing))
         sys.exit(2)

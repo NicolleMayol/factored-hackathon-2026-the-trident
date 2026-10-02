@@ -14,3 +14,4 @@ tfplan
 plan.txt
 infra/**/comment.md
 data/mock/ops_agent_turns.jsonl
+eval/results/
