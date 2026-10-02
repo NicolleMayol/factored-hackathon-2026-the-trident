@@ -166,7 +166,8 @@ elements:
   - {id: ml.embeddings_endpoint,      file: contracts/chunks.yaml, owner: ia-ml,   consumers: [datos, servicio], used_by: ["CERRADA (ADR-21): Model Serving embed-bge-m3, modelo hackathon.ml.bge_m3 int8 ONNX 1024 dims", "E7 y nodo Act usan el mismo endpoint", EMBED_ENDPOINT]}
 
   # --- añadidos 2026-10-01 por ADR-21 (ajustes de ia-ml tras ADR-19 y ADR-20) ---
-  - {id: policy.test_users,          file: docs/test-users.md,    owner: ia-ml,    consumers: [servicio],        used_by: [POST /session (N4), 5 clientes + analista con handoff:read, eval/cases.jsonl]}
+  - {id: policy.test_users,          file: docs/test-users.md,    owner: ia-ml,    consumers: [servicio, datos], used_by: [POST /session (N4), 5 clientes + analista con handoff:read, eval/cases.jsonl, "filas TEST-* en gold.customer_360 (E1)"]}
+  - {id: tools.limits,               file: contracts/tools.yaml,  owner: ia-ml,    consumers: [servicio],        used_by: ["timeout 8 s, retries 2, circuit breaker 5", "cold_start: timeout extendido una vez; keep-warm solo en demos (ADR-21 v1.1)"]}
   - {id: api.scopes,                 file: contracts/api.yaml,    owner: ia-ml,    consumers: [servicio],        used_by: ["customer:read, credit:simulate, handoff:read, public", "JWT HS256 validado en código (auth_level anonymous)"]}
   - {id: eval.external_data_guard,   file: eval/,                 owner: ia-ml,    consumers: [datos],           used_by: ["regla Factored: fuentes externas justificadas y fuera de entrenamiento y evaluación", "test en CI: 0 columnas ref.* en features; eval solo dataset + catálogo sintético"]}
   - {id: data.analytics_insights,    file: data/,                 owner: datos,    consumers: [ia-ml, servicio], used_by: ["notebook de insights (E10): demanda de crédito por país e idioma, segmentos, por qué workflow 4", "dimensión Data Analytics del reto", slides]}

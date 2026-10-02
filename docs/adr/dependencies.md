@@ -4,7 +4,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 ## Manuela ← Eladio
 | # | Entregable | Formato / acceso | Fecha | Mock |
 | --- | --- | --- | --- | --- |
-| E1 | Esquema congelado 7 tablas gold; bronze y silver pasan a decisión abierta (E9) | contracts/gold.yaml v2 + tablas vacías hackathon.gold | Mié 30 mañana (depende de X1) | CSV 50 filas |
+| E1 | Esquema congelado 7 tablas gold; bronze y silver pasan a decisión abierta (E9); + 5 filas sintéticas TEST-* en gold.customer_360 (ADR-21 v1.1) | contracts/gold.yaml v2 + tablas vacías hackathon.gold | Jue 1 (depende de X1) | CSV 50 filas |
 | E2 | customer_360, customer_products, customer_behavior_12m (corte 2025-06-30) | Delta; wh-agent; sp-agent-ro | Mié 30 mediodía (depende de X1) | CSV |
 | E3 | intent_labels con split temporal | Delta | Mié 30 noche | 300 filas manuales |
 | E4 | contact_demand + notebook "por qué workflow 4" | Delta | Jue 1 | — |

@@ -1,6 +1,6 @@
 # 21-ajustes-ia-ml
 
-Owner: Manuela · v1 · 2026-10-01.
+Owner: Manuela · v1.1 · 2026-10-01 (revisión de servicio en el PR #16: tolerancia al frío y costo del keep-warm; /healthz con estados; usuario `cliente_co_pt`; Eladio consumer de los usuarios de prueba).
 
 ## ADR-21 · Ajustes de ia-ml tras ADR-19 y ADR-20  ·  rol: ia-ml  ·  2026-10-01  ·  estado: cerrada
 
@@ -26,8 +26,20 @@ Owner: Manuela · v1 · 2026-10-01.
 | Usuario de prueba | `analista` en `docs/test-users.md`, junto a los 5 clientes (M3) |
 | Validación | firma HS256 con `JWT_SIGNING_KEY`, `exp`, `customer_id` solo del token; `auth_level=ANONYMOUS` (ADR-19 v3) |
 | `POST /chat/confirm` | confirma una acción pendiente (`action_id`) que `evaluate_eligibility` dejó en `confirm`; la confirmación es un turno más del grafo, con `trace_id` nuevo y `conversation_id` igual |
-| `GET /healthz` | revisa LLM, Cosmos, Model Serving (`prescore-lgbm`, `embed-bge-m3`) y SQL Warehouse; 200 solo si los cuatro responden |
+| `GET /healthz` | público, sin JWT; devuelve `ok / cold / down` por dependencia (`llm`, `cosmos`, `prescore`, `embed`, `sql`) sin mensajes ni nombres internos; 503 solo si `llm` o `cosmos` están `down` (N8 revisa esos dos). `cold` no es fallo: es scale-to-zero o auto-stop |
 | Arranque | `agent/` no carga modelos al importar; adaptadores por inyección, elegidos por `AGENT_*` (`infra.yaml` v7) |
+
+### 2b · Frío: tolerar, no mantener caliente
+
+Mantener `wh-agent` (2X-Small, ~4 DBU/h), `prescore-lgbm` y `embed-bge-m3` encendidos las 24 h durante la evaluación (6 al 15 de octubre) no cabe en el presupuesto. Regla: el ping a `/healthz` cada 5 min se usa solo en demos anunciadas (~2 h/día); el resto del tiempo el agente tolera el frío.
+
+| Punto | Valor |
+| --- | --- |
+| Detección | Act lee el estado de `/healthz` (cacheado 60 s) antes de llamar una tool |
+| Dependencia `cold` | timeout extendido a 25 s (límite de la Function), una sola vez por dependencia y `conversation_id`; mensaje intermedio al cliente ("estoy consultando") |
+| Si aun así vence | `escalate_reason = timeout_tool`, se escala con contexto |
+| Dependencia `ok` | timeout normal de `tools.yaml` (8 s) |
+| Costo estimado 7 días (no cotización) | keep-warm en demos: ~14 h × ~5 DBU × 0,70 USD ≈ 50 USD; sin ping ≈ 0 USD; keep-warm 24 h descartado: ~168 h × 5 DBU × 0,70 ≈ 590 USD |
 
 ### 3 · Escalamientos con causa
 
@@ -58,7 +70,8 @@ La página del reto publica cinco dimensiones (Technical Judgment, AI Engineerin
 | Embedding dentro del job E7 y otro en la Function | dos artefactos, dos versiones; una desviación mínima entre ambos degrada Recall@5 sin que nadie lo vea |
 | `databricks-bge-large-en` (FM APIs) | solo inglés |
 | Scope `agent:handoff` | el resto de scopes usa `recurso:acción` (`customer:read`, `credit:simulate`); `handoff:read` sigue la convención |
-| Copiar datos de cliente a Cosmos para evitar el cold start del SQL Warehouse (propuesta abierta de ADR-19) | duplica datos de cliente fuera de Unity Catalog; un ping a `/healthz` cada 5 min en ventana de evaluación mantiene `wh-agent` caliente (auto-stop 10 min) |
+| Copiar datos de cliente a Cosmos para evitar el cold start del SQL Warehouse (propuesta abierta de ADR-19) | duplica datos de cliente fuera de Unity Catalog; se tolera el frío con timeout extendido una vez por sesión (sección 2b) |
+| Keep-warm 24 h con ping a `/healthz` | ~590 USD en 7 días; solo en demos anunciadas |
 | Jev en el hackathon | sin métrica que lo justifique; parser con esquema ya cubre el tipado |
 
 **Impacto.**
@@ -71,7 +84,8 @@ La página del reto publica cinco dimensiones (Technical Judgment, AI Engineerin
 | `api.GET_/handoff`, `api.GET_/trace` (`api.yaml` v1.1) | cambia: scope `handoff:read` | ia-ml | servicio | Nicolle: `POST /session` emite `handoff:read` para el usuario `analista`; la vista `/handoff` de la Static Web App envía el JWT | jue 1 |
 | `api.POST_/chat` (`api.yaml` v1.1) | cambia: `/chat/confirm` y `/healthz` detallados; sin cambio de request/response de `/chat` | ia-ml | servicio | Nicolle: botón de confirmación en el chat llama `/chat/confirm`; smoke N8 usa `/healthz` | vie 2 |
 | `ops.agent_turns` (`ops.yaml` v3) | cambia: + `escalate_reason` | ia-ml | servicio, datos | Nicolle: tablero AI/BI con escalamientos por causa (X3). Eladio: nada | vie 2 |
-| `policy.test_users` | nuevo: `docs/test-users.md` (M3) con 5 clientes + `analista` | ia-ml | servicio | Nicolle: cargar en `POST /session` | jue 1 |
+| `policy.test_users` | nuevo: `docs/test-users.md` (M3) con 5 clientes + `analista` | ia-ml | servicio, datos | Nicolle: cargar en `POST /session`. Eladio: 5 filas sintéticas `TEST-*` en `gold.customer_360` con E1 | jue 1 |
+| `tools.limits` (`tools.yaml` v2) | cambia: + `cold_start` (timeout extendido una vez, keep-warm solo en demos) | ia-ml | servicio | Nicolle: nada en infra; el smoke N8 usa `/healthz` con estados | vie 2 |
 | `infra.ci_cd` | cambia: `ci.yml` (pytest + `run_eval.py` + guard de fuentes externas) y `deploy.yml` pasan a bloqueantes de entrega | servicio | ia-ml | Nicolle: ambos workflows antes de Integración 2 | sáb 3 |
 | `data.analytics_insights` | nuevo: notebook de insights sobre el dataset (E10) | datos | ia-ml, servicio | Eladio: E4 ampliado a demanda por país e idioma y segmentos; una figura por hallazgo | sáb 3 |
 | `docs/adr/12-fuentes-externas.md` v2 | cambia: justificación por fuente y regla de uso | ia-ml | datos | Eladio: columna "Por qué" en la tabla de fuentes de ADR-20 cuando registre E6 | vie 2 |
@@ -84,6 +98,8 @@ La página del reto publica cinco dimensiones (Technical Judgment, AI Engineerin
 | Mismo vector para chunk y consulta | cosine(embed_job(x), embed_agent(x)) ≥ 0,999 sobre 20 textos | `eval/test_embeddings.py`, CI |
 | int8 vs fp32 en PT | Recall@5 int8 ≥ fp32 − 0,02 | MLflow, `eval/` |
 | JWT inválido, expirado o sin scope | 401 / 403; `/handoff` sin `handoff:read` → 403 | pytest |
+| `/healthz` en frío | 200 con `cold` en serving y sql; 503 solo con `llm` o `cosmos` `down`; sin nombres internos en el cuerpo | pytest + smoke N8 |
+| Tolerancia al frío | primera consulta con `sql = cold` responde en ≤ 25 s sin escalar; la segunda ya en 8 s | eval, `ops.agent_turns.escalate_reason` |
 | Arranque de la Function App | `import agent` < 2 s en frío; sin descarga de modelos | pytest + `ops.infra_requests.cold_start` |
 | Guard de fuentes externas | 0 columnas de `ref.*` en `features`; 0 casos de eval con origen externo | CI |
 | Escalamientos por causa | 100 % de `action = escalate` con `escalate_reason ≠ none` | `ops.agent_turns` |
