@@ -1,14 +1,17 @@
 # X2 · Asset Bundles de datos (data/). Cada carpeta con databricks.yml es un bundle.
 # PR: validate. Push a main: deploy al target de producción, que corre como sp-pipelines (run_as),
-# y copia de policy_docs y catalog.yaml a los volúmenes de ref.
+# y copia de policy_docs, policy/catalog.yaml (E5) y los snapshots de tasas (E6) a los volúmenes de ref.
 # Sin aprobación de environment: a main solo llega lo que Nicolle mergea.
 name: bundles
 on:
   pull_request:
-    paths: ["data/**", ".github/workflows/bundles.yml"]
+    # policy/catalog.yaml entra en los paths: lo genera data/ref/build_catalog.py pero vive fuera de
+    # data/, así que sin esto regenerar el catálogo no dispara el workflow y el volumen se queda con
+    # la versión vieja (revisión de servicio en el PR #31).
+    paths: ["data/**", "policy/catalog.yaml", ".github/workflows/bundles.yml"]
   push:
     branches: [main]
-    paths: ["data/**", ".github/workflows/bundles.yml"]
+    paths: ["data/**", "policy/catalog.yaml", ".github/workflows/bundles.yml"]
   workflow_dispatch:
 
 permissions: { contents: read, id-token: write }
@@ -58,4 +61,10 @@ jobs:
           else
             echo "::notice::Sin data/policy_docs/docs todavía."
           fi
-          databricks fs cp data/mock/catalog.yaml dbfs:/Volumes/hackathon/ref/fuentes/catalog.yaml --overwrite
+          databricks fs cp policy/catalog.yaml dbfs:/Volumes/hackathon/ref/fuentes/catalog.yaml --overwrite
+          # E6: los snapshots de tasas de regulador. Se copian todos y conviven a propósito: una
+          # respuesta citada en octubre tiene que poder reproducirse con la tasa de octubre.
+          for f in data/ref/regulator_rates_*.csv; do
+            [ -e "$f" ] || continue
+            databricks fs cp "$f" "dbfs:/Volumes/hackathon/ref/fuentes/$(basename "$f")" --overwrite
+          done

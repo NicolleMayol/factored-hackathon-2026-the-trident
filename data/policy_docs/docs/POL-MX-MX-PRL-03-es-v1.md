@@ -6,15 +6,15 @@ Crédito de libranza en México: producto de crédito para personas naturales cl
 <!-- source: catálogo sintético -->
 
 ## R2
-Requisitos de Crédito de libranza: ser mayor de edad; ingreso mensual demostrable; antigüedad como cliente mayor a 6 meses; sin mora superior a 30 días en ningún producto; puntaje de crédito mínimo 600. Para la pre-evaluación se usan solo datos del propio cliente.
+Requisitos de Crédito de libranza: ser mayor de edad; ingreso mensual demostrable; antigüedad como cliente mayor a 6 meses; sin mora superior a 30 días en ningún producto; puntaje de crédito mínimo 580. Para la pre-evaluación se usan solo datos del propio cliente.
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Crédito de libranza: entre 18 % y 35 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF; la referencia de mercado para esta modalidad es 45 % de CAT. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Crédito de libranza: entre 10.15 % y 19.88 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF; la referencia de mercado para esta modalidad es — % de CAT. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
-Montos y plazos de Crédito de libranza: desde 5.000 hasta 500.000 pesos mexicanos; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 9.791 pesos mexicanos al mes.
+Montos y plazos de Crédito de libranza: desde 150 hasta 108.316 dólares; plazo hasta 72 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 1.653 dólares al mes.
 <!-- source: catálogo sintético -->
 
 ## R5

@@ -40,7 +40,7 @@ class Settings:
     # rutas locales
     mock_dir: Path = field(default_factory=lambda: Path(_env("AGENT_MOCK_DIR", str(REPO_ROOT / "data" / "mock"))))
     policy_path: Path = field(default_factory=lambda: REPO_ROOT / "policy" / "policy.yaml")
-    catalog_path: Path = field(default_factory=lambda: Path(_env("AGENT_CATALOG_PATH", str(REPO_ROOT / "data" / "mock" / "catalog.yaml"))))
+    catalog_path: Path = field(default_factory=lambda: Path(_env("AGENT_CATALOG_PATH", str(REPO_ROOT / "policy" / "catalog.yaml"))))  # E5: el catálogo definitivo vive en policy/
     glossary_path: Path = field(default_factory=lambda: REPO_ROOT / "policy" / "glossary.yaml")
     prompts_dir: Path = field(default_factory=lambda: REPO_ROOT / "agent" / "prompts")
     # límites (contracts/tools.yaml)

@@ -33,9 +33,24 @@ def test_grounded_check():
     assert llm_reply_grounded("Tu crédito está aprobado con 16 %.", "16 %")[1] == "forbidden_phrase"
 
 
+def _tasas_del_catalogo(product_code: str) -> tuple[str, str]:
+    """Las cifras salen del catálogo, no fijas en el test: E5 las regenera y E11 recorta rate_max al
+    techo del país, así que fijarlas aquí rompe el test cada vez que cambia el catálogo (revisión de
+    servicio en el PR #31)."""
+    import yaml
+    from pathlib import Path
+
+    cat = yaml.safe_load((Path(__file__).resolve().parents[1] / "policy" / "catalog.yaml").read_text(encoding="utf-8"))
+    p = next(x for x in cat["products"] if x["product_code"] == product_code)
+    def fmt(v):  # el agente escribe "16 %" y no "16.0 %"
+        return f"{v:g} %"
+    return fmt(p["rate_min"]), fmt(p["rate_max"])
+
+
 def test_llm_reply_usada_si_cifras_coinciden(monkeypatch):
-    r = _run(monkeypatch, "Entre 16 % y 24 % anual según tu perfil, con tope de usura de 25.5 % [POL-CO-PL-01-es-v1-R3]. La tasa final se fija al aprobar.")
-    assert r["action"] == "answer" and r["_state"]["reply_source"] == "llm" and r["reply"].startswith("Entre 16 %") and r["cost_usd"] > 0
+    lo, hi = _tasas_del_catalogo("CO-PL-01")
+    r = _run(monkeypatch, f"Entre {lo} y {hi} anual según tu perfil [POL-CO-PL-01-es-v1-R3]. La tasa final se fija al aprobar.")
+    assert r["action"] == "answer" and r["_state"]["reply_source"] == "llm" and r["reply"].startswith(f"Entre {lo}") and r["cost_usd"] > 0
 
 
 def test_fallback_si_inventa_cifra(monkeypatch):

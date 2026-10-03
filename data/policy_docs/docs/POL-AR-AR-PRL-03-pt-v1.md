@@ -6,15 +6,15 @@ Crédito consignado em Argentina: produto de crédito para pessoas físicas clie
 <!-- source: catálogo sintético -->
 
 ## R2
-Requisitos de Crédito consignado: ser maior de idade; renda mensal comprovável; mais de 6 meses como cliente; sem atraso superior a 30 dias em nenhum produto; pontuação de crédito mínima 600. Para a pré-avaliação usam-se apenas dados do próprio cliente.
+Requisitos de Crédito consignado: ser maior de idade; renda mensal comprovável; mais de 6 meses como cliente; sem atraso superior a 30 dias em nenhum produto; pontuação de crédito mínima 580. Para a pré-avaliação usam-se apenas dados do próprio cliente.
 <!-- source: catálogo sintético -->
 
 ## R3
-Taxa de juros de Crédito consignado: entre 55 % e 95 % ao ano conforme o perfil. Informam-se TNA, TEA e CFT (Custo Financeiro Total) conforme o Regime de Transparência do BCRA; a referência de mercado de CFT para esta modalidade é 130 %. A taxa definitiva é fixada na aprovação e não no chat.
+Taxa de juros de Crédito consignado: entre 49.5 % e 99.04 % ao ano conforme o perfil. Informam-se TNA, TEA e CFT (Custo Financeiro Total) conforme o Regime de Transparência do BCRA; a referência de mercado de CFT para esta modalidade é — %. A taxa definitiva é fixada na aprovação e não no chat.
 <!-- source: Com. A 5460 BCRA (AR) · Régimen de Transparencia -->
 
 ## R4
-Valores e prazos de Crédito consignado: de 100.000 até 15.000.000 pesos argentinos; prazo até 60 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 368.750 pesos argentinos por mês.
+Valores e prazos de Crédito consignado: de 50.000 até 32.000.000 pesos argentinos; prazo até 72 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 664.533 pesos argentinos por mês.
 <!-- source: catálogo sintético -->
 
 ## R5

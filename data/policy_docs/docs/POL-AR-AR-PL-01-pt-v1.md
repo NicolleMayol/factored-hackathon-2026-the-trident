@@ -10,11 +10,11 @@ Requisitos de Empréstimo pessoal: ser maior de idade; renda mensal comprovável
 <!-- source: catálogo sintético -->
 
 ## R3
-Taxa de juros de Empréstimo pessoal: entre 60 % e 110 % ao ano conforme o perfil. Informam-se TNA, TEA e CFT (Custo Financeiro Total) conforme o Regime de Transparência do BCRA; a referência de mercado de CFT para esta modalidade é 160 %. A taxa definitiva é fixada na aprovação e não no chat.
+Taxa de juros de Empréstimo pessoal: entre 66.0 % e 132.05 % ao ano conforme o perfil. Informam-se TNA, TEA e CFT (Custo Financeiro Total) conforme o Regime de Transparência do BCRA; a referência de mercado de CFT para esta modalidade é 372 %. A taxa definitiva é fixada na aprovação e não no chat.
 <!-- source: Com. A 5460 BCRA (AR) · Régimen de Transparencia -->
 
 ## R4
-Valores e prazos de Empréstimo pessoal: de 100.000 até 15.000.000 pesos argentinos; prazo até 60 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 387.500 pesos argentinos por mês.
+Valores e prazos de Empréstimo pessoal: de 50.000 até 40.000.000 pesos argentinos; prazo até 60 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 1.106.833 pesos argentinos por mês.
 <!-- source: catálogo sintético -->
 
 ## R5

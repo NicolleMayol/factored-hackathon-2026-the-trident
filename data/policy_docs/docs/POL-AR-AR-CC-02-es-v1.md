@@ -10,11 +10,11 @@ Requisitos de Tarjeta de crédito: ser mayor de edad; ingreso mensual demostrabl
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Tarjeta de crédito: entre 70 % y 120 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es 180 %. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Tarjeta de crédito: entre 61.67 % y 116.76 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es — %. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: Com. A 5460 BCRA (AR) · Régimen de Transparencia -->
 
 ## R4
-Montos y plazos de Tarjeta de crédito: desde 100.000 hasta 15.000.000 pesos argentinos; plazo hasta 36 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 666.666 pesos argentinos al mes.
+Montos y plazos de Tarjeta de crédito: desde 50.000 hasta 15.809.487 pesos argentinos; plazo hasta 36 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 695.529 pesos argentinos al mes.
 <!-- source: catálogo sintético -->
 
 ## R5

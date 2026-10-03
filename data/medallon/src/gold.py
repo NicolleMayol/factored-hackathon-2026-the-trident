@@ -119,3 +119,77 @@ def gold_customer_behavior_12m():
             "max_days_past_due", "active_months", "_ingested_at",
         )
     )
+
+
+# ------------------------------------------------------------------ E5 y E6: insumos de ref
+# No salen del dataset: son el catálogo sintético (ADR-12) y las tasas de regulador. El repo es la
+# fuente de verdad y `bundles.yml` los copia al volumen; el pipeline lee el volumen, nunca la API
+# ni el repo, para que una corrida sea reproducible y fechada (ADR-12: batch versionado).
+VOL_FUENTES = "/Volumes/hackathon/ref/fuentes"
+
+
+@dlt.table(
+    name=f"{CATALOG}.gold.credit_product_catalog",
+    comment="Catálogo sintético (E5). AR del BCRA, CO y MX de percentiles del dataset. es_sintetico = true.",
+)
+@dlt.expect_or_fail("product_code_no_nulo", "product_code IS NOT NULL")
+@dlt.expect("todo_sintetico", "es_sintetico = true")
+@dlt.expect("rango_de_tasa_coherente", "rate_min <= rate_max")
+@dlt.expect("rango_de_monto_coherente", "amount_min <= amount_max")
+def gold_credit_product_catalog():
+    # El YAML del catálogo se carga como texto y se explota: así una fila mal formada no tumba el
+    # pipeline entero y queda visible en el check de conteo.
+    df = spark.read.format("text").option("wholetext", "true").load(f"{VOL_FUENTES}/catalog.yaml")  # noqa: F821
+    import yaml  # local: el intérprete del pipeline lo trae
+
+    productos = yaml.safe_load(df.first()["value"])["products"]
+    return (
+        spark.createDataFrame(productos)  # noqa: F821
+        .select(
+            F.col("product_code").cast("string"),
+            F.col("country").cast("string"),
+            F.col("name_es").cast("string"),
+            F.col("name_pt").cast("string"),
+            F.col("product_type").cast("string"),
+            F.col("product_type_dataset").cast("string"),
+            F.col("min_score").cast("int"),
+            F.col("currency").cast("string"),
+            F.col("rate_min").cast("decimal(5,2)"),
+            F.col("rate_max").cast("decimal(5,2)"),
+            F.col("amount_min").cast("decimal(15,2)"),
+            F.col("amount_max").cast("decimal(15,2)"),
+            F.col("term_months_max").cast("int"),
+            F.col("requirements").cast("string"),
+            F.col("valid_from").cast("date"),
+            F.col("valid_to").cast("date"),
+            F.col("es_sintetico").cast("boolean"),
+        )
+        .withColumn("_ingested_at", F.current_timestamp())
+    )
+
+
+@dlt.table(
+    name=f"{CATALOG}.ref.regulator_rates",
+    comment="Tasas de regulador por país, producto y tipo de tasa (E6). Techo legal del motor; no es oferta.",
+)
+@dlt.expect_or_fail("llave_no_nula", "country IS NOT NULL AND product_type IS NOT NULL AND rate_kind IS NOT NULL")
+@dlt.expect("rate_kind_en_dominio", "rate_kind IN ('ea','tna','cat','cft','usura')")
+def ref_regulator_rates():
+    # Se lee el snapshot más reciente del volumen. Varios snapshots conviven a propósito: una
+    # respuesta citada en octubre tiene que poder reproducirse con la tasa de octubre.
+    return (
+        spark.read.format("csv")  # noqa: F821
+        .option("header", "true").option("multiLine", "true")
+        .load(f"{VOL_FUENTES}/regulator_rates_*.csv")
+        .select(
+            F.col("country").cast("string"),
+            F.col("product_type").cast("string"),
+            F.col("rate_kind").cast("string"),
+            F.col("rate_min").cast("decimal(5,2)"),
+            F.col("rate_max").cast("decimal(5,2)"),
+            F.col("source").cast("string"),
+            F.col("url").cast("string"),
+            F.col("snapshot_date").cast("date"),
+        )
+        .withColumn("_ingested_at", F.current_timestamp())
+    )

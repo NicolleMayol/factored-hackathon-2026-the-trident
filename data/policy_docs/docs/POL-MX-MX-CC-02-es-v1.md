@@ -10,11 +10,11 @@ Requisitos de Tarjeta de crédito: ser mayor de edad; ingreso mensual demostrabl
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Tarjeta de crédito: entre 30 % y 60 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF; la referencia de mercado para esta modalidad es 80 % de CAT. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Tarjeta de crédito: entre 20.69 % y 42.34 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF; la referencia de mercado para esta modalidad es 80 % de CAT. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
-Montos y plazos de Tarjeta de crédito: desde 5.000 hasta 500.000 pesos mexicanos; plazo hasta 36 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 18.055 pesos mexicanos al mes.
+Montos y plazos de Tarjeta de crédito: desde 150 hasta 45.210 dólares; plazo hasta 36 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 1.521 dólares al mes.
 <!-- source: catálogo sintético -->
 
 ## R5

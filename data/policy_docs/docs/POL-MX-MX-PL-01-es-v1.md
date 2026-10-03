@@ -10,11 +10,11 @@ Requisitos de Préstamo personal: ser mayor de edad; ingreso mensual demostrable
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Préstamo personal: entre 22 % y 45 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF; la referencia de mercado para esta modalidad es 60 % de CAT. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Préstamo personal: entre 13.54 % y 26.5 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF; la referencia de mercado para esta modalidad es 60 % de CAT. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
-Montos y plazos de Préstamo personal: desde 5.000 hasta 500.000 pesos mexicanos; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 10.208 pesos mexicanos al mes.
+Montos y plazos de Préstamo personal: desde 150 hasta 135.395 dólares; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 2.555 dólares al mes.
 <!-- source: catálogo sintético -->
 
 ## R5

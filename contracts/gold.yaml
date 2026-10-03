@@ -1,4 +1,6 @@
-# Contrato de tablas gold/ref · owner: datos (Eladio) · consumers: ia-ml · v5 · 2026-10-02
+# Contrato de tablas gold/ref · owner: datos (Eladio) · consumers: ia-ml · v6 · 2026-10-02
+# v6 (E5/E6): + credit_product_catalog.product_type_dataset (join con customer_products) y .min_score (lo usa el motor);
+#     ref.regulator_rates cambia de grano a país × producto × rate_kind × snapshot y añade rate_kind. Avisar: ia-ml.
 # v5 (PR #27, opción 2 acordada con ia-ml): + gold.customer_360.country_code (MX|CO|AR). Quita la traducción entre
 #     la convención de customer_360/contact_demand (nombre completo) y la de catalog/regulator_rates/policy_chunks (ISO-2).
 #     get_customer_profile lo devuelve; tools.yaml mapea por nombre solo si falta. Avisar: ia-ml.
@@ -44,7 +46,8 @@ tables:
   gold.credit_product_catalog:
     grain: 1 fila por producto × país
     synthetic: true
-    columns: {product_code: string, country: string, name_es: string, name_pt: string, product_type: string, currency: string, rate_min: "decimal(5,2)", rate_max: "decimal(5,2)", amount_min: "decimal(15,2)", amount_max: "decimal(15,2)", term_months_max: int, requirements: string, valid_from: date, valid_to: date, es_sintetico: boolean}
+    source: "policy/catalog.yaml, generado por data/ref/build_catalog.py (E5): AR del BCRA, CO y MX de percentiles del dataset"
+    columns: {product_code: string, country: string, name_es: string, name_pt: string, product_type: string, product_type_dataset: "string, nullable (vacío = oferta sin cartera en el dataset); join con gold.customer_products.product_type", min_score: int, currency: string, rate_min: "decimal(5,2)", rate_max: "decimal(5,2)", amount_min: "decimal(15,2)", amount_max: "decimal(15,2)", term_months_max: int, requirements: string, valid_from: date, valid_to: date, es_sintetico: boolean}
   gold.intent_labels:
     grain: 1 fila por transcript_id
     split: {by: process_date, test: últimos 3 meses}
@@ -53,5 +56,6 @@ tables:
     grain: día × país × reason_category
     columns: {date: date, country: string, reason_category: string, volume: int, fcr_rate: "decimal(5,4)", escalated: int, wait_p50_s: int, csat_avg: "decimal(3,2)"}
   ref.regulator_rates:
-    grain: país × producto × snapshot
-    columns: {country: string, product_type: string, rate_min: "decimal(5,2)", rate_max: "decimal(5,2)", source: string, url: string, snapshot_date: date}
+    grain: país × producto × rate_kind × snapshot
+    source: "data/ref/regulator_rates_<fecha>.csv, generado por data/ref/ingest_regulator_rates.py (E6); AR del BCRA por API, CO y MX a mano"
+    columns: {country: string, product_type: string, rate_kind: "string, values: [ea, tna, cat, cft, usura]; usura/cat/cft son el techo del país (decisión de ia-ml, PR #23)", rate_min: "decimal(5,2)", rate_max: "decimal(5,2)", source: string, url: string, snapshot_date: date}

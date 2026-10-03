@@ -6,15 +6,15 @@ Crédito de libranza en Argentina: producto de crédito para personas naturales 
 <!-- source: catálogo sintético -->
 
 ## R2
-Requisitos de Crédito de libranza: ser mayor de edad; ingreso mensual demostrable; antigüedad como cliente mayor a 6 meses; sin mora superior a 30 días en ningún producto; puntaje de crédito mínimo 600. Para la pre-evaluación se usan solo datos del propio cliente.
+Requisitos de Crédito de libranza: ser mayor de edad; ingreso mensual demostrable; antigüedad como cliente mayor a 6 meses; sin mora superior a 30 días en ningún producto; puntaje de crédito mínimo 580. Para la pre-evaluación se usan solo datos del propio cliente.
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Crédito de libranza: entre 55 % y 95 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es 130 %. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Crédito de libranza: entre 49.5 % y 99.04 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es — %. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: Com. A 5460 BCRA (AR) · Régimen de Transparencia -->
 
 ## R4
-Montos y plazos de Crédito de libranza: desde 100.000 hasta 15.000.000 pesos argentinos; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 368.750 pesos argentinos al mes.
+Montos y plazos de Crédito de libranza: desde 50.000 hasta 32.000.000 pesos argentinos; plazo hasta 72 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 664.533 pesos argentinos al mes.
 <!-- source: catálogo sintético -->
 
 ## R5
