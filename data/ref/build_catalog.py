@@ -52,6 +52,16 @@ BCRA = {
     ("AR", "mortgage"):      dict(monto=(300_000_000, 372_113_275), tasa=(7.76, 14.00), plazo=240, ingreso=3_500_000),
 }
 
+# Piso de producto: el monto mínimo que el banco presta, no el p10 de los saldos existentes.
+# El p10 de credit_limit es la distribución de cupos ya otorgados; usarlo como mínimo dejaba
+# CO-PL en 75 M COP y mandaba cualquier préstamo pequeño a E07 (revisión de ia-ml en el PR #31).
+PISO = {"COP": 500_000, "USD": 150, "ARS": 50_000}
+PISO_HIPOTECARIO = 100  # el hipotecario no arranca en el mismo piso que un consumo: × este factor
+
+# Techo del país por rate_kind (engine.py CAP_KIND). El catálogo nunca puede ofrecer por encima:
+# si lo hace, E11 manda toda simulación del país a revisión humana.
+CAP_KIND = {"CO": "usura", "MX": "cat", "AR": "cft"}
+
 MONEDA = {"CO": "COP", "MX": "USD", "AR": "ARS"}  # MX en USD: el dataset no tiene MXN (ADR-23)
 PAIS_NOMBRE = {"CO": "Colombia", "MX": "México", "AR": "Argentina"}
 
@@ -93,7 +103,23 @@ FACTORES = {  # (monto, tasa) respecto al préstamo personal del mismo país
 }
 
 
+def _techos() -> dict[tuple[str, str], float]:
+    """rate_max del tipo de tasa que actúa como techo, por país y producto, leído del snapshot de
+    E6. Es la misma fuente que usa el motor, así que no pueden discrepar."""
+    import csv
+
+    snaps = sorted((ROOT / "data" / "ref").glob("regulator_rates_*.csv"))
+    if not snaps:
+        return {}
+    out = {}
+    for f in csv.DictReader(snaps[-1].open(encoding="utf-8")):
+        if f["rate_kind"] == CAP_KIND.get(f["country"]) and f["rate_max"]:
+            out[(f["country"], f["product_type"])] = float(f["rate_max"])
+    return out
+
+
 def construir() -> dict:
+    techos = _techos()
     productos = []
     for pais in ("CO", "MX", "AR"):
         fuente = BCRA if pais == "AR" else DATASET
@@ -105,6 +131,20 @@ def construir() -> dict:
             else:
                 v = _derivado(base, *FACTORES[ptype])
                 plazo_final = plazo
+            # El catálogo ofrece dentro del techo legal: rate_max = min(p90, techo del país).
+            tasa_max = v["tasa"][1]
+            # Si no hay fila de techo para ese producto, se usa el del préstamo personal del país:
+            # es de donde se derivan esos tres, y el techo varía demasiado entre productos como para
+            # tomar el más estricto (el del hipotecario en AR dejaría rate_min > rate_max).
+            # Hueco anotado: libranza, bajo monto y microcrédito no tienen fila en E6, así que E11
+            # tampoco los protege en el motor.
+            techo = techos.get((pais, ptype)) or techos.get((pais, "personal_loan"))
+            recortada = techo is not None and tasa_max > techo
+            if recortada:
+                tasa_max = techo
+            if tasa_max < v["tasa"][0]:  # el recorte no puede invertir el rango
+                raise SystemExit(f"{pais}-{codigo}: techo {tasa_max} por debajo de rate_min {v['tasa'][0]}")
+            piso = PISO[MONEDA[pais]] * (PISO_HIPOTECARIO if ptype == "mortgage" else 1)
             productos.append({
                 "product_code": f"{pais}-{codigo}",
                 "country": pais,
@@ -115,8 +155,8 @@ def construir() -> dict:
                 "product_type_dataset": pdataset,
                 "currency": MONEDA[pais],
                 "rate_min": v["tasa"][0],
-                "rate_max": v["tasa"][1],
-                "amount_min": v["monto"][0],
+                "rate_max": tasa_max,
+                "amount_min": piso,
                 "amount_max": v["monto"][1],
                 "term_months_max": plazo_final,
                 "min_score": min_score,
@@ -152,6 +192,7 @@ def _escribir_mock(cat: dict) -> Path:
 
 
 def main() -> int:
+    techos = _techos()
     cat = construir()
     SALIDA.parent.mkdir(exist_ok=True)
     with SALIDA.open("w", encoding="utf-8") as f:
@@ -163,8 +204,10 @@ def main() -> int:
           f"({con_join} con contraparte en el dataset, {len(cat['products']) - con_join} oferta sin cartera)")
     for p in cat["products"]:
         marca = " " if p["product_type_dataset"] else "~"
+        tope = techos.get((p["country"], p["product_type"]))
+        nota = f"  (recortada al techo {tope})" if tope is not None and p["rate_max"] == tope else ""
         print(f"  {marca}{p['product_code']:10} {p['product_type']:20} {p['currency']} "
-              f"{p['rate_min']:>7.2f}-{p['rate_max']:<7.2f} {p['amount_min']:>14,}-{p['amount_max']:<14,} {p['term_months_max']:>4}m")
+              f"{p['rate_min']:>7.2f}-{p['rate_max']:<7.2f} {p['amount_min']:>13,}-{p['amount_max']:<14,} {p['term_months_max']:>4}m{nota}")
     return 0
 
 

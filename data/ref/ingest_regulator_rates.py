@@ -49,20 +49,24 @@ URL_DOC = {
 
 # Filas que no se pueden automatizar hoy. Completar valor, source, url y snapshot_date; en cuanto
 # `source` deje de ser PENDIENTE, el check de DQ pasa.
+# Los techos de CO y MX llevan un valor provisional heredado del mock con el que el equipo venía
+# trabajando: sin techo, E11 del motor no protege nada y toda simulación cae en revisión humana
+# (revisión de ia-ml en el PR #31). `source` sigue marcado PENDIENTE a propósito: el valor sirve de
+# guarda, **no es citable** hasta que se transcriba de la fuente oficial, y el DQ sigue en rojo.
 FILAS_MANUALES = [
     # country, product_type, rate_kind, rate_min, rate_max, source, url, snapshot_date
-    ("CO", "personal_loan", "usura", "", "", "PENDIENTE",
-     "https://www.superfinanciera.gov.co/publicaciones/10116142/superfinanciera-certifica-el-interes-bancario-corriente/", ""),
-    ("CO", "credit_card", "usura", "", "", "PENDIENTE",
-     "https://www.superfinanciera.gov.co/publicaciones/10116142/superfinanciera-certifica-el-interes-bancario-corriente/", ""),
-    ("CO", "mortgage", "usura", "", "", "PENDIENTE",
-     "https://www.superfinanciera.gov.co/publicaciones/10116142/superfinanciera-certifica-el-interes-bancario-corriente/", ""),
-    ("MX", "personal_loan", "cat", "", "", "PENDIENTE",
-     "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=18&accion=consultarCuadro&idCuadro=CF303&locale=es", ""),
-    ("MX", "credit_card", "cat", "", "", "PENDIENTE",
-     "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=18&accion=consultarCuadro&idCuadro=CF303&locale=es", ""),
-    ("MX", "mortgage", "cat", "", "", "PENDIENTE",
-     "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=18&accion=consultarCuadro&idCuadro=CF303&locale=es", ""),
+    ("CO", "personal_loan", "usura", "0", "25.50", "PENDIENTE (valor provisional, no citable)",
+     "https://www.superfinanciera.gov.co/publicaciones/10116142/superfinanciera-certifica-el-interes-bancario-corriente/", "2025-06-30"),
+    ("CO", "credit_card", "usura", "0", "25.50", "PENDIENTE (valor provisional, no citable)",
+     "https://www.superfinanciera.gov.co/publicaciones/10116142/superfinanciera-certifica-el-interes-bancario-corriente/", "2025-06-30"),
+    ("CO", "mortgage", "usura", "0", "25.50", "PENDIENTE (valor provisional, no citable)",
+     "https://www.superfinanciera.gov.co/publicaciones/10116142/superfinanciera-certifica-el-interes-bancario-corriente/", "2025-06-30"),
+    ("MX", "personal_loan", "cat", "25.00", "60.00", "PENDIENTE (valor provisional, no citable)",
+     "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=18&accion=consultarCuadro&idCuadro=CF303&locale=es", "2025-06-30"),
+    ("MX", "credit_card", "cat", "35.00", "80.00", "PENDIENTE (valor provisional, no citable)",
+     "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=18&accion=consultarCuadro&idCuadro=CF303&locale=es", "2025-06-30"),
+    ("MX", "mortgage", "cat", "12.00", "25.00", "PENDIENTE (valor provisional, no citable)",
+     "https://www.banxico.org.mx/SieInternet/consultarDirectorioInternetAction.do?sector=18&accion=consultarCuadro&idCuadro=CF303&locale=es", "2025-06-30"),
 ]
 
 CABECERA = ["country", "product_type", "rate_kind", "rate_min", "rate_max", "source", "url", "snapshot_date"]
@@ -123,10 +127,17 @@ def main() -> int:
         w = csv.writer(f)
         w.writerow(CABECERA)
         w.writerows(filas)
-    pendientes = [f for f in filas if f[5] == "PENDIENTE"]
+    # El mock que lee el motor con AGENT_SQL=mock sale del mismo snapshot: si se mantienen aparte,
+    # el techo del motor y el de la tabla real se separan sin que nadie lo note (petición de ia-ml, #31).
+    mock = Path(__file__).resolve().parents[1] / "mock" / "regulator_rates.csv"
+    with mock.open("w", newline="", encoding="utf-8") as f:
+        w = csv.writer(f); w.writerow(CABECERA); w.writerows(filas)
+    print(f"data/mock/{mock.name}: regenerado desde el mismo snapshot")
+
+    pendientes = [f for f in filas if f[5].startswith("PENDIENTE")]
     print(f"{destino.name}: {len(filas)} filas, {len(filas) - len(pendientes)} con fuente real, {len(pendientes)} PENDIENTE")
     for f in filas:
-        marca = "  " if f[5] != "PENDIENTE" else "! "
+        marca = "! " if f[5].startswith("PENDIENTE") else "  "
         print(f"  {marca}{f[0]} {f[1]:<14} {f[2]:<6} {f[3]:>8} - {f[4]:<8} {f[5][:46]}")
     return 0
 

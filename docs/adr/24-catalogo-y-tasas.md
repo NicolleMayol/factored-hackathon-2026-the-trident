@@ -1,6 +1,6 @@
 # 24-catalogo-y-tasas
 
-Owner: Eladio · v1 · 2026-10-02.
+Owner: Eladio · v1.1 · 2026-10-02 (revisión de ia-ml en el PR #31: recorte al techo del país, piso de monto y mock de tasas generado).
 
 ## ADR-24 · Catálogo sintético y tasas de regulador (E5 y E6)  ·  rol: datos  ·  2026-10-02  ·  estado: cerrada
 
@@ -26,6 +26,11 @@ Dos artefactos, dos scripts, un principio: si una cifra no se puede reproducir, 
 
 Las tasas del catálogo son **la oferta**; el techo legal vive en `ref.regulator_rates` y lo aplica el motor aparte. Para AR se usa p10–mediana del BCRA: el p90 (337 %) es la cola del mercado, no una tasa que este banco ofrecería.
 
+### El catálogo nunca ofrece por encima del techo (revisión del PR #31)
+`rate_max = min(p90, techo del país)`, leyendo el techo del mismo snapshot que usa `engine.py` (`CAP_KIND`: CO `usura`, MX `cat`, AR `cft`). Sin el recorte, `CO-PL-01` (26,28) y `CO-CC-02` (42,33) superaban la usura de Colombia y **E11 mandaba toda simulación del país a revisión humana**. Para los tres productos sin fila de techo propia se usa el del préstamo personal del país: tomar el más estricto invertía el rango en AR, donde el techo del hipotecario (28,28) queda por debajo de la tasa de un microcrédito.
+
+`amount_min` es un **piso de producto declarado** (500.000 COP, 150 USD, 50.000 ARS; ×100 en hipotecario), no el p10 de `credit_limit`. El p10 es la distribución de cupos ya otorgados: usarlo como mínimo dejaba `CO-PL` en 75 M COP y mandaba cualquier préstamo pequeño a E07.
+
 ### `product_type_dataset`: la columna que evita un fallo silencioso
 `gold.customer_products.product_type` trae los valores del origen en español (`Préstamo Personal`, `Tarjeta Crédito`, `Préstamo Hipotecario`) y el catálogo usa su propia taxonomía (`personal_loan`, `credit_card`, …). `engine.py` compara los dos. Sin una columna puente, `evaluate_eligibility` **no encuentra el producto del cliente y devuelve cero sin error**: el mismo patrón que `country_code` (PR #27) y que `multiLine` (ADR-23).
 
@@ -38,7 +43,9 @@ Se añade la columna en vez de renombrar: los `product_code` y el corpus de ia-m
 | SFC (CO) | manual | la certificación de usura es un PDF mensual |
 | Banxico (MX) | manual | el cuadro CF303 se exporta tras una consulta interactiva |
 
-Las seis filas de CO y MX entran con `source = PENDIENTE` y su URL ya puesta. Un check de DQ **falla mientras quede alguna**: la deuda queda en `ops.dq_results`, no en la cabeza de nadie.
+Las seis filas de CO y MX entran con `source = PENDIENTE (valor provisional, no citable)` y su URL ya puesta. Llevan un `rate_max` provisional heredado del mock con el que venía trabajando el equipo: **sin techo, E11 no protege nada**. El valor sirve de guarda y no es citable; un check de DQ **falla mientras quede alguna fila así**, y la deuda queda en `ops.dq_results`, no en la cabeza de nadie.
+
+`data/mock/regulator_rates.csv` se regenera desde el mismo snapshot: si se mantienen aparte, el techo que aplica el motor y el de la tabla real se separan sin que nadie lo note.
 
 Dos cuidados que el dato exigió:
 - **Frescura.** Las entidades informan en fechas que van de 2019 a hoy. Un snapshot ingenuo mezclaría tasas de hace siete años con las de ayer; solo entra lo informado en 120 días.
@@ -60,6 +67,9 @@ Dos cuidados que el dato exigió:
 | Dejar MX en MXN | el dataset no tiene MXN: el agente ofrecería un producto en una moneda que el cliente no tiene |
 | Consultar las APIs en el pipeline | ADR-12 lo prohíbe y haría irreproducible una respuesta ya citada |
 | Esperar a tener CO y MX para entregar E6 | bloquea el pipeline por dos PDF; mejor el check de DQ que falla y la deuda visible |
+| Dejar CO y MX sin valor de techo | E11 no protegería ninguna simulación de esos países; mejor un provisional marcado como no citable |
+| Recortar por el techo más estricto del país | en AR el del hipotecario (28,28) deja `rate_min > rate_max` en microcrédito |
+| `amount_min` = p10 de `credit_limit` | es la distribución de cupos otorgados, no un mínimo de oferta |
 
 **Impacto.**
 

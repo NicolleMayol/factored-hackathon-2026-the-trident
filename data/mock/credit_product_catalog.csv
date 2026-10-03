@@ -1,19 +1,19 @@
 product_code,country,name_es,name_pt,product_type,product_type_dataset,min_score,currency,rate_min,rate_max,amount_min,amount_max,term_months_max,requirements,valid_from,valid_to,es_sintetico
-CO-PL-01,CO,Préstamo personal,Empréstimo pessoal,personal_loan,Préstamo Personal,600,COP,13.62,26.28,75534925,542588089,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-CO-CC-02,CO,Tarjeta de crédito,Cartão de crédito,credit_card,Tarjeta Crédito,600,COP,20.66,42.33,23405438,180283078,36,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-CO-MG-06,CO,Crédito hipotecario,Crédito habitacional,mortgage,Préstamo Hipotecario,680,COP,6.56,11.41,76519585,539420007,240,mayor de edad; ingreso demostrable; sin mora > 30 días; avalúo del inmueble; cuota ≤ 30 % del ingreso,2025-07-01,2026-12-31,True
-CO-PRL-03,CO,Crédito de libranza,Crédito consignado,payroll_loan,,580,COP,10.21,19.71,60427940,434070471,72,relación laboral vigente; convenio de nómina con el empleador,2025-07-01,2026-12-31,True
-CO-LAC-04,CO,Crédito de bajo monto,Crédito de baixo valor,low_amount_consumer,,550,COP,15.66,30.22,7553492,54258809,24,mayor de edad; ingreso demostrable,2025-07-01,2026-12-31,True
-CO-MC-05,CO,Microcrédito,Microcrédito,microcredit,,540,COP,17.71,34.16,3776746,27129404,36,actividad productiva declarada; mayor de edad,2025-07-01,2026-12-31,True
-MX-PL-01,MX,Préstamo personal,Empréstimo pessoal,personal_loan,Préstamo Personal,600,USD,13.54,26.5,20311,135395,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-MX-CC-02,MX,Tarjeta de crédito,Cartão de crédito,credit_card,Tarjeta Crédito,600,USD,20.69,42.34,5911,45210,36,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-MX-MG-06,MX,Crédito hipotecario,Crédito habitacional,mortgage,Préstamo Hipotecario,680,USD,6.58,11.41,19786,134138,240,mayor de edad; ingreso demostrable; sin mora > 30 días; avalúo del inmueble; cuota ≤ 30 % del ingreso,2025-07-01,2026-12-31,True
-MX-PRL-03,MX,Crédito de libranza,Crédito consignado,payroll_loan,,580,USD,10.15,19.88,16249,108316,72,relación laboral vigente; convenio de nómina con el empleador,2025-07-01,2026-12-31,True
-MX-LAC-04,MX,Crédito de bajo monto,Crédito de baixo valor,low_amount_consumer,,550,USD,15.57,30.47,2031,13540,24,mayor de edad; ingreso demostrable,2025-07-01,2026-12-31,True
-MX-MC-05,MX,Microcrédito,Microcrédito,microcredit,,540,USD,17.6,34.45,1016,6770,36,actividad productiva declarada; mayor de edad,2025-07-01,2026-12-31,True
-AR-PL-01,AR,Préstamo personal,Empréstimo pessoal,personal_loan,Préstamo Personal,600,ARS,66.0,132.05,450000,40000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-AR-CC-02,AR,Tarjeta de crédito,Cartão de crédito,credit_card,Tarjeta Crédito,600,ARS,61.67,116.76,2069104,15809487,36,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
-AR-MG-06,AR,Crédito hipotecario,Crédito habitacional,mortgage,Préstamo Hipotecario,680,ARS,7.76,14.0,300000000,372113275,240,mayor de edad; ingreso demostrable; sin mora > 30 días; avalúo del inmueble; cuota ≤ 30 % del ingreso,2025-07-01,2026-12-31,True
-AR-PRL-03,AR,Crédito de libranza,Crédito consignado,payroll_loan,,580,ARS,49.5,99.04,360000,32000000,72,relación laboral vigente; convenio de nómina con el empleador,2025-07-01,2026-12-31,True
-AR-LAC-04,AR,Crédito de bajo monto,Crédito de baixo valor,low_amount_consumer,,550,ARS,75.9,151.86,45000,4000000,24,mayor de edad; ingreso demostrable,2025-07-01,2026-12-31,True
-AR-MC-05,AR,Microcrédito,Microcrédito,microcredit,,540,ARS,85.8,171.67,22500,2000000,36,actividad productiva declarada; mayor de edad,2025-07-01,2026-12-31,True
+CO-PL-01,CO,Préstamo personal,Empréstimo pessoal,personal_loan,Préstamo Personal,600,COP,13.62,25.5,500000,542588089,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+CO-CC-02,CO,Tarjeta de crédito,Cartão de crédito,credit_card,Tarjeta Crédito,600,COP,20.66,25.5,500000,180283078,36,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+CO-MG-06,CO,Crédito hipotecario,Crédito habitacional,mortgage,Préstamo Hipotecario,680,COP,6.56,11.41,50000000,539420007,240,mayor de edad; ingreso demostrable; sin mora > 30 días; avalúo del inmueble; cuota ≤ 30 % del ingreso,2025-07-01,2026-12-31,True
+CO-PRL-03,CO,Crédito de libranza,Crédito consignado,payroll_loan,,580,COP,10.21,19.71,500000,434070471,72,relación laboral vigente; convenio de nómina con el empleador,2025-07-01,2026-12-31,True
+CO-LAC-04,CO,Crédito de bajo monto,Crédito de baixo valor,low_amount_consumer,,550,COP,15.66,25.5,500000,54258809,24,mayor de edad; ingreso demostrable,2025-07-01,2026-12-31,True
+CO-MC-05,CO,Microcrédito,Microcrédito,microcredit,,540,COP,17.71,25.5,500000,27129404,36,actividad productiva declarada; mayor de edad,2025-07-01,2026-12-31,True
+MX-PL-01,MX,Préstamo personal,Empréstimo pessoal,personal_loan,Préstamo Personal,600,USD,13.54,26.5,150,135395,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+MX-CC-02,MX,Tarjeta de crédito,Cartão de crédito,credit_card,Tarjeta Crédito,600,USD,20.69,42.34,150,45210,36,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+MX-MG-06,MX,Crédito hipotecario,Crédito habitacional,mortgage,Préstamo Hipotecario,680,USD,6.58,11.41,15000,134138,240,mayor de edad; ingreso demostrable; sin mora > 30 días; avalúo del inmueble; cuota ≤ 30 % del ingreso,2025-07-01,2026-12-31,True
+MX-PRL-03,MX,Crédito de libranza,Crédito consignado,payroll_loan,,580,USD,10.15,19.88,150,108316,72,relación laboral vigente; convenio de nómina con el empleador,2025-07-01,2026-12-31,True
+MX-LAC-04,MX,Crédito de bajo monto,Crédito de baixo valor,low_amount_consumer,,550,USD,15.57,30.47,150,13540,24,mayor de edad; ingreso demostrable,2025-07-01,2026-12-31,True
+MX-MC-05,MX,Microcrédito,Microcrédito,microcredit,,540,USD,17.6,34.45,150,6770,36,actividad productiva declarada; mayor de edad,2025-07-01,2026-12-31,True
+AR-PL-01,AR,Préstamo personal,Empréstimo pessoal,personal_loan,Préstamo Personal,600,ARS,66.0,132.05,50000,40000000,60,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+AR-CC-02,AR,Tarjeta de crédito,Cartão de crédito,credit_card,Tarjeta Crédito,600,ARS,61.67,116.76,50000,15809487,36,mayor de edad; ingreso demostrable; sin mora > 30 días,2025-07-01,2026-12-31,True
+AR-MG-06,AR,Crédito hipotecario,Crédito habitacional,mortgage,Préstamo Hipotecario,680,ARS,7.76,14.0,5000000,372113275,240,mayor de edad; ingreso demostrable; sin mora > 30 días; avalúo del inmueble; cuota ≤ 30 % del ingreso,2025-07-01,2026-12-31,True
+AR-PRL-03,AR,Crédito de libranza,Crédito consignado,payroll_loan,,580,ARS,49.5,99.04,50000,32000000,72,relación laboral vigente; convenio de nómina con el empleador,2025-07-01,2026-12-31,True
+AR-LAC-04,AR,Crédito de bajo monto,Crédito de baixo valor,low_amount_consumer,,550,ARS,75.9,151.86,50000,4000000,24,mayor de edad; ingreso demostrable,2025-07-01,2026-12-31,True
+AR-MC-05,AR,Microcrédito,Microcrédito,microcredit,,540,ARS,85.8,171.67,50000,2000000,36,actividad productiva declarada; mayor de edad,2025-07-01,2026-12-31,True

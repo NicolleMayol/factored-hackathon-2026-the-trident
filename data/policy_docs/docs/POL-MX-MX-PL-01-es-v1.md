@@ -14,7 +14,7 @@ Tasa de Préstamo personal: entre 13.54 % y 26.5 % anual según perfil. Antes de
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
-Montos y plazos de Préstamo personal: desde 20.311 hasta 135.395 dólares; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 2.555 dólares al mes.
+Montos y plazos de Préstamo personal: desde 150 hasta 135.395 dólares; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 2.555 dólares al mes.
 <!-- source: catálogo sintético -->
 
 ## R5

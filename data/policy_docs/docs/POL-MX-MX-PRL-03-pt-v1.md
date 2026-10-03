@@ -10,11 +10,11 @@ Requisitos de Crédito consignado: ser maior de idade; renda mensal comprovável
 <!-- source: catálogo sintético -->
 
 ## R3
-Taxa de juros de Crédito consignado: entre 10.15 % e 19.88 % ao ano conforme o perfil. Antes de contratar informa-se o CAT (Custo Anual Total) para fins informativos e de comparação, conforme a CONDUSEF; a referência de mercado para esta modalidade é 45 % de CAT. A taxa definitiva é fixada na aprovação e não no chat.
+Taxa de juros de Crédito consignado: entre 10.15 % e 19.88 % ao ano conforme o perfil. Antes de contratar informa-se o CAT (Custo Anual Total) para fins informativos e de comparação, conforme a CONDUSEF; a referência de mercado para esta modalidade é — % de CAT. A taxa definitiva é fixada na aprovação e não no chat.
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
-Valores e prazos de Crédito consignado: de 16.249 até 108.316 dólares; prazo até 72 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 1.653 dólares por mês.
+Valores e prazos de Crédito consignado: de 150 até 108.316 dólares; prazo até 72 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 1.653 dólares por mês.
 <!-- source: catálogo sintético -->
 
 ## R5

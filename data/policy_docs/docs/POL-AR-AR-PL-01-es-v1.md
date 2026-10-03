@@ -10,11 +10,11 @@ Requisitos de Préstamo personal: ser mayor de edad; ingreso mensual demostrable
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Préstamo personal: entre 66.0 % y 132.05 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es 160 %. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Préstamo personal: entre 66.0 % y 132.05 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es 372 %. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: Com. A 5460 BCRA (AR) · Régimen de Transparencia -->
 
 ## R4
-Montos y plazos de Préstamo personal: desde 450.000 hasta 40.000.000 pesos argentinos; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 1.106.833 pesos argentinos al mes.
+Montos y plazos de Préstamo personal: desde 50.000 hasta 40.000.000 pesos argentinos; plazo hasta 60 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 1.106.833 pesos argentinos al mes.
 <!-- source: catálogo sintético -->
 
 ## R5

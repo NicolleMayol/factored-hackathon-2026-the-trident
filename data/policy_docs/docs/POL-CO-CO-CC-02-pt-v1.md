@@ -10,11 +10,11 @@ Requisitos de Cartão de crédito: ser maior de idade; renda mensal comprovável
 <!-- source: catálogo sintético -->
 
 ## R3
-Taxa de juros de Cartão de crédito: entre 20.66 % e 42.33 % ao ano conforme o perfil. A taxa é efetiva anual (EA) e nunca supera a taxa de usura vigente certificada pela Superintendência Financeira; o teto vigente para esta modalidade é 25.5 % EA. A taxa definitiva é fixada na aprovação e não no chat.
+Taxa de juros de Cartão de crédito: entre 20.66 % e 25.5 % ao ano conforme o perfil. A taxa é efetiva anual (EA) e nunca supera a taxa de usura vigente certificada pela Superintendência Financeira; o teto vigente para esta modalidade é 25.5 % EA. A taxa definitiva é fixada na aprovação e não no chat.
 <!-- source: Ley 1328/2009 (CO) · tasa de usura SFC -->
 
 ## R4
-Valores e prazos de Cartão de crédito: de 23.405.438 até 180.283.078 pesos colombianos; prazo até 36 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 6.067.777 pesos colombianos por mês.
+Valores e prazos de Cartão de crédito: de 500.000 até 180.283.078 pesos colombianos; prazo até 36 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 5.646.365 pesos colombianos por mês.
 <!-- source: catálogo sintético -->
 
 ## R5

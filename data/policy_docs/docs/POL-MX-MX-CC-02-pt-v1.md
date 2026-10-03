@@ -14,7 +14,7 @@ Taxa de juros de Cartão de crédito: entre 20.69 % e 42.34 % ao ano conforme o 
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
-Valores e prazos de Cartão de crédito: de 5.911 até 45.210 dólares; prazo até 36 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 1.521 dólares por mês.
+Valores e prazos de Cartão de crédito: de 150 até 45.210 dólares; prazo até 36 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 1.521 dólares por mês.
 <!-- source: catálogo sintético -->
 
 ## R5

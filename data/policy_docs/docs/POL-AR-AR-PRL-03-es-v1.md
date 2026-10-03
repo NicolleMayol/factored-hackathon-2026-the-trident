@@ -10,11 +10,11 @@ Requisitos de Crédito de libranza: ser mayor de edad; ingreso mensual demostrab
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Crédito de libranza: entre 49.5 % y 99.04 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es 130 %. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Crédito de libranza: entre 49.5 % y 99.04 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es — %. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: Com. A 5460 BCRA (AR) · Régimen de Transparencia -->
 
 ## R4
-Montos y plazos de Crédito de libranza: desde 360.000 hasta 32.000.000 pesos argentinos; plazo hasta 72 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 664.533 pesos argentinos al mes.
+Montos y plazos de Crédito de libranza: desde 50.000 hasta 32.000.000 pesos argentinos; plazo hasta 72 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 664.533 pesos argentinos al mes.
 <!-- source: catálogo sintético -->
 
 ## R5

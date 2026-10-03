@@ -118,7 +118,7 @@ def main() -> int:
     nr = rr.count()
     filas.append(check(spark, cat, "ref.regulator_rates", "rate_kind_en_dominio", "rate_kind NOT IN ('ea','tna','cat','cft','usura')", nr))
     # Deuda visible: mientras alguna fila siga sin fuente real, este check falla a propósito.
-    pend = rr.where(F.col("source") == "PENDIENTE").count()
+    pend = rr.where(F.col("source").startswith("PENDIENTE")).count()
     filas.append(("ref.regulator_rates", "sin_filas_PENDIENTE", pend == 0, nr, pend, None))
     filas.append(check(spark, cat, "ref.regulator_rates", "fuente_y_url_presentes",
                        "source IS NULL OR url IS NULL OR snapshot_date IS NULL", nr))

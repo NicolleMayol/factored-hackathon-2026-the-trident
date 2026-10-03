@@ -14,7 +14,7 @@ Taxa de juros de Empréstimo pessoal: entre 13.54 % e 26.5 % ao ano conforme o p
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
-Valores e prazos de Empréstimo pessoal: de 20.311 até 135.395 dólares; prazo até 60 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 2.555 dólares por mês.
+Valores e prazos de Empréstimo pessoal: de 150 até 135.395 dólares; prazo até 60 meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente 2.555 dólares por mês.
 <!-- source: catálogo sintético -->
 
 ## R5

@@ -14,7 +14,7 @@ Tasa de Tarjeta de crédito: entre 20.69 % y 42.34 % anual según perfil. Antes 
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
-Montos y plazos de Tarjeta de crédito: desde 5.911 hasta 45.210 dólares; plazo hasta 36 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 1.521 dólares al mes.
+Montos y plazos de Tarjeta de crédito: desde 150 hasta 45.210 dólares; plazo hasta 36 meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente 1.521 dólares al mes.
 <!-- source: catálogo sintético -->
 
 ## R5
