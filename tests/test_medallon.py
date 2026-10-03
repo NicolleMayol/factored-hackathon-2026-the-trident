@@ -204,3 +204,25 @@ def test_el_mock_de_tasas_sale_del_mismo_snapshot():
     snap = list(csv.DictReader(snaps[-1].open(encoding="utf-8")))
     mock = list(csv.DictReader((ROOT / "data" / "mock" / "regulator_rates.csv").open(encoding="utf-8")))
     assert snap == mock, "data/mock/regulator_rates.csv no coincide con el último snapshot"
+
+
+# --------------------------------------------------------------------------- E4 · demanda
+REASON_CATEGORY = {"Transaccional", "Producto", "Queja", "Técnico", "Comercial", "Retención"}
+
+
+def test_contact_demand_usa_el_vocabulario_real_del_dataset():
+    """El mock anterior usaba credit/card/payment, que no existen en el origen. Alimenta el notebook
+    de insights (E10) y el pitch: un vocabulario inventado lleva a conclusiones sobre categorías
+    que no existen."""
+    filas = list(csv.DictReader((ROOT / "data" / "mock" / "contact_demand.csv").open(encoding="utf-8")))
+    assert {f["reason_category"] for f in filas} == REASON_CATEGORY
+    assert {f["country"] for f in filas} <= {"Mexico", "Colombia", "Argentina"}
+
+
+def test_contact_demand_respeta_grano_y_rangos():
+    filas = list(csv.DictReader((ROOT / "data" / "mock" / "contact_demand.csv").open(encoding="utf-8")))
+    llaves = [(f["date"], f["country"], f["reason_category"]) for f in filas]
+    assert len(llaves) == len(set(llaves)), "grano roto: día × país × categoría debe ser único"
+    for f in filas:
+        assert 0 <= float(f["fcr_rate"]) <= 1
+        assert int(f["escalated"]) <= int(f["volume"]), f"{f['date']} {f['country']}: más escalados que volumen"

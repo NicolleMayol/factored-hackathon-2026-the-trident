@@ -128,6 +128,19 @@ def main() -> int:
     faltan_techo = [p for p in ("CO", "MX", "AR") if techos.get(p, 0) == 0]
     filas.append(("ref.regulator_rates", "techo_por_pais", not faltan_techo, nr, len(faltan_techo), None))
 
+    # ---- E4: demanda de contacto
+    cd = spark.table(f"{cat}.gold.contact_demand")
+    ncd = cd.count()
+    filas.append(check(spark, cat, "gold.contact_demand", "fcr_entre_0_y_1", "fcr_rate IS NOT NULL AND (fcr_rate < 0 OR fcr_rate > 1)", ncd))
+    filas.append(check(spark, cat, "gold.contact_demand", "escalados_no_superan_el_volumen", "escalated > volume", ncd))
+    # El país sale de un join con customers: si hay huérfanas, caen en 'Desconocido' en vez de
+    # desaparecer. Se cuentan para que la pérdida sea visible y no silenciosa.
+    desc = cd.where(F.col("country") == "Desconocido").count()
+    filas.append(("gold.contact_demand", "interacciones_con_pais_conocido", desc == 0, ncd, desc, None))
+    # El grano es día × país × categoría: si se rompe, el notebook de insights dobla volúmenes.
+    llaves = cd.select("date", "country", "reason_category").distinct().count()
+    filas.append(("gold.contact_demand", "grano_unico_dia_pais_categoria", ncd == llaves, ncd, ncd - llaves, None))
+
     # Columnas prohibidas: ninguna puede haber cruzado a gold (ADR-22).
     prohibidas = {"gender", "marital_status", "date_of_birth"}
     for t in ("customer_360", "customer_products", "customer_behavior_12m"):
