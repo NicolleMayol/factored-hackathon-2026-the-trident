@@ -193,3 +193,44 @@ def ref_regulator_rates():
         )
         .withColumn("_ingested_at", F.current_timestamp())
     )
+
+
+@dlt.table(
+    name=f"{CATALOG}.gold.contact_demand",
+    comment="Demanda de contacto por día, país y categoría (E4). Alimenta el notebook de insights (E10) y el pitch.",
+)
+@dlt.expect_or_fail("llave_no_nula", "date IS NOT NULL AND country IS NOT NULL AND reason_category IS NOT NULL")
+@dlt.expect("fcr_entre_0_y_1", "fcr_rate IS NULL OR fcr_rate BETWEEN 0 AND 1")
+@dlt.expect("escalados_no_superan_el_volumen", "escalated <= volume")
+def gold_contact_demand():
+    # El país no está en la interacción: sale del cliente. Las interacciones sin cliente conocido
+    # (huérfanas, que el diccionario admite) se cuentan aparte y no se descartan en silencio.
+    inter = dlt.read(f"{CATALOG}.silver.call_center_interactions")
+    clientes = dlt.read(f"{CATALOG}.silver.customers").select("customer_id", "country")
+
+    # CSAT: solo las encuestas de tipo CSAT puntúan 1–5. Las NPS van de 0 a 10 y promediarlas
+    # juntas daría un número sin significado.
+    csat = (
+        dlt.read(f"{CATALOG}.silver.satisfaction_surveys")
+        .where(F.col("survey_type") == "CSAT")
+        .groupBy("interaction_id")
+        .agg(F.avg("main_score").alias("_csat"))
+    )
+
+    return (
+        inter.join(clientes, "customer_id", "left")
+        .join(csat, "interaction_id", "left")
+        .withColumn("country", F.coalesce(F.col("country"), F.lit("Desconocido")))
+        .groupBy(F.col("process_date").alias("date"), "country", "reason_category")
+        .agg(
+            F.count("*").cast("int").alias("volume"),
+            # fcr_rate solo sobre las que declaran resolución: contar un nulo como no resuelto
+            # inventaría un FCR más bajo del real.
+            F.avg(F.when(F.col("was_resolved").isNotNull(), F.col("was_resolved").cast("double")))
+             .cast("decimal(5,4)").alias("fcr_rate"),
+            F.sum(F.when(F.col("was_escalated"), 1).otherwise(0)).cast("int").alias("escalated"),
+            F.percentile_approx("wait_time_seconds", 0.5).cast("int").alias("wait_p50_s"),
+            F.avg("_csat").cast("decimal(3,2)").alias("csat_avg"),
+        )
+        .withColumn("_ingested_at", F.current_timestamp())
+    )
