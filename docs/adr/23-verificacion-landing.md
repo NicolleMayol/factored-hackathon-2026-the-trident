@@ -64,6 +64,8 @@ El último es señal de calidad, no de tipado: hay valores no numéricos dentro.
 | Leer sin `multiLine` y limpiar después | las filas ya vienen partidas y las columnas corridas; no hay nada que limpiar aguas abajo |
 | Confiar en la inferencia de tipos | no da los tipos del contrato en 6 columnas, y `duration_seconds` saldría como texto |
 | Una sola ruta de Auto Loader | la raíz y los particionados tienen disposición distinta; `year`/`month`/`day` solo existen en los hechos |
+| Auto Loader también para las 6 de la raíz | exige un directorio y son archivos sueltos: `CloudInvalidPathException`. Y son snapshots, no flujos: van en lote |
+| El shim `dlt` en vez de `pyspark.pipelines` | ADR-20 declara Spark Declarative Pipelines; `dlt` funciona por compatibilidad, pero no es la API del ADR |
 | Quitar la dedup de `customers` | hoy no quita filas, pero el diccionario declara ~2 % de duplicados y el origen puede recargarse |
 | Normalizar `México` a `Mexico` en bronze | bronze es copia fiel; la normalización es de silver (ADR-22) |
 
