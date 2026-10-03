@@ -12,7 +12,9 @@ Cierra la decisión abierta 1 de ADR-20. El contrato de columnas sale del **dicc
 19.000.000 de filas, 13 tablas, México, Colombia y Argentina, del 2023-06-17 al 2026-06-17. Sintético, en español, con problemas de calidad deliberados: ~2 % de duplicados, ~5 % de nulos en campos opcionales, llegadas tardías y evolución de esquema.
 
 ### Bronze · las 13 tablas, 1:1
-Sin reglas de negocio y sin dedup. Una tabla de streaming por fuente, poblada por Auto Loader (ADR-20, corregido en ADR-23: el origen es CSV, así que el tipado de bronze sale de hints explícitos y no de un formato autodescriptivo).
+Sin reglas de negocio y sin dedup (ADR-20, corregido en ADR-23: el origen es CSV, así que el tipado de bronze sale de hints explícitos y no de un formato autodescriptivo).
+
+**Dos formas de leer, porque el origen tiene dos formas** (medido al desplegar, 2026-10-03). Los 7 hechos particionados son tablas de streaming con Auto Loader: solo crecen, así que se ingieren de forma incremental. Las 6 fuentes de la raíz van como vista materializada en lote: el diccionario las declara `monthly_snapshot` o `full_snapshot`, o sea el archivo se reemplaza entero y no se le añaden filas. Auto Loader además no las admite, porque exige un directorio y falla con `CloudInvalidPathException: Input path is not a directory`.
 
 | Tabla origen | Filas (dicc.) | Formato y ruta reales (medido 2026-10-02) | ¿Pasa a silver? | Por qué |
 | --- | --- | --- | --- | --- |

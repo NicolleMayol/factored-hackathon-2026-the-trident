@@ -94,8 +94,13 @@ def ruta(landing: str, fuente: str) -> str:
     return f"{base}/{fuente}.csv" if fuente in RAIZ else f"{base}/{fuente}/"
 
 
-def opciones(fuente: str) -> dict[str, str]:
-    """Opciones de Auto Loader para una fuente (ADR-23)."""
+def opciones(fuente: str, streaming: bool = True) -> dict[str, str]:
+    """Opciones de lectura de una fuente (ADR-23).
+
+    `streaming=True` da las de Auto Loader, para las 7 particionadas. `streaming=False` da las
+    equivalentes del lector en lote, para las 6 de la raíz: Auto Loader exige un directorio y esas
+    son archivos sueltos (`CloudInvalidPathException: Input path is not a directory`).
+    """
     o = {
         "cloudFiles.format": "csv",
         "header": "true",
@@ -111,4 +116,12 @@ def opciones(fuente: str) -> dict[str, str]:
     }
     if fuente in HINTS:
         o["cloudFiles.schemaHints"] = HINTS[fuente]
-    return o
+    if streaming:
+        return o
+    # Lector en lote: mismas opciones sin el prefijo cloudFiles, y la inferencia se pide con
+    # inferSchema. Los hints no existen fuera de Auto Loader; el tipado lo hace silver.
+    lote = {k.removeprefix("cloudFiles."): v for k, v in o.items() if not k.startswith("cloudFiles.schema")}
+    for solo_autoloader in ("format", "inferColumnTypes"):
+        lote.pop(solo_autoloader, None)
+    lote["inferSchema"] = "true"
+    return lote

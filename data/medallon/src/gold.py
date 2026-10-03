@@ -11,7 +11,7 @@ Reglas que vienen del contrato y de los ADR:
   - los nulos de credit_score y estimated_monthly_income NO se imputan: ia-ml los usa como señal
     con flags propios (ADR-23, respuesta de ia-ml en el PR #25)
 """
-import dlt
+from pyspark import pipelines as dp
 from pyspark.sql import functions as F
 
 import schemas
@@ -33,16 +33,16 @@ CLIENTES_PRUEBA = [
 ]
 
 
-@dlt.table(
+@dp.table(
     name=f"{CATALOG}.gold.customer_360",
     comment="1 fila por customer_id. Sin gender, marital_status ni date_of_birth (excluded_from_features). Incluye los 5 TEST-* de docs/test-users.md.",
 )
-@dlt.expect_or_fail("customer_id_no_nulo", "customer_id IS NOT NULL")
-@dlt.expect("pais_normalizado", "country IN ('Mexico', 'Colombia', 'Argentina')")
-@dlt.expect("country_code_valido", "country_code IN ('MX', 'CO', 'AR')")
+@dp.expect_or_fail("customer_id_no_nulo", "customer_id IS NOT NULL")
+@dp.expect("pais_normalizado", "country IN ('Mexico', 'Colombia', 'Argentina')")
+@dp.expect("country_code_valido", "country_code IN ('MX', 'CO', 'AR')")
 def gold_customer_360():
     codigo = F.create_map([F.lit(x) for kv in schemas.CODIGO_PAIS.items() for x in kv])
-    reales = dlt.read(f"{CATALOG}.silver.customers").select(
+    reales = spark.read.table(f"{CATALOG}.silver.customers").select(
         F.col("customer_id").cast("string"),
         F.col("country").cast("string"),
         codigo[F.col("country")].alias("country_code"),
@@ -57,19 +57,22 @@ def gold_customer_360():
     prueba = (
         spark.createDataFrame(  # noqa: F821
             CLIENTES_PRUEBA,
+            # Tipos simples: createDataFrame no acepta un float de Python en una columna decimal.
+            # El tipado definitivo se aplica abajo, copiándolo de `reales` para que no puedan diferir.
             "customer_id string, country string, country_code string, segment string, credit_score int, "
-            "estimated_monthly_income decimal(12,2), customer_status string, registration_date string, detected_accent string",
+            "estimated_monthly_income double, customer_status string, registration_date string, detected_accent string",
         )
         .withColumn("registration_date", F.to_timestamp("registration_date"))
         .withColumn("_ingested_at", F.current_timestamp())
     )
-    return reales.unionByName(prueba.select(*reales.columns))
+    prueba = prueba.select([F.col(c).cast(reales.schema[c].dataType) for c in reales.columns])
+    return reales.unionByName(prueba)
 
 
-@dlt.table(name=f"{CATALOG}.gold.customer_products", comment="1 fila por product_id (contracts/gold.yaml).")
-@dlt.expect_or_fail("product_id_no_nulo", "product_id IS NOT NULL")
+@dp.table(name=f"{CATALOG}.gold.customer_products", comment="1 fila por product_id (contracts/gold.yaml).")
+@dp.expect_or_fail("product_id_no_nulo", "product_id IS NOT NULL")
 def gold_customer_products():
-    return dlt.read(f"{CATALOG}.silver.products").select(
+    return spark.read.table(f"{CATALOG}.silver.products").select(
         F.col("product_id").cast("string"),
         F.col("customer_id").cast("string"),
         F.col("product_type").cast("string"),
@@ -82,17 +85,17 @@ def gold_customer_products():
     )
 
 
-@dlt.table(
+@dp.table(
     name=f"{CATALOG}.gold.customer_behavior_12m",
     comment=f"1 fila por customer_id. Ventana de 12 meses hasta el corte {CORTE} (contracts/gold.yaml). Sin los TEST-*.",
 )
-@dlt.expect_or_fail("customer_id_no_nulo", "customer_id IS NOT NULL")
-@dlt.expect("ratio_entre_0_y_1", "declined_ratio BETWEEN 0 AND 1")
+@dp.expect_or_fail("customer_id_no_nulo", "customer_id IS NOT NULL")
+@dp.expect("ratio_entre_0_y_1", "declined_ratio BETWEEN 0 AND 1")
 def gold_customer_behavior_12m():
     # Los clientes de prueba no entran a ninguna agregación (ADR-22): no existen en el origen y
     # contaminarían conteos y ratios.
     tx = (
-        dlt.read(f"{CATALOG}.silver.transactions")
+        spark.read.table(f"{CATALOG}.silver.transactions")
         .where(F.col("process_date").between(F.lit(VENTANA_INICIO), F.lit(CORTE)))
         .where(~F.col("customer_id").startswith(PREFIJO_PRUEBA))
     )
@@ -106,7 +109,7 @@ def gold_customer_behavior_12m():
     )
     # max_days_past_due vive en products, no en transactions (diccionario de Factored).
     mora = (
-        dlt.read(f"{CATALOG}.silver.products")
+        spark.read.table(f"{CATALOG}.silver.products")
         .where(~F.col("customer_id").startswith(PREFIJO_PRUEBA))
         .groupBy("customer_id")
         .agg(F.max("days_past_due").cast("int").alias("max_days_past_due"))
@@ -128,14 +131,14 @@ def gold_customer_behavior_12m():
 VOL_FUENTES = "/Volumes/hackathon/ref/fuentes"
 
 
-@dlt.table(
+@dp.table(
     name=f"{CATALOG}.gold.credit_product_catalog",
     comment="Catálogo sintético (E5). AR del BCRA, CO y MX de percentiles del dataset. es_sintetico = true.",
 )
-@dlt.expect_or_fail("product_code_no_nulo", "product_code IS NOT NULL")
-@dlt.expect("todo_sintetico", "es_sintetico = true")
-@dlt.expect("rango_de_tasa_coherente", "rate_min <= rate_max")
-@dlt.expect("rango_de_monto_coherente", "amount_min <= amount_max")
+@dp.expect_or_fail("product_code_no_nulo", "product_code IS NOT NULL")
+@dp.expect("todo_sintetico", "es_sintetico = true")
+@dp.expect("rango_de_tasa_coherente", "rate_min <= rate_max")
+@dp.expect("rango_de_monto_coherente", "amount_min <= amount_max")
 def gold_credit_product_catalog():
     # El YAML del catálogo se carga como texto y se explota: así una fila mal formada no tumba el
     # pipeline entero y queda visible en el check de conteo.
@@ -168,12 +171,12 @@ def gold_credit_product_catalog():
     )
 
 
-@dlt.table(
+@dp.table(
     name=f"{CATALOG}.ref.regulator_rates",
     comment="Tasas de regulador por país, producto y tipo de tasa (E6). Techo legal del motor; no es oferta.",
 )
-@dlt.expect_or_fail("llave_no_nula", "country IS NOT NULL AND product_type IS NOT NULL AND rate_kind IS NOT NULL")
-@dlt.expect("rate_kind_en_dominio", "rate_kind IN ('ea','tna','cat','cft','usura')")
+@dp.expect_or_fail("llave_no_nula", "country IS NOT NULL AND product_type IS NOT NULL AND rate_kind IS NOT NULL")
+@dp.expect("rate_kind_en_dominio", "rate_kind IN ('ea','tna','cat','cft','usura')")
 def ref_regulator_rates():
     # Se lee el snapshot más reciente del volumen. Varios snapshots conviven a propósito: una
     # respuesta citada en octubre tiene que poder reproducirse con la tasa de octubre.
@@ -195,23 +198,23 @@ def ref_regulator_rates():
     )
 
 
-@dlt.table(
+@dp.table(
     name=f"{CATALOG}.gold.contact_demand",
     comment="Demanda de contacto por día, país y categoría (E4). Alimenta el notebook de insights (E10) y el pitch.",
 )
-@dlt.expect_or_fail("llave_no_nula", "date IS NOT NULL AND country IS NOT NULL AND reason_category IS NOT NULL")
-@dlt.expect("fcr_entre_0_y_1", "fcr_rate IS NULL OR fcr_rate BETWEEN 0 AND 1")
-@dlt.expect("escalados_no_superan_el_volumen", "escalated <= volume")
+@dp.expect_or_fail("llave_no_nula", "date IS NOT NULL AND country IS NOT NULL AND reason_category IS NOT NULL")
+@dp.expect("fcr_entre_0_y_1", "fcr_rate IS NULL OR fcr_rate BETWEEN 0 AND 1")
+@dp.expect("escalados_no_superan_el_volumen", "escalated <= volume")
 def gold_contact_demand():
     # El país no está en la interacción: sale del cliente. Las interacciones sin cliente conocido
     # (huérfanas, que el diccionario admite) se cuentan aparte y no se descartan en silencio.
-    inter = dlt.read(f"{CATALOG}.silver.call_center_interactions")
-    clientes = dlt.read(f"{CATALOG}.silver.customers").select("customer_id", "country")
+    inter = spark.read.table(f"{CATALOG}.silver.call_center_interactions")
+    clientes = spark.read.table(f"{CATALOG}.silver.customers").select("customer_id", "country")
 
     # CSAT: solo las encuestas de tipo CSAT puntúan 1–5. Las NPS van de 0 a 10 y promediarlas
     # juntas daría un número sin significado.
     csat = (
-        dlt.read(f"{CATALOG}.silver.satisfaction_surveys")
+        spark.read.table(f"{CATALOG}.silver.satisfaction_surveys")
         .where(F.col("survey_type") == "CSAT")
         .groupBy("interaction_id")
         .agg(F.avg("main_score").alias("_csat"))

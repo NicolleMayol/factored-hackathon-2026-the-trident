@@ -8,7 +8,7 @@ Tipa, deduplica y normaliza. No agrega: eso es gold. Reglas transversales de ADR
 Las expectativas cortan solo ante fallos duros (llave nula, grano roto, rango imposible). Lo demás
 se mide y se reporta, porque el ~2 % de duplicados y el ~5 % de nulos son parte del reto.
 """
-import dlt
+from pyspark import pipelines as dp
 from pyspark.sql import functions as F
 from pyspark.sql.window import Window
 
@@ -34,36 +34,36 @@ def _mapa(col, mapeo: dict[str, str]):
 
 
 # ------------------------------------------------------------------ dimensiones
-@dlt.table(name=f"{CATALOG}.silver.customers", comment="customers tipada, deduplicada y con country normalizado (ADR-22, ADR-23).")
-@dlt.expect_or_drop("customer_id_no_nulo", "customer_id IS NOT NULL")
-@dlt.expect("credit_score_en_rango", "credit_score IS NULL OR (credit_score BETWEEN 300 AND 850)")
+@dp.table(name=f"{CATALOG}.silver.customers", comment="customers tipada, deduplicada y con country normalizado (ADR-22, ADR-23).")
+@dp.expect_or_drop("customer_id_no_nulo", "customer_id IS NOT NULL")
+@dp.expect("credit_score_en_rango", "credit_score IS NULL OR (credit_score BETWEEN 300 AND 850)")
 def silver_customers():
     # Dedup por document_number, última last_updated (contracts/gold.yaml). Hoy no quita filas
     # (150.000 document_number distintos, ADR-23), pero el origen puede recargarse.
-    df = dlt.read(f"{CATALOG}.bronze.customers")
+    df = spark.read.table(f"{CATALOG}.bronze.customers")
     return _ultima_por_llave(df, ["document_number"], "last_updated").withColumn("country", _mapa("country", PAISES))
 
 
-@dlt.table(name=f"{CATALOG}.silver.products", comment="products tipada y deduplicada por product_id (ADR-22).")
-@dlt.expect_or_drop("product_id_no_nulo", "product_id IS NOT NULL")
+@dp.table(name=f"{CATALOG}.silver.products", comment="products tipada y deduplicada por product_id (ADR-22).")
+@dp.expect_or_drop("product_id_no_nulo", "product_id IS NOT NULL")
 def silver_products():
-    return _ultima_por_llave(dlt.read(f"{CATALOG}.bronze.products"), ["product_id"], "last_updated")
+    return _ultima_por_llave(spark.read.table(f"{CATALOG}.bronze.products"), ["product_id"], "last_updated")
 
 
-@dlt.table(name=f"{CATALOG}.silver.daily_exchange_rates", comment="Tasas de cambio diarias, 1 fila por fecha y par de monedas.")
-@dlt.expect_or_drop("llave_no_nula", "date IS NOT NULL AND source_currency IS NOT NULL AND target_currency IS NOT NULL")
+@dp.table(name=f"{CATALOG}.silver.daily_exchange_rates", comment="Tasas de cambio diarias, 1 fila por fecha y par de monedas.")
+@dp.expect_or_drop("llave_no_nula", "date IS NOT NULL AND source_currency IS NOT NULL AND target_currency IS NOT NULL")
 def silver_daily_exchange_rates():
     return _ultima_por_llave(
-        dlt.read(f"{CATALOG}.bronze.daily_exchange_rates"), ["date", "source_currency", "target_currency"], "date"
+        spark.read.table(f"{CATALOG}.bronze.daily_exchange_rates"), ["date", "source_currency", "target_currency"], "date"
     )
 
 
 # ------------------------------------------------------------------ hechos
-@dlt.table(name=f"{CATALOG}.silver.transactions", comment="transactions deduplicada; amount_usd completado con daily_exchange_rates (ADR-22).")
-@dlt.expect_or_drop("transaction_id_no_nulo", "transaction_id IS NOT NULL")
+@dp.table(name=f"{CATALOG}.silver.transactions", comment="transactions deduplicada; amount_usd completado con daily_exchange_rates (ADR-22).")
+@dp.expect_or_drop("transaction_id_no_nulo", "transaction_id IS NOT NULL")
 def silver_transactions():
-    tx = _ultima_por_llave(dlt.read(f"{CATALOG}.bronze.transactions"), ["transaction_id"], "transaction_date")
-    fx = dlt.read(f"{CATALOG}.silver.daily_exchange_rates").where(F.col("target_currency") == "USD")
+    tx = _ultima_por_llave(spark.read.table(f"{CATALOG}.bronze.transactions"), ["transaction_id"], "transaction_date")
+    fx = spark.read.table(f"{CATALOG}.silver.daily_exchange_rates").where(F.col("target_currency") == "USD")
     return (
         tx.join(
             fx.select(
@@ -83,16 +83,16 @@ def silver_transactions():
     )
 
 
-@dlt.table(name=f"{CATALOG}.silver.call_center_interactions", comment="Interacciones deduplicadas por interaction_id (ADR-22).")
-@dlt.expect_or_drop("interaction_id_no_nulo", "interaction_id IS NOT NULL")
+@dp.table(name=f"{CATALOG}.silver.call_center_interactions", comment="Interacciones deduplicadas por interaction_id (ADR-22).")
+@dp.expect_or_drop("interaction_id_no_nulo", "interaction_id IS NOT NULL")
 def silver_call_center_interactions():
-    return _ultima_por_llave(dlt.read(f"{CATALOG}.bronze.call_center_interactions"), ["interaction_id"], "interaction_date")
+    return _ultima_por_llave(spark.read.table(f"{CATALOG}.bronze.call_center_interactions"), ["interaction_id"], "interaction_date")
 
 
-@dlt.table(name=f"{CATALOG}.silver.call_transcripts", comment="Transcripciones deduplicadas; duration_seconds casteado contando el descarte (ADR-23).")
-@dlt.expect_or_drop("transcript_id_no_nulo", "transcript_id IS NOT NULL")
+@dp.table(name=f"{CATALOG}.silver.call_transcripts", comment="Transcripciones deduplicadas; duration_seconds casteado contando el descarte (ADR-23).")
+@dp.expect_or_drop("transcript_id_no_nulo", "transcript_id IS NOT NULL")
 def silver_call_transcripts():
-    df = _ultima_por_llave(dlt.read(f"{CATALOG}.bronze.call_transcripts"), ["transcript_id"], "process_date")
+    df = _ultima_por_llave(spark.read.table(f"{CATALOG}.bronze.call_transcripts"), ["transcript_id"], "process_date")
     return (
         # duration_seconds llega STRING porque hay valores no numéricos (ADR-23): el cast deja NULL
         # y la columna auxiliar permite contar cuántos se perdieron, sin descartar la fila.
@@ -105,15 +105,15 @@ def silver_call_transcripts():
     )
 
 
-@dlt.table(name=f"{CATALOG}.silver.satisfaction_surveys", comment="Encuestas deduplicadas; main_score separado por survey_type (ADR-22).")
-@dlt.expect_or_drop("survey_id_no_nulo", "survey_id IS NOT NULL")
-@dlt.expect("score_en_rango_por_tipo",
+@dp.table(name=f"{CATALOG}.silver.satisfaction_surveys", comment="Encuestas deduplicadas; main_score separado por survey_type (ADR-22).")
+@dp.expect_or_drop("survey_id_no_nulo", "survey_id IS NOT NULL")
+@dp.expect("score_en_rango_por_tipo",
             "main_score IS NULL "
             "OR (survey_type = 'CSAT' AND main_score BETWEEN 1 AND 5) "
             "OR (survey_type = 'NPS'  AND main_score BETWEEN 0 AND 10) "
             "OR survey_type NOT IN ('CSAT','NPS')")
 def silver_satisfaction_surveys():
-    df = _ultima_por_llave(dlt.read(f"{CATALOG}.bronze.satisfaction_surveys"), ["survey_id"], "survey_date")
+    df = _ultima_por_llave(spark.read.table(f"{CATALOG}.bronze.satisfaction_surveys"), ["survey_id"], "survey_date")
     return df.withColumn("csat", F.when(F.col("survey_type") == "CSAT", F.col("main_score"))).withColumn(
         "nps", F.when(F.col("survey_type") == "NPS", F.col("main_score"))
     )
