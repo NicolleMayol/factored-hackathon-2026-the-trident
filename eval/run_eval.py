@@ -14,7 +14,7 @@ import json
 import statistics
 import sys
 import time
-from collections import defaultdict
+from collections import Counter, defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,7 +56,7 @@ def run(limit: int | None = None, cases_path: Path | None = None, *, small: str 
         rows.append({**{k: c[k] for k in ("case_id", "category", "pair_id", "language", "expected_action", "message")}, "atlas": c.get("atlas"),
                      "action": r["action"], "escalate_reason": st.get("escalate_reason", "none"), "rules_fired": st.get("rules_fired", []),
                      "informed": informed, "verify_ok": bool(st.get("verify_ok", True)), "citations": len(r["citations"]),
-                     "latency_ms": round(ms, 1), "cost_usd": r.get("cost_usd", 0.0), "tokens": getattr(deps.llm, "last_usage", {}).get("tokens_in", 0) + getattr(deps.llm, "last_usage", {}).get("tokens_out", 0)})
+                     "latency_ms": round(ms, 1), "cost_usd": r.get("cost_usd", 0.0), "reply_source": st.get("reply_source", "template"), "fallback": st.get("_respond_fallback", ""), "reply": r["reply"], "tokens": getattr(deps.llm, "last_usage", {}).get("tokens_in", 0) + getattr(deps.llm, "last_usage", {}).get("tokens_out", 0)})
     by_lang = {lang: metrics([x for x in rows if x["language"] == lang]) for lang in sorted({x["language"] for x in rows})}
     allm = metrics(rows)
     lat = [x["latency_ms"] for x in rows]
@@ -66,6 +66,7 @@ def run(limit: int | None = None, cases_path: Path | None = None, *, small: str 
            "latency_ms": {"p50": round(statistics.median(lat), 1), "p95": round(sorted(lat)[int(0.95 * (len(lat) - 1))], 1)},
            "node_ms_p50": {k: round(statistics.median(v), 1) for k, v in node_ms.items()},
            "cost_usd_per_turn": round(sum(x["cost_usd"] for x in rows) / len(rows), 5),
+           "reply_source": dict(Counter(x["reply_source"] for x in rows)),
            "failures": [x for x in rows if not (x["action"] == x["expected_action"] or (x["expected_action"] in ("clarify", "escalate", "blocked", "reject") and x["action"] in ("clarify", "escalate", "blocked", "reject")))],
            "rows": rows}
     return rep
@@ -89,6 +90,7 @@ def main():
     m = rep["all"]
     print(f"\n[all] " + " · ".join(f"{k}={m[k]}" for k in ("act_accuracy", "abstain_accuracy", "paired_accuracy", "car", "ur", "irr", "fp_action_rate", "ivr", "exact_match")))
     print(f"  IVR por ATLAS: {m['ivr_by_atlas']} · escalate_reason: {m['escalate_reason']}")
+    print(f"  reply_source={rep['reply_source']}")
     print(f"  groundedness={rep['groundedness']} · latencia p50/p95={rep['latency_ms']['p50']}/{rep['latency_ms']['p95']} ms · nodos p50={rep['node_ms_p50']} · costo/turno={rep['cost_usd_per_turn']} USD")
     for f in rep["failures"]:
         print(f"  FALLA {f['case_id']} [{f['category']}/{f['language']}] esperado={f['expected_action']} tomado={f['action']} reglas={f['rules_fired']} · {f['message'][:60]}")

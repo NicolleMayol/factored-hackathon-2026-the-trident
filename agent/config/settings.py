@@ -25,6 +25,8 @@ class Settings:
     databricks_client_id: str = field(default_factory=lambda: _env("DATABRICKS_CLIENT_ID"))
     databricks_client_secret: str = field(default_factory=lambda: _env("DATABRICKS_CLIENT_SECRET"))
     sql_http_path: str = field(default_factory=lambda: _env("SQL_HTTP_PATH"))
+    respond_llm: str = field(default_factory=lambda: _env("RESPOND_LLM", "auto"))  # auto: LLM solo si AGENT_LLM=real | on | off
+    respond_prompt_version: str = field(default_factory=lambda: _env("RESPOND_PROMPT_VERSION", "v2"))
     understand_prompt: str = field(default_factory=lambda: _env("UNDERSTAND_PROMPT", "understand_v2.md"))  # v2: reglas + ejemplos (it. 3, 11 fallas del 70B)
     fm_endpoint_main: str = field(default_factory=lambda: _env("FM_ENDPOINT_MAIN", "databricks-meta-llama-3-3-70b-instruct"))
     fm_endpoint_small: str = field(default_factory=lambda: _env("FM_ENDPOINT_SMALL", "databricks-meta-llama-3-1-8b-instruct"))

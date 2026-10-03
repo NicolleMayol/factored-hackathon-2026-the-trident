@@ -29,8 +29,18 @@ def _nums(text: str) -> set[str]:
     return {n.strip(".,").replace(".", "").replace(",", "") for n in NUM_RE.findall(text)} - {""}
 
 
-def llm_reply_grounded(reply: str, allowed_text: str) -> tuple[bool, str]:
-    """Toda cifra de la respuesta del LLM debe existir en citas/hechos/borrador; sin promesas de aprobación."""
+INTERNAL = re.compile(r"(hechos verificados|fatos verificados|borrador|rascunho|\bcatalog:|catálogo sintético)", re.I)
+OUTCOME_RE = re.compile(r"Resultado preliminar: (Elegible|No elegible|Revisión humana)")
+
+
+def llm_reply_grounded(reply: str, allowed_text: str, draft: str = "") -> tuple[bool, str]:
+    """Toda cifra de la respuesta del LLM debe existir en citas/hechos/borrador; sin promesas de aprobación;
+    el veredicto de una simulación se conserva literal; sin jerga interna."""
+    m = OUTCOME_RE.search(draft or "")
+    if m and f"resultado preliminar: {m.group(1).lower()}" not in reply.lower():
+        return False, f"outcome_missing:{m.group(1)}"
+    if INTERNAL.search(CITE_RE.sub(" ", reply)):  # las citas [catalog:...] sí se permiten
+        return False, "internal_wording"
     extra = _nums(reply) - _nums(allowed_text)
     if extra:
         return False, f"numbers_not_in_facts:{sorted(extra)[:3]}"
@@ -256,7 +266,7 @@ class Nodes:
                 u = getattr(self.d.llm, "last_usage", {}) or {}
                 st = {**st, "tokens_in": st.get("tokens_in", 0) + u.get("tokens_in", 0), "tokens_out": st.get("tokens_out", 0) + u.get("tokens_out", 0), "cost_usd": round(st.get("cost_usd", 0.0) + u.get("cost_usd", 0.0), 6)}
                 cand = str(out.get("reply", "")).strip()
-                ok, why = llm_reply_grounded(cand, facts_txt + " " + reply)
+                ok, why = llm_reply_grounded(cand, facts_txt + " " + reply, draft=reply)
                 if ok:
                     reply, source = cand, "llm"
                 else:
@@ -264,8 +274,8 @@ class Nodes:
             except Exception as e:  # noqa: BLE001  — el LLM nunca bloquea la respuesta
                 source, fallback = "template_fallback", type(e).__name__
         reply = _redact_pii(reply)
-        if tmpl and st.get("country") and a == "answer" and ("%" in reply or "R3" in routed_for_disclosure(st)):
-            reply += _disclosure(lang, st["country"])
+        if tmpl and st.get("country") and a == "answer" and ("%" in reply or "R3" in routed_for_disclosure(st)) and not _mentions_cap(reply, st["country"]):
+            reply += _disclosure(lang, st["country"])  # solo si la respuesta no trae ya el término del país (el chunk R3 suele traerlo)
         return {**st, "reply": reply, "reply_source": source, "_respond_fallback": fallback, "prompt_version": f"{st.get('prompt_version','')}+{ver}", "model_version": getattr(self.d.llm, 'model_version', ''),
                 "node_path": st["node_path"] + ["respond"]}
 
@@ -282,6 +292,14 @@ def _jurisdiction_note(lang: str, country: str, term: str) -> str:
     cname = {"CO": ("Colombia", "na Colômbia"), "MX": ("México", "no México"), "AR": ("Argentina", "na Argentina")}[country]
     return {"es": f"El {term} aplica en {where}; en {cname[0]} el costo se expresa como {own[country]['es']}.",
             "pt": f"O {term} aplica-se na {where}; {cname[1]} o custo é expresso como {own[country]['pt']}."}[lang]
+
+
+CAP_TERMS = {"CO": r"\busura\b", "MX": r"\bCAT\b", "AR": r"\bCFT\b"}
+
+
+def _mentions_cap(reply: str, country: str) -> bool:
+    pat = CAP_TERMS.get(country)
+    return bool(pat and re.search(pat, reply, re.I if country == "CO" else 0))
 
 
 def _disclosure(lang: str, country: str) -> str:
