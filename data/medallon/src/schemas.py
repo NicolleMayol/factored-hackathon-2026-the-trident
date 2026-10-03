@@ -7,6 +7,8 @@ Medido contra `landing` el 2026-10-02 (ADR-23):
   - los 7.671 archivos son CSV; no hay un solo Parquet
   - 6 CSV sueltos en la raíz (5 dimensiones + daily_exchange_rates) y 7 carpetas year=/month=/day=
   - `multiLine` es obligatorio: sin él call_transcripts da 548.336 filas en vez de 171.321
+  - `escape` = comilla doble es obligatorio: sin él el JSON de mentioned_entities corre las columnas
+    siguientes sin cambiar el conteo de filas (medido 2026-10-03)
   - la inferencia no da los tipos del contrato, así que los que importan van como hint explícito
 """
 from __future__ import annotations
@@ -98,6 +100,11 @@ def opciones(fuente: str) -> dict[str, str]:
         "cloudFiles.format": "csv",
         "header": "true",
         "multiLine": "true",          # obligatorio: textos en español con comas y saltos de línea
+        # Obligatorio también: los archivos escapan las comillas internas duplicándolas (RFC-4180),
+        # pero Spark usa "\\" por defecto. Sin esto, toda fila con un JSON embebido corre sus
+        # columnas en silencio: call_transcripts.mentioned_entities se partía en detected_intents,
+        # main_topics y transcription_model. El conteo de filas no cambia, así que no se nota.
+        "escape": '"',
         "cloudFiles.schemaEvolutionMode": "addNewColumns",
         "cloudFiles.inferColumnTypes": "true",
         "rescuedDataColumn": "_rescued_data",

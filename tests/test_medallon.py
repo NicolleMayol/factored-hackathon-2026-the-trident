@@ -40,6 +40,9 @@ def test_multiline_y_csv_en_todas_las_fuentes(fuente):
     assert o["multiLine"] == "true"
     assert o["header"] == "true"
     assert o["rescuedDataColumn"] == "_rescued_data"
+    # Sin escape de comilla doble, el JSON de mentioned_entities corre las columnas siguientes y el
+    # conteo de filas no cambia: la corrupción es invisible salvo que se mire el contenido.
+    assert o["escape"] == '"'
 
 
 def test_rutas_raiz_vs_particionadas():
