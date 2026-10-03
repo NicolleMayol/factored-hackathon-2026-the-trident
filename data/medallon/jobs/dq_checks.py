@@ -15,10 +15,35 @@ from pathlib import Path
 
 from pyspark.sql import SparkSession, functions as F
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
-import schemas  # noqa: E402
-
 FRESCURA_MAX_H = 24  # contracts/ops.yaml · alerts.freshness_h
+
+
+def _cargar_schemas(src: str | None):
+    """`schemas` describe las fuentes y lo comparten el pipeline y los checks.
+
+    En el job no se puede deducir su ruta con `__file__`: Databricks ejecuta el archivo con
+    `exec(compile(...))` y ese nombre no existe. La ruta llega como parámetro `--src`, que el bundle
+    resuelve por target; en local se cae al directorio hermano.
+    """
+    ruta = src or str(Path.cwd() / "src")
+    if not Path(ruta).exists() and "__file__" in globals():
+        ruta = str(Path(__file__).resolve().parents[1] / "src")
+    sys.path.insert(0, ruta)
+    import schemas  # noqa: PLC0415
+
+    return schemas
+
+
+def _conteo_anterior(spark, catalog, tabla) -> int | None:
+    """Filas que tenía la tabla en la corrida anterior, según ops.dq_results. None la primera vez."""
+    try:
+        r = spark.sql(
+            f"SELECT rows_checked FROM {catalog}.ops.dq_results "
+            f"WHERE table = '{tabla}' AND rule = 'tabla_no_vacia' ORDER BY run_ts DESC LIMIT 1"
+        ).first()
+        return int(r[0]) if r else None
+    except Exception:
+        return None  # primera corrida: la tabla de resultados aún no existe
 
 
 def check(spark, catalog, tabla, regla, condicion_mala, filas=None):
@@ -32,8 +57,10 @@ def check(spark, catalog, tabla, regla, condicion_mala, filas=None):
 def main() -> int:
     p = argparse.ArgumentParser()
     p.add_argument("--catalog", default="hackathon")
+    p.add_argument("--src", default=None, help="ruta de data/medallon/src (la pasa el bundle)")
     args = p.parse_args()
     cat = args.catalog
+    schemas = _cargar_schemas(args.src)
     spark = SparkSession.builder.getOrCreate()
     filas: list[tuple] = []
 
@@ -41,10 +68,18 @@ def main() -> int:
     for fuente in schemas.FUENTES:
         df = spark.table(f"{cat}.bronze.{fuente}")
         n = df.count()
-        esperado = schemas.FILAS_DICCIONARIO[fuente]
-        # El diccionario es nominal (ADR-23): se alerta solo si se desvía más del 30 %, que es el
-        # margen que separa "cifra redonda" de "parseo partido".
-        filas.append((f"bronze.{fuente}", "conteo_en_orden_de_magnitud", abs(n - esperado) <= 0.30 * esperado, n, abs(n - esperado), None))
+        # El conteo del diccionario es nominal y no sirve de umbral: daily_exchange_rates tiene
+        # 13.164 filas reales contra 3.000 declaradas (12 pares de divisas por día), y digital_events
+        # 15,6 M contra 10 M. Comparar contra él solo medía la imprecisión del diccionario.
+        # Lo que sí importa es que la tabla no se vacíe ni encoja respecto a la corrida anterior:
+        # eso detecta un parseo roto o una pérdida de datos, que es el riesgo real.
+        anterior = _conteo_anterior(spark, cat, f"bronze.{fuente}")
+        filas.append((f"bronze.{fuente}", "tabla_no_vacia", n > 0, n, 0, None))
+        filas.append((f"bronze.{fuente}", "conteo_no_cae_respecto_a_la_corrida_anterior",
+                      anterior is None or n >= anterior, n, max(0, (anterior or 0) - n), None))
+        # El diccionario se reporta como referencia, sin cortar.
+        filas.append((f"bronze.{fuente}", "desvio_vs_diccionario", True, n,
+                      abs(n - schemas.FILAS_DICCIONARIO[fuente]), None))
         frescura = df.select(F.max("_ingested_at")).first()[0]
         h = None
         if frescura is not None:
@@ -161,5 +196,7 @@ def main() -> int:
     return 0  # no corta el job: la alerta vive en contracts/ops.yaml
 
 
+# Sin `raise SystemExit`: Databricks marca la tarea como fallida aunque el código sea 0, porque
+# ejecuta el archivo con exec() y la excepción sube. Los checks ya se reportan en ops.dq_results.
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

@@ -46,11 +46,13 @@ HINTS = {
     "customers": "credit_score INT, estimated_monthly_income DECIMAL(12,2)",
     "products": "days_past_due INT, current_balance DECIMAL(15,2), credit_limit DECIMAL(15,2), interest_rate DECIMAL(5,2)",
     "transactions": "amount DECIMAL(15,2), amount_usd DECIMAL(15,2), response_code STRING, fraud_score DECIMAL(5,2)",
-    "call_center_interactions": "duration_seconds INT, wait_time_seconds INT, sentiment_score DECIMAL(3,2)",
-    # duration_seconds se infiere STRING: hay valores no numéricos. Entra como texto y silver lo castea
-    # contando el descarte, en vez de que Auto Loader mande la fila entera a _rescued_data.
-    "call_transcripts": "duration_seconds STRING, accent_confidence DECIMAL(3,2)",
-    "satisfaction_surveys": "main_score INT, question_1_response INT, question_2_response INT, question_3_response INT",
+    # Los enteros del origen vienen escritos como decimal ("209.0", "2.0"). Pedir INT en el hint hace
+    # que Auto Loader no pueda castear y mande la fila entera a _rescued_data: pasó en el 86 % de
+    # call_center_interactions y satisfaction_surveys en la primera corrida (2026-10-03). Entran como
+    # DOUBLE y es silver quien aplica el tipo del contrato.
+    "call_center_interactions": "duration_seconds DOUBLE, wait_time_seconds DOUBLE, sentiment_score DECIMAL(3,2)",
+    "call_transcripts": "duration_seconds DOUBLE, accent_confidence DECIMAL(3,2)",
+    "satisfaction_surveys": "main_score DOUBLE, question_1_response DOUBLE, question_2_response DOUBLE, question_3_response DOUBLE",
     "daily_exchange_rates": "exchange_rate DECIMAL(12,6), buy_rate DECIMAL(12,6), sell_rate DECIMAL(12,6)",
 }
 
