@@ -48,7 +48,7 @@ def handle(message: str, session: dict[str, Any], *, rt=None, history: list[dict
            "tools_called": st.get("tools_called"), "rules_fired": st.get("rules_fired"), "expected_action": session.get("expected_action"),
            "action": st.get("action"), "escalate_reason": st.get("escalate_reason", "none"), "guardrail_hits": st.get("guardrail_hits"),
            "groundedness": 1.0 if st.get("verify_ok") else 0.0, "tokens_in": st.get("tokens_in", 0), "tokens_out": st.get("tokens_out", 0),
-           "cost_usd": st.get("cost_usd", 0.0), "latency_ms": latency, "prompt_version": st.get("prompt_version"), "model_version": st.get("model_version")}
+           "cost_usd": st.get("cost_usd", 0.0), "latency_ms": latency, "prompt_version": st.get("prompt_version"), "model_version": st.get("model_version"), "reply_source": st.get("reply_source", "template")}
     d.trace.log_turn(row)
     return {"reply": st.get("reply"), "action": st.get("action"), "citations": [{"type": c["type"], "id": c["id"]} for c in st.get("citations", [])],
             "trace_id": trace_id, "conversation_id": conv, "cost_usd": row["cost_usd"], "latency_ms": latency,
