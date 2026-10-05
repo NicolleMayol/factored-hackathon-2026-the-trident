@@ -51,10 +51,10 @@ def _fail(r, what: str):
     raise SystemExit(f"{what}: {r.status_code} {r.text[:400]}")
 
 
-def upsert(name: str, model: str, version: str, size: str, env: dict[str, str] | None = None) -> None:
+def upsert(name: str, model: str, version: str, size: str, env: dict[str, str] | None = None, always_on: bool = False) -> None:
     if version in ("latest", "", None):
         version = latest_version(model)
-    entity = {"entity_name": model, "entity_version": str(version), "workload_size": size, "workload_type": "CPU", "scale_to_zero_enabled": True}
+    entity = {"entity_name": model, "entity_version": str(version), "workload_size": size, "workload_type": "CPU", "scale_to_zero_enabled": not always_on}  # --always-on en la ventana de evaluación (ADR-21 §1): sin frío de minutos en el primer turno
     if env:
         entity["environment_vars"] = env  # p. ej. HF_HUB_OFFLINE=1: el contenedor no tiene salida a internet y sentence-transformers no debe intentar el Hub
     st = status(name)
@@ -104,6 +104,7 @@ if __name__ == "__main__":
     ap.add_argument("--size", default="Small"); ap.add_argument("--status", action="store_true"); ap.add_argument("--wait", action="store_true")
     ap.add_argument("--grant", default=os.environ.get("SP_AGENT_RO_APP_ID", ""), help="application id de sp-agent-ro: da CAN_QUERY (también SP_AGENT_RO_APP_ID en .env)")
     ap.add_argument("--grant-only", action="store_true", help="solo dar CAN_QUERY a un endpoint que ya existe")
+    ap.add_argument("--always-on", action="store_true", help="sin scale-to-zero (ventana de evaluación, ADR-21 §1); volver a lanzar sin la opción lo reactiva")
     ap.add_argument("--env", action="append", default=[], metavar="K=V", help="variable de entorno del contenedor (repetible), p. ej. --env HF_HUB_OFFLINE=1")
     a = ap.parse_args()
     if a.status:
@@ -112,7 +113,7 @@ if __name__ == "__main__":
         grant_query(a.name, a.grant or sys.exit("falta --grant <app id>")); sys.exit(0)
     if not a.model:
         print(status(a.name)); sys.exit(0)
-    upsert(a.name, a.model, a.version, a.size, dict(kv.split("=", 1) for kv in a.env) or None)
+    upsert(a.name, a.model, a.version, a.size, dict(kv.split("=", 1) for kv in a.env) or None, always_on=a.always_on)
     if a.grant:
         grant_query(a.name, a.grant)
     if a.wait:

@@ -102,8 +102,14 @@ def search_policy(deps: Deps, query: str, country: str, language: str, product_c
     filters = {"country": country, "language": language}
     if product_code:
         filters["product_code"] = product_code
-    vec = deps.embed.embed([query])[0]
-    vec_hits = deps.store.search(vec, filters, k=top_k * 3)
+    embed_version, fallback = deps.embed.model_version, False
+    try:
+        vec = deps.embed.embed([query])[0]
+        vec_hits = deps.store.search(vec, filters, k=top_k * 3)
+    except Exception as e:  # noqa: BLE001 — endpoint frío (scale-to-zero), 403 o red: se sigue solo con léxico + enrutado y queda en la traza
+        import logging
+        logging.warning("search_policy: embed no disponible (%s: %s); búsqueda léxica", type(e).__name__, str(e)[:120])
+        vec_hits, embed_version, fallback = [], "lexical-fallback", True
     lex_hits = deps.store.search_text(query, filters, k=top_k * 3)
     wanted = set(route_sections(query))
     fused: dict[str, float] = {}
@@ -117,7 +123,7 @@ def search_policy(deps: Deps, query: str, country: str, language: str, product_c
             fused[cid] += 1.0 / 30  # equivale a estar en el top-1 de una lista
     order = sorted(fused, key=lambda c: -fused[c])[:top_k]
     return {"chunks": [{**{k: rows[c].get(k) for k in ("chunk_id", "text", "rule_id", "version", "source", "product_code")}, "score": round(fused[c], 5)} for c in order],
-            "embedding_model_version": deps.embed.model_version, "sections_routed": sorted(wanted)}
+            "embedding_model_version": embed_version, "embed_fallback": fallback, "sections_routed": sorted(wanted)}
 
 
 def get_prescore(deps: Deps, customer_id: str) -> dict[str, Any]:
