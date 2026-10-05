@@ -51,11 +51,13 @@ resource "databricks_grants" "catalog" {
 locals {
   # datos y sp-pipelines: ALL PRIVILEGES en bronze, silver, gold, ref, ops; nada en ml (ADR-20).
   # ia-ml y sp-agent-ro: lectura de gold y ref. ia-ml: ALL PRIVILEGES en ml; en ops crea sus
-  # tablas (agent_turns, ml_inference) y queda como dueña de ellas.
+  # tablas (agent_turns, ml_inference) y queda como dueña de ellas. En silver, ia-ml solo entra al
+  # esquema (USE_SCHEMA); el SELECT va tabla por tabla (abajo), no sobre todo el esquema.
   schema_grants = {
     for s in local.schemas : s => tolist(concat(
       s != "ml" ? [for p in local.writers : { principal = p, privileges = tolist(["ALL_PRIVILEGES"]) }] : [],
       contains(["gold", "ref"], s) ? [for p in local.readers : { principal = p, privileges = tolist(["USE_SCHEMA", "SELECT"]) }] : [],
+      s == "silver" ? [for p in local.iaml : { principal = p, privileges = tolist(["USE_SCHEMA"]) }] : [],
       s == "ops" ? [for p in local.iaml : { principal = p, privileges = tolist(["USE_SCHEMA", "SELECT", "CREATE_TABLE"]) }] : [],
       s == "ml" ? [for p in local.iaml : { principal = p, privileges = tolist(["ALL_PRIVILEGES"]) }] : [],
     ))
@@ -74,3 +76,19 @@ resource "databricks_grants" "schema" {
     }
   }
 }
+
+# ia-ml lee tablas puntuales de silver (data.silver tiene a ia-ml como consumer). Primera: call_transcripts,
+# para el etiquetado de intención (M5). databricks_grant (singular) no es autoritativo: suma este permiso
+# sin tocar los que datos o sp-pipelines tengan sobre la tabla. La tabla la crea el pipeline de datos.
+locals {
+  iaml_silver_tables = ["call_transcripts"]
+  iaml_silver_select = { for pair in setproduct(local.iaml, local.iaml_silver_tables) : "${pair[0]}/${pair[1]}" => { principal = pair[0], table = pair[1] } }
+}
+
+resource "databricks_grant" "iaml_silver_select" {
+  for_each   = local.iaml_silver_select
+  table      = "${databricks_catalog.hackathon.name}.${databricks_schema.this["silver"].name}.${each.value.table}"
+  principal  = each.value.principal
+  privileges = ["SELECT"]
+}
+

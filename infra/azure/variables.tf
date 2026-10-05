@@ -21,6 +21,12 @@ variable "admin_object_ids" {
   default     = []
 }
 
+variable "iaml_object_ids" {
+  description = "Object ids de Entra de ia-ml con lectura del secreto cosmos-key (correr el agente en local con AGENT_STORE=real)."
+  type        = list(string)
+  default     = []
+}
+
 variable "function_always_ready" {
   description = "true solo en la ventana de jurado (1 instancia caliente)."
   type        = bool

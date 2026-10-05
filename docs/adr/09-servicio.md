@@ -372,3 +372,13 @@ El SKU `trial` devuelve `404 FEATURE_DISABLED: Model serving is not available fo
 
 **Costo.** Desde el cambio, los DBUs (serverless SQL, jobs, Model Serving) se cobran. Los endpoints escalan a cero; el consumo se sigue en `system.billing.usage` y el presupuesto de Azure avisa al 50 %.
 
+### v3.8 · 2026-10-05 · ia-ml lee silver.call_transcripts (M5)
+
+ia-ml necesita los textos de llamadas para el etiquetado de intención (M5). `data.silver` ya tiene a ia-ml como consumer en el impact-map, pero ADR-20 solo le daba gold, ref, ops y ml. Se agrega `USE SCHEMA` en silver y `SELECT` solo en `silver.call_transcripts`, con `databricks_grant` (no autoritativo: no toca los permisos de datos ni de sp-pipelines sobre la tabla). La lista de tablas está en `local.iaml_silver_tables`: otra tabla de silver es una línea más.
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| `SELECT` en todo el esquema silver | Más de lo que M5 necesita; silver tiene datos de clientes, transacciones y encuestas |
+| Exportar un CSV con `customer_text` | Las filas del dataset saldrían del tenant (regla de Factored, ADR-12) |
+| Grant a mano en el workspace | Se pierde en el próximo apply; los grants viven en Terraform |
+
