@@ -228,8 +228,9 @@ const ic=n=>`<svg class="i"><use href="#i-${n}"/></svg>`;
 function t(path,l=lang){const get=x=>path.split(".").reduce((o,k)=>o==null?o:o[k],UI&&UI.lang[x]);const v=get(l);return v!=null?v:(get(UI.default_lang)??path)}
 const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(_,k)=>v[k]??"");
 const langOf=c=>{const l=String(c||"").slice(0,2);return UI.lang[l]?l:UI.default_lang};
-const pct=x=>`${Number(x).toLocaleString(lang,{maximumFractionDigits:2})} %`;
-const pname=p=>p.name[lang]||p.name[UI.default_lang];
+const pct=x=>`${Number(x).toLocaleString(lang,{maximumFractionDigits:2})}${lang==="en"?"":"\u00a0"}%`; // en: 13.62%; es/pt: 13,62 % sin partir la línea antes del %
+const ptype=p=>((UI&&UI.lang[lang]&&UI.lang[lang].product_types)||{})[p.type];
+const pname=p=>p.name[lang]||ptype(p)||p.name[UI.default_lang];
 const lower=s=>s.charAt(0).toLowerCase()+s.slice(1);
 
 function render(){

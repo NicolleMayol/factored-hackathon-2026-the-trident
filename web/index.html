@@ -281,7 +281,8 @@ async function call(path,opt={}){
 
 // Ids del corpus: POL-<país>-<product_code>-<idioma>-v<n>-R<k> y catalog:<product_code> (template.md, ADR-03).
 const CHUNK=/^POL-[A-Z]{2}-([A-Z]{2}-[A-Z]+-\d+)-([a-z]{2})-v\d+-(R\d+)$/,CAT=/^catalog:([A-Z]{2}-[A-Z]+-\d+)$/;
-const prodName=code=>{const p=META.products[code];return p?(p.name[lang]||p.name[UI.default_lang]||code):code};
+const ptype=p=>((UI&&UI.lang[lang]&&UI.lang[lang].product_types)||{})[p.type];
+const prodName=code=>{const p=META.products[code];return p?(p.name[lang]||ptype(p)||p.name[UI.default_lang]||code):code};
 const ctryName=c=>META.countries[c]||c;
 function srcLabel(id){
  let m=CHUNK.exec(id);

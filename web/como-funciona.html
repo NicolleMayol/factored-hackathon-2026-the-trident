@@ -158,7 +158,7 @@ function render(){
 function coverage(){if(!META){$("coverage").hidden=true;return}
  const by={};for(const [code,p] of Object.entries(META.products))(by[p.country]=by[p.country]||[]).push(p);
  $("ctry").innerHTML=Object.entries(by).map(([c,ps])=>`<section><h3>${esc(META.countries[c]||c)}</h3><table>${ps.map(p=>
-  `<tr><td>${esc(p.name[lang]||p.name[UI.default_lang])}</td><td>${p.rate_min!=null?`${num(p.rate_min)}–${num(p.rate_max)} %`:""}${p.term_months_max?`<small>${esc(t("how_page.term"))} ${p.term_months_max} ${esc(t("how_page.months"))}</small>`:""}</td></tr>`).join("")}</table></section>`).join("");
+  `<tr><td>${esc(p.name[lang]||(((UI.lang[lang]||{}).product_types||{})[p.type])||p.name[UI.default_lang])}</td><td>${p.rate_min!=null?`${num(p.rate_min)}–${num(p.rate_max)} %`:""}${p.term_months_max?`<small>${esc(t("how_page.term"))} ${p.term_months_max} ${esc(t("how_page.months"))}</small>`:""}</td></tr>`).join("")}</table></section>`).join("");
  $("coverage").hidden=false}
 
 async function boot(){
