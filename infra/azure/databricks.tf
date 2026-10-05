@@ -3,7 +3,7 @@ resource "azurerm_databricks_workspace" "main" {
   name                        = "dbw-agent-bank-dev"
   location                    = azurerm_resource_group.main.location
   resource_group_name         = azurerm_resource_group.main.name
-  sku                         = "trial" # Premium trial de 14 días (diagrama DEMO)
+  sku                         = "premium" # ADR-19 v3.7: el trial no trae Model Serving (FEATURE_DISABLED); cambio en el lugar
   managed_resource_group_name = "rg-ai-agents-dev-dbw-managed"
   tags                        = local.tags
 }

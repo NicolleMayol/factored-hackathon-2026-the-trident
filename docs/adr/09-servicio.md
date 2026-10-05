@@ -1,6 +1,6 @@
 # 09-servicio
 
-Owner: Nicolle · v3.6 · 2026-10-05 (ADR-27: un pipeline por PR y uno por merge, con orden fijo). v3.5 · 2026-10-05 (ADR-26: versiones con tags y GitHub Release). v3.4 · 2026-10-05 (ADR-25: UI sin datos quemados, `GET /meta`, nombres de recursos en variables del repo). v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
+Owner: Nicolle · v3.7 · 2026-10-05 (workspace trial → premium: el trial no trae Model Serving). v3.6 · 2026-10-05 (ADR-27: un pipeline por PR y uno por merge, con orden fijo). v3.5 · 2026-10-05 (ADR-26: versiones con tags y GitHub Release). v3.4 · 2026-10-05 (ADR-25: UI sin datos quemados, `GET /meta`, nombres de recursos en variables del repo). v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
 
 ## ADR-19 · Plan de infraestructura en Terraform  ·  rol: servicio  ·  2026-09-29  ·  estado: cerrada
 
@@ -36,7 +36,7 @@ Región: `eastus2` (Claude Sonnet 5 verificado por Nicolle el 2026-09-29). Nombr
 | Function App | `func-agent-bank-dev` | Flex Consumption, Linux, python3.11, 2048 MB | máx. 10 instancias; always-ready 0 (1 en ventana de jurado); identidad administrada |
 | Frontend | `swa-agent-bank-dev` | Static Web Apps Free | chat + vista `/handoff/{case_id}`; llama a la Function App desde el navegador (CORS) |
 | Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capabilities `EnableNoSQLVectorSearch` y `EnableNoSQLFullTextSearchPreviewFeatures` (`azapi`) | ver "Cosmos" |
-| Databricks | `dbw-agent-bank-dev` | Premium trial (14 días), como en el diagrama | solo cómputo serverless |
+| Databricks | `dbw-agent-bank-dev` | Premium (v3.7; antes Premium trial de 14 días, que no trae Model Serving) | solo cómputo serverless |
 | ADLS Gen2 | `adlsagentbankdev` | Standard LRS, HNS | contenedores `unity-catalog` (storage del catálogo), `landing` (copia de S3), `ops-export`, y uno por esquema: `bronze`, `silver`, `gold`, `ref`, `ops`, `ml-data` (el de `ml`; Azure pide 3 a 63 caracteres) (ADR-20) |
 | Access Connector | `acc-agent-bank-dev` | — | identidad de Databricks sobre ADLS |
 | SQL Warehouse | `wh-agent` | serverless 2X-Small, auto-stop 10 min | lectura de gold/ref |
@@ -360,4 +360,15 @@ Si `ci` falla no se despliega nada. Si el apply espera aprobación, function y b
 | `pr-gate` como check obligatorio (protección de rama a mano) | protección de rama en Terraform (provider de GitHub) |
 
 **Dependencias.** Sin cambios en `dependencies.md`. Protección de main: pedir el check `pr-gate` (Settings → Branches).
+
+### v3.7 · 2026-10-05 · workspace trial → premium
+
+El SKU `trial` devuelve `404 FEATURE_DISABLED: Model serving is not available for trial workspaces` al crear endpoints propios. Las FM APIs (`databricks-meta-llama-3-3-70b-instruct`, `llama-3.1-8b`) sí funcionan en trial, pero `embed-bge-m3` y `prescore-lgbm` (ADR-21) necesitan Model Serving. Se adelanta al 5 oct el paso a `premium` que estaba previsto para el vencimiento del trial (~13 oct). En `azurerm_databricks_workspace` el cambio de SKU es en el lugar: no recrea el workspace ni toca Unity Catalog.
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Seguir en trial: pre-score por lote en gold y búsqueda solo full-text en Cosmos | Reescribe trabajo de ia-ml el día de la entrega y cambia ADR-21 |
+| Embeddings en la Function | bge-m3 no cabe en el arranque de 30 s ni en 2048 MB (ADR-21) |
+
+**Costo.** Desde el cambio, los DBUs (serverless SQL, jobs, Model Serving) se cobran. Los endpoints escalan a cero; el consumo se sigue en `system.billing.usage` y el presupuesto de Azure avisa al 50 %.
 
