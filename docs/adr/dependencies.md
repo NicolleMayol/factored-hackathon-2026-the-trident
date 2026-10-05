@@ -1,4 +1,4 @@
-# Dependencias entre roles · v9 · 2026-10-03 (E4 cierra la tabla; E3 espera M5 · ADR-24: E5 cierra; E6 parcial; M10 nueva · ADR-23: E9 cierra del todo; E1, E2 cambian · ADR-22: E9 cierra; E1, E3, E6 cambian · ADR-19 v3.3: N3 cambia · ADR-21: M3, E7 cambian; M9, N9, N10, E10 nuevas · ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5 · ADR-20: X1, X2, E1, E7, E8 cambian; E9 nueva)
+# Dependencias entre roles · v10 · 2026-10-05 (E10 cierra; M5 entregado · E4 cierra la tabla; E3 espera M5 · ADR-24: E5 cierra; E6 parcial; M10 nueva · ADR-23: E9 cierra del todo; E1, E2 cambian · ADR-22: E9 cierra; E1, E3, E6 cambian · ADR-19 v3.3: N3 cambia · ADR-21: M3, E7 cambian; M9, N9, N10, E10 nuevas · ADR-18: N2, X1, M6, X3 cambian; N8 nueva · ADR-19: X1 pasa a Nicolle; N1, N2, N3, N5, E1, E2 cambian · ADR-19 v3: N1, N5 · ADR-20: X1, X2, E1, E7, E8 cambian; E9 nueva)
 Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega, el receptor trabaja con mock. Integraciones: mié 30 sep y sáb 3 oct.
 
 ## Manuela ← Eladio
@@ -13,6 +13,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | E7 | Pipeline policy_docs ES+PT → policy_chunks (+JSONL Cosmos); depende de ml.embeddings_endpoint (abierta) y de lectura del scope fh26 | Asset Bundle | Jue 1 | 10 docs manuales |
 | E8 | ops.dq_results por dos vías (expectativas SDP + checks propios) + fixture de llegada tardía desde el manifiesto de data-landing | Delta | Vie 2 | — |
 | E9 | Contrato de columnas de bronze y silver (cerrado en ADR-22: 13 tablas en bronze, 7 en silver, columnas del diccionario de Factored v1.0.0; verificación contra landing ejecutada el 2026-10-02: el origen es CSV, ver ADR-23) | docs/adr/22-esquemas-bronze-silver.md + docs/adr/23-verificacion-landing.md + contracts/gold.yaml v4 | hecho jue 2 | esquemas abiertos |
+| E10 | Notebook de insights (Data Analytics): `data/insights/insights_demanda.py`, 3 hallazgos con una figura cada uno sobre hackathon.gold | notebook en el workspace + fuente en el repo | hecho dom 5 | — |
 
 ## Manuela ← Nicolle
 | # | Entregable | Fecha | Mock |
@@ -39,7 +40,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | M6 | módulo /agent handle(message, session): grafo LangGraph compilado, sin databricks-agents, prompts en agent/prompts/ con hash + tests | Nicolle | Mié 30 |
 | M7 | eval/metrics.md + eval/cases.jsonl | Nicolle | Vie 2 |
 | M8 | contracts/ops.yaml v3 (+ escalate_reason) | Eladio, Nicolle | hecho jue 1 |
-| M5 | docs/labels.md: mapeo de las 42 frases del dataset → intent_label; action_label sale de policy.yaml (acordado en el PR #31) | Eladio | Vie 2 |
+| M5 | docs/labels.md: las 42 frases son 2 aperturas (saldo de tarjeta y de cuenta) → out_of_scope/clarify; overrides por prefijo, label_source y es_entrenable = false | Eladio | hecho dom 5 |
 | M9 | modelo hackathon.ml.bge_m3 (bge-m3 int8 ONNX) registrado en UC | Nicolle | Jue 1 noche |
 | M10 | R1–R8 para mortgage, low_amount_consumer y microcredit, o ruteo a escalamiento: hoy search_policy devuelve cero para los tres (ADR-24) | Eladio | Vie 2 |
 | M11 | productos de los TEST-* en gold.customer_products desde el pipeline (`data/medallon/src/gold.py`, PRODUCTOS_PRUEBA; behavior_12m sigue sin TEST-* por ADR-22) para que la UI pueda escalar por riesgo; despliegue manual `databricks bundle deploy` (Actions caído); mientras, el eval usa clientes reales por condición (ADR-21 §7) | Nicolle despliega (código listo; Eladio out) | Dom 5 |
