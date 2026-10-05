@@ -61,6 +61,7 @@ header .wrap{display:flex;align-items:center;justify-content:space-between;gap:1
 .pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
 .pcard{text-align:left;border:1px solid var(--line);background:var(--soft);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-height:44px}
 .pcard:hover,.pcard:focus-visible{border-color:var(--ink);outline:none}
+.pcard:disabled{opacity:.45;cursor:progress}.pcard.busy{opacity:1;border-color:var(--ink)}
 .pcard b{font-size:16px}.pcard .d{font-size:14px;color:var(--mute)}.pcard .l{font-size:12px;color:var(--mute)}
 @media (max-width:640px){#picker{padding:20px}}
 
@@ -262,6 +263,8 @@ let UI=null,META={users:[],countries:{},products:{},tools:[],outcomes:[],reason_
 // chosen: idioma elegido arriba; si es null, manda el locale del cliente.
 let tok=null,conv=null,curU=null,pending=null,lang="es",chosen=null,healthKey=null;
 // Estado de la conversación que alimenta las etapas y "Tu solicitud". Solo datos que devolvió la API.
+// seq: sube con cada login o vuelta al selector; una respuesta con un seq viejo se descarta.
+let seq=0;
 let S=null;const fresh=()=>({stage:0,seen:new Set([0]),product:null,outcome:null,consent:null,caseId:null,last:null});
 const cases=[];
 const $=id=>document.getElementById(id);
@@ -401,7 +404,7 @@ const isAnalyst=u=>u&&u.scopes.includes("handoff:read");
 function persona(u){const p=t("personas."+u.key);return typeof p==="object"?p:{label:u.key,desc:""}}
 function personaLabel(u){const p=persona(u);
  return isAnalyst(u)||!u.country?p.label:`${fill(t("text.account_in"),{country:ctryName(u.country)})} · ${p.label}`}
-function card(u){const p=persona(u),b=document.createElement("button");b.type="button";b.className="pcard";
+function card(u){const p=persona(u),b=document.createElement("button");b.type="button";b.className="pcard";b.dataset.k=u.key;
  const head=isAnalyst(u)||!u.country?p.label:fill(t("text.account_in"),{country:ctryName(u.country)});
  b.innerHTML=`<b>${esc(head)}</b>${!isAnalyst(u)&&u.country?`<span class="tag t-info">${esc(p.label)}</span>`:""}`+
   (p.desc?`<span class="d">${esc(p.desc)}</span>`:"")+(isAnalyst(u)?"":`<span class="l">${esc(fill(t("text.writes_in"),{lang:t("lang_names."+langOf(u.locale))}))}</span>`);
@@ -409,12 +412,15 @@ function card(u){const p=persona(u),b=document.createElement("button");b.type="b
 function show(view){const chat=view==="chat",an=view==="analyst",pk=view==="picker";
  $("picker").hidden=!pk;$("bar").hidden=pk;$("stages").hidden=!chat;
  $("side").style.display=chat?"flex":"none";$("chat").style.display=chat?"flex":"none";$("analyst").style.display=an?"flex":"none"}
-function showPicker(){curU=null;tok=null;conv=null;pending=null;lang=chosen||langOf(navigator.language);i18n();renderPicker();
+function showPicker(){seq++;curU=null;tok=null;conv=null;pending=null;lang=chosen||langOf(navigator.language);i18n();renderPicker();
  try{history.replaceState(null,"",location.pathname)}catch(e){}
  show("picker")}
 function renderPicker(){$("loading").hidden=true;$("pcards").innerHTML="";$("acards").innerHTML="";
  for(const u of META.users)(isAnalyst(u)?$("acards"):$("pcards")).appendChild(card(u));
  $("acards").previousElementSibling.hidden=!$("acards").children.length}
+// Mientras abre la sesión: tarjetas bloqueadas, la elegida marcada y el aviso de conexión visible.
+function busy(k){if($("picker").hidden)return;for(const b of document.querySelectorAll(".pcard")){b.disabled=true;if(b.dataset.k===k){b.classList.add("busy");b.setAttribute("aria-busy","true")}}
+ const l=$("loading");l.textContent=t("text.connecting");l.hidden=false}
 // Sugerencias con {name:<product_type>} y {amount:<product_type>}: nombre y un monto dentro del rango del producto del país del cliente.
 function sugg(){const u=curU;if(!u)return [];const byType=ty=>Object.values(META.products).find(p=>p.country===u.country&&p.type===ty);const out=[];
  for(const tpl of t("suggestions")){let ok=true;
@@ -425,10 +431,13 @@ function sugg(){const u=curU;if(!u)return [];const byType=ty=>Object.values(META
 function renderSugg(){$("sugg").innerHTML="";for(const s of sugg()){const c=document.createElement("button");c.type="button";c.className="sg";c.textContent=s;c.onclick=()=>send(s);$("sugg").appendChild(c)}}
 function renderCases(){$("cases").innerHTML="";for(const c of cases){const b=document.createElement("button");b.type="button";b.className="pill";b.textContent=c;b.onclick=()=>{$("case").value=c;openCase(c)};$("cases").appendChild(b)}}
 
-async function login(k){conv=null;pending=null;tok=null;S=fresh();$("log").innerHTML="";$("hand").innerHTML="";$("tech").hidden=true;
+async function login(k){const my=++seq;
+ busy(k);
+ conv=null;pending=null;tok=null;S=fresh();$("log").innerHTML="";$("hand").innerHTML="";$("tech").hidden=true;
  try{history.replaceState(null,"",`${location.pathname}?user=${encodeURIComponent(k)}`)}catch(e){}
  const u=META.users.find(x=>x.key===k)||{key:k,scopes:[],locale:""};
  const [r,j]=await call("/session",{method:"POST",body:JSON.stringify({user:k})});
+ if(my!==seq)return; // otro clic o «Cambiar de cliente» llegó después
  curU=u;lang=chosen||langOf(j.locale||u.locale);i18n();$("curLabel").textContent=personaLabel(u);
  if(!r.ok){show("chat");addRow(`<div class="bot stop">${tag("error")}<div class="txt">${esc(t("text.no_session"))} (${r.status}).</div></div>`);return}
  tok=j.token;const a=(j.scopes||u.scopes).includes("handoff:read");show(a?"analyst":"chat");
@@ -436,8 +445,9 @@ async function login(k){conv=null;pending=null;tok=null;S=fresh();$("log").inner
  stages();side();renderSugg();
  const h=document.createElement("div");h.className="hello";h.innerHTML=`<h1 data-t="text.hello">${esc(t("text.hello"))}</h1><p data-t="text.hello_sub">${esc(t("text.hello_sub"))}</p>`;$("log").appendChild(h)}
 
-async function send(text){if(!text||!tok)return;addMe(text);const ty=addTyping("text.thinking");
+async function send(text){if(!text||!tok)return;const my=seq;addMe(text);const ty=addTyping("text.thinking");
  const [r,j]=await call("/chat",{method:"POST",body:JSON.stringify({message:text,conversation_id:conv})});ty.remove();
+ if(my!==seq)return;
  if(!r.ok){addRow(`<div class="bot stop">${tag("error")}<div class="txt">${esc(j.error||t("text.no_reply"))} (${r.status})</div></div>`);return}
  conv=j.conversation_id||conv;pending=j.action_id||null;
  const el=renderBot(j);
@@ -447,8 +457,9 @@ async function send(text){if(!text||!tok)return;addMe(text);const ty=addTyping("
 function decide(box,ok){const d=document.createElement("div");d.className="cdone "+(ok?"yes":"no");
  d.innerHTML=`${ic(ok?"check":"ban")}<span>${esc(fill(t(ok?"text.consent_given":"text.consent_denied"),{when:`${t("text.today")}, ${now()}`}))}</span>`;
  box.replaceWith(d);confirmAct(ok)}
-async function confirmAct(ok){const ty=addTyping("text.scoring");
- const [r,j]=await call("/chat/confirm",{method:"POST",body:JSON.stringify({action_id:pending,confirmed:ok,conversation_id:conv})});ty.remove();pending=null;S.consent=ok;
+async function confirmAct(ok){const my=seq;const ty=addTyping("text.scoring");
+ const [r,j]=await call("/chat/confirm",{method:"POST",body:JSON.stringify({action_id:pending,confirmed:ok,conversation_id:conv})});ty.remove();
+ if(my!==seq)return;pending=null;S.consent=ok;
  if(!r.ok){addRow(`<div class="bot stop">${tag("error")}<div class="txt">${esc(j.error||"")} (${r.status})</div></div>`);side();return}
  renderBot(j)}
 

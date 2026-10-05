@@ -23,6 +23,7 @@ Fuente de verdad del diseño. Se edita por PR con el skill `adr-hackathon` (`.cl
 | 16 | 22-esquemas-bronze-silver.md (ADR-22: contrato de bronze y silver, E9) | Eladio |
 | 17 | 23-verificacion-landing.md (ADR-23: el origen es CSV; corrige ADR-20 y ADR-22) | Eladio |
 | 18 | 24-catalogo-y-tasas.md (ADR-24: catálogo sintético y tasas de regulador, E5 y E6) | Eladio |
+| 19 | 28-plan-de-pruebas.md (ADR-28: plan de pruebas por modos de falla, ISO/IEC 25010, tabla de decisión y GQM) | Nicolle (con Manuela y Eladio) |
 
 ## Glosario
 | Término | Significado |
