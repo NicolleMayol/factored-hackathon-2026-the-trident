@@ -30,5 +30,6 @@ Mismo harness y casos; usuarios = clientes reales de gold elegidos por condició
 | gold, usuarios TEST-* (sin productos en gold) | — | 0,679 | 0,333 | 0,321 | 0,0 | — | 21 |
 | gold, clientes reales por condición | 0,862 | 0,943 | 0,833 | 0,057 | 0,0 | 0,89 | 7 |
 | gold + fix de `slots` null (P06) | **0,862** | **0,981** | **0,833** | **0,019** | **0,0** | **0,915** | 5 |
+| gold + fix, **con Cosmos y `embed-bge-m3` reales** | 0,862 | 0,981 | 0,833 | 0,019 | 0,0 | 0,915 | 5 (las mismas) |
 
-Fallas restantes (juicio del LLM, declaradas): EV-005 / EV-025 («hasta cuánto me prestan» como simulación), EV-019 (reclamo como `formal_application`), EV-048 (P09 por confianza), EV-062 («Simula si soy elegible» con producto inferido). Latencia p50 3,3 s · p95 9,7 s · 0,00035 USD/turno (≈ 0,9 s por consulta a gold; dos llamadas al 70B).
+Fallas restantes (juicio del LLM, declaradas): EV-005 / EV-025 («hasta cuánto me prestan» como simulación), EV-019 (reclamo como `formal_application`), EV-048 (P09 por confianza), EV-062 («Simula si soy elegible» con producto inferido). Latencia p50 3,3 s · p95 9,7 s · 0,00035 USD/turno (≈ 0,9 s por consulta a gold; dos llamadas al 70B). Con store y embed reales: p50 3,1 s · p95 10,7 s · `search_policy` 1,2 s (endpoint + Cosmos) frente a 3 ms del mock; ninguna decisión cambia.
