@@ -102,3 +102,113 @@ def meta(req: func.HttpRequest) -> func.HttpResponse:
     """Público, sin JWT ni datos de clientes (solo claves de prueba, locale, scopes y país)."""
     return func.HttpResponse(_meta_body(), status_code=200, mimetype="application/json",
                              headers={"Cache-Control": "public, max-age=300"})
+
+
+# --- GET /insights (ADR-29) -----------------------------------------------------------------
+# Los tres hallazgos del notebook de datos (E10, data/insights/insights_demanda.py) servidos en
+# vivo para la página insights.html. Solo agregados de gold: ninguna fila de cliente sale del
+# tenant (ADR-12). El mismo SQL corre en el warehouse (AGENT_SQL=real) y, en tests y en local,
+# sobre data/mock cargado en SQLite, así que las pruebas ejercitan las consultas de producción.
+import sqlite3  # noqa: E402
+import time  # noqa: E402
+from collections import Counter  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
+
+INSIGHTS_TTL_S = 3600  # gold se refresca cada 6 h; una consulta por hora basta
+_insights_cache: dict[str, tuple[float, dict]] = {}
+_NOT_TEST = "customer_id NOT LIKE 'TEST-%'"  # los TEST-* no existen en el origen (ADR-22)
+
+
+def _threshold(root: Path = _ROOT) -> int:
+    """Umbral de elegibilidad más común del catálogo (min_score), no un número fijo en el código."""
+    cat = yaml.safe_load((root / "policy" / "catalog.yaml").read_text(encoding="utf-8"))["products"]
+    return Counter(int(p["min_score"]) for p in cat if p.get("min_score") is not None).most_common(1)[0][0]
+
+
+def _insights_sql(gold: str, t: int) -> dict[str, str]:
+    return {
+        "demand": f"SELECT reason_category AS category, sum(volume) AS contacts, avg(fcr_rate) AS fcr, avg(csat_avg) AS csat "
+                  f"FROM {gold}contact_demand GROUP BY reason_category",
+        "segments": f"SELECT segment, count(*) AS customers, avg(credit_score) AS avg_score, "
+                    f"sum(CASE WHEN credit_score IS NULL THEN 1 ELSE 0 END) AS no_score, "
+                    f"sum(CASE WHEN estimated_monthly_income IS NULL THEN 1 ELSE 0 END) AS no_income, "
+                    f"sum(CASE WHEN credit_score < {t} THEN 1 ELSE 0 END) AS below, "
+                    f"sum(CASE WHEN credit_score BETWEEN {t - 25} AND {t + 25} THEN 1 ELSE 0 END) AS near "
+                    f"FROM {gold}customer_360 WHERE {_NOT_TEST} GROUP BY segment",
+    }
+
+
+def _mock_executor(root: Path = _ROOT):
+    """SQLite en memoria con los CSV de data/mock (vacíos → NULL, números → REAL)."""
+    db = sqlite3.connect(":memory:")
+    for table in ("contact_demand", "customer_360"):
+        rows = list(csv.DictReader(open(root / "data" / "mock" / f"{table}.csv", encoding="utf-8")))
+        cols = list(rows[0])
+        db.execute(f"CREATE TABLE {table} ({', '.join(cols)})")
+
+        def val(v):
+            if v == "":
+                return None
+            try:
+                return float(v)
+            except ValueError:
+                return v
+        db.executemany(f"INSERT INTO {table} VALUES ({', '.join('?' * len(cols))})", [[val(r[c]) for c in cols] for r in rows])
+
+    def run(sql: str) -> list[dict]:
+        cur = db.execute(sql)
+        names = [d[0] for d in cur.description]
+        return [dict(zip(names, r)) for r in cur.fetchall()]
+    return run
+
+
+def _pct(a, b) -> float:
+    return round(100.0 * float(a or 0) / float(b), 1) if b else 0.0
+
+
+def build_insights(run, t: int, source: str) -> dict:
+    q = _insights_sql("" if source == "mock" else "hackathon.gold.", t)
+    demand = sorted(run(q["demand"]), key=lambda r: -float(r["contacts"] or 0))
+    total_contacts = sum(float(r["contacts"] or 0) for r in demand)
+    segs = sorted(run(q["segments"]), key=lambda r: -float(r["customers"] or 0))
+    n = sum(float(r["customers"] or 0) for r in segs)
+    return {
+        "as_of": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source": source,
+        "threshold": t,
+        "demand": [{"category": r["category"], "contacts": int(float(r["contacts"])), "share_pct": _pct(r["contacts"], total_contacts),
+                    "fcr": round(float(r["fcr"]), 3), "csat": round(float(r["csat"]), 2)} for r in demand],
+        "segments": [{"segment": r["segment"], "customers": int(float(r["customers"])), "share_pct": _pct(r["customers"], n),
+                      "avg_score": round(float(r["avg_score"])) if r["avg_score"] is not None else None,
+                      "below_threshold_pct": _pct(r["below"], float(r["customers"]) - float(r["no_score"] or 0)),
+                      "near_threshold_pct": _pct(r["near"], float(r["customers"]) - float(r["no_score"] or 0))} for r in segs],
+        "coverage": {"customers": int(n), "no_score_pct": _pct(sum(float(r["no_score"] or 0) for r in segs), n),
+                     "no_income_pct": _pct(sum(float(r["no_income"] or 0) for r in segs), n)},
+    }
+
+
+def _insights() -> dict:
+    hit = _insights_cache.get("v")
+    if hit and time.time() - hit[0] < INSIGHTS_TTL_S:
+        return hit[1]
+    if S.agent_sql == "real":
+        from agent.adapters.sql_warehouse import SQLWarehouse
+        wh = SQLWarehouse(S)
+        body = build_insights(lambda sql: wh._execute(sql, []), _threshold(), "gold")
+    else:
+        body = build_insights(_mock_executor(), _threshold(), "mock")
+    _insights_cache["v"] = (time.time(), body)
+    return body
+
+
+@app.route(route="insights", methods=["GET"])
+def insights(req: func.HttpRequest) -> func.HttpResponse:
+    """Público, sin JWT. Solo agregados de gold (ADR-12); caché de una hora."""
+    try:
+        body = _insights()
+    except Exception:  # noqa: BLE001 — warehouse frío o caído: la página reintenta; nunca un 500 con detalles internos
+        import logging
+        logging.exception("insights: no se pudo consultar gold")
+        return _json(503, {"error": "unavailable"})
+    return func.HttpResponse(json.dumps(body, ensure_ascii=False), status_code=200, mimetype="application/json",
+                             headers={"Cache-Control": "public, max-age=3600"})

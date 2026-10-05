@@ -143,11 +143,23 @@ jobs:
             -d '{"message":"¿Qué requisitos tiene el préstamo personal?"}' -o chat.json
           jq '{action, citations: (.citations | length), latency_ms, trace_id}' chat.json
           jq -e '.action and .trace_id' chat.json >/dev/null || { echo "::error::/chat sin action o trace_id"; exit 1; }
+      # ADR-29: los hallazgos de datos en vivo. El primer pedido despierta el warehouse; si no responde en ~2 min
+      # queda un aviso y la página reintenta sola, pero el deploy no se marca como fallido por eso.
+      - name: API · insights (agregados de gold)
+        run: |
+          for i in $(seq 1 12); do
+            code=$(curl -s --max-time 40 -o ins.json -w '%{http_code}' "$API/api/insights" || true)
+            echo "intento $i: $code"
+            if [ "$code" = 200 ]; then jq -e '(.demand|length>0) and (.segments|length>0) and .coverage.customers>0' ins.json >/dev/null && jq '{source, threshold, demand: (.demand|length), segments: (.segments|length)}' ins.json && exit 0; fi
+            sleep 10
+          done
+          echo "::warning::/api/insights no respondió con datos (¿warehouse frío?); la página reintenta sola"
       - name: UI · página, textos y config
         run: |
           set -euo pipefail
           curl -sf "$WEB/" -o /dev/null          # portada del proyecto
           curl -sf "$WEB/chat.html" -o /dev/null  # el chat
+          curl -sf "$WEB/insights.html" -o /dev/null  # hallazgos de datos (ADR-29)
           curl -sf "$WEB/ui.json" | jq -e '.lang' >/dev/null
           curl -sf "$WEB/config.js" | grep -q "$API" || { echo "::error::config.js no apunta a $API"; exit 1; }
           echo "### Chat en $WEB" >> "$GITHUB_STEP_SUMMARY"
