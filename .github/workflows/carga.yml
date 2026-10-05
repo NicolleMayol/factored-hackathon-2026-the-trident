@@ -1,0 +1,58 @@
+# ADR-28 F15 · prueba de carga a mano contra la Function desplegada (antes del video y de la ventana de jurado).
+# Calienta primero: el umbral de p95 de contracts/ops.yaml es en caliente; el cold start se reporta aparte.
+# Cada turno llama al LLM real (FM APIs, pay-per-token): 10 usuarios × 1 min son unos cientos de turnos.
+name: carga
+on:
+  workflow_dispatch:
+    inputs:
+      vus: { description: "Usuarios simultáneos (10, 25 o 50)", default: "10", type: choice, options: ["10", "25", "50"] }
+      duracion: { description: "Duración (k6: 30s, 1m, 2m)", default: "1m" }
+
+permissions: { contents: read, id-token: write }
+concurrency: { group: carga, cancel-in-progress: false }
+
+jobs:
+  k6:
+    runs-on: ubuntu-latest
+    env:
+      RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+      FUNC: ${{ vars.FUNCTION_APP_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Host y umbrales
+        run: |
+          set -euo pipefail
+          api=$(az resource show -g "$RG" -n "$FUNC" --resource-type Microsoft.Web/sites --query properties.defaultHostName -o tsv)
+          [ -n "$api" ] || { echo "::error::sin host de la API"; exit 1; }
+          echo "API=https://$api" >> "$GITHUB_ENV"
+          python3 -c "import yaml; a = yaml.safe_load(open('contracts/ops.yaml'))['alerts']; print(f\"P95_MS={a['p95_ms']}\nERROR_RATE={a['error_rate']}\")" >> "$GITHUB_ENV"
+      - name: Calentar (healthz + un turno)
+        run: |
+          for i in $(seq 1 18); do
+            [ "$(curl -s -o /dev/null -w '%{http_code}' "$API/api/healthz")" = 200 ] && break; sleep 10
+          done
+          user=$(curl -sf "$API/api/meta" | jq -r '[.users[] | select(.scopes | index("handoff:read") | not)][0].key')
+          tok=$(curl -sf -X POST "$API/api/session" -H 'content-type: application/json' -d "{\"user\":\"$user\"}" | jq -r .token)
+          curl -s -o /dev/null -w 'turno de calentamiento: %{http_code} en %{time_total}s\n' -X POST "$API/api/chat" \
+            -H 'content-type: application/json' -H "authorization: Bearer $tok" -d '{"message":"¿Qué requisitos tiene el préstamo personal?"}'
+      - uses: grafana/setup-k6-action@v1
+      - name: k6
+        run: |
+          k6 run -e API="$API" -e VUS="${{ inputs.vus }}" -e DURACION="${{ inputs.duracion }}" \
+            -e P95_MS="$P95_MS" -e ERROR_RATE="$ERROR_RATE" --summary-export resumen.json scripts/carga/chat.js
+      - name: Resumen
+        if: always()
+        run: |
+          [ -f resumen.json ] || exit 0
+          jq -r --arg vus "${{ inputs.vus }}" --arg p95 "$P95_MS" --arg er "$ERROR_RATE" '
+            "### Carga: \($vus) usuarios, \(.metrics["iterations"].count) turnos",
+            "| Métrica | Valor | Umbral |", "| --- | --- | --- |",
+            "| p50 chat | \(.metrics["http_req_duration{ruta:chat}"]["p(50)"] | floor) ms | — |",
+            "| p95 chat | \(.metrics["http_req_duration{ruta:chat}"]["p(95)"] | floor) ms | \($p95) ms |",
+            "| error rate | \(.metrics["http_req_failed{ruta:chat}"].value) | \($er) |"' resumen.json >> "$GITHUB_STEP_SUMMARY"

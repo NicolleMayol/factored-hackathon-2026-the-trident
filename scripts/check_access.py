@@ -2,6 +2,7 @@
 
     python scripts/check_access.py             # todos
     python scripts/check_access.py A1 A3 A4    # algunos
+    python scripts/check_access.py --segun-modos   # solo lo que la Function usa en modo real (AGENT_*); smoke de main.yml (ADR-28 F09)
 
 Credenciales solo desde .env / entorno o el perfil de la CLI (nunca en el repo), ver agent/adapters/dbx_auth.py:
   local:  databricks auth login --host https://adb-xxxx.azuredatabricks.net --profile fh26   +   DATABRICKS_CONFIG_PROFILE=fh26
@@ -93,9 +94,15 @@ def a4_mlflow():
     return "ok", f"experimento={eid} run={rid[:8]} (puedes borrarlo)"
 
 
+def _real(dep: str) -> bool:
+    """Sin AGENT_<DEP> (uso local) se revisa todo; con él, solo si la Function usa el recurso real."""
+    return E(f"AGENT_{dep.upper()}", "real") == "real"
+
+
 def a5_serving():
     out, status = [], "ok"
-    for name in (E("PRESCORE_ENDPOINT", "prescore-lgbm"), E("EMBED_ENDPOINT", "embed-bge-m3")):
+    endpoints = [E("PRESCORE_ENDPOINT", "prescore-lgbm")] * _real("prescore") + [E("EMBED_ENDPOINT", "embed-bge-m3")] * _real("embed")
+    for name in endpoints:
         r = requests.get(f"{HOST}/api/2.0/serving-endpoints/{name}", headers=H(), timeout=15)
         if r.status_code == 404:
             out.append(f"{name}: no existe (N9)"); status = "down"; continue
@@ -120,6 +127,22 @@ def a6_cosmos():
     return "ok", f"contenedores={names} policy_chunks={cnt} docs; handoffs escritura/borrado ok"
 
 
+def a8_trazas():
+    """El agente crea hackathon.ops.agent_turns y escribe un turno por respuesta (trace_mlflow.py). Se prueba el permiso sin escribir:
+    un INSERT de cero filas exige los mismos grants (USE SCHEMA, CREATE TABLE si no existe, MODIFY) que uno real."""
+    from agent.adapters.trace_mlflow import DDL, TABLE
+    path = E("SQL_HTTP_PATH")
+    if not path:
+        return "down", "falta SQL_HTTP_PATH (N2)"
+    wid = path.rstrip("/").split("/")[-1]
+    for stmt in (DDL, f"INSERT INTO {TABLE} SELECT * FROM {TABLE} WHERE false"):
+        r = requests.post(f"{HOST}/api/2.0/sql/statements", headers=H(), json={"warehouse_id": wid, "statement": stmt, "wait_timeout": "30s"}, timeout=60)
+        r.raise_for_status(); st = r.json().get("status", {})
+        if st.get("state") != "SUCCEEDED":
+            return "down", f"{stmt.split('(')[0][:40]}… → {st.get('error', {}).get('message', st.get('state'))[:160]}"
+    return "ok", f"{TABLE}: crear si no existe + insertar (0 filas) ok"
+
+
 def a7_function():
     url = E("FUNCTION_URL")
     if not url:
@@ -129,10 +152,23 @@ def a7_function():
 
 
 CHECKS = {"A1": ("workspace + Unity Catalog", a1_workspace), "A2": ("SQL Warehouse wh-agent", a2_sql), "A3": ("FM APIs small + main", a3_fm_apis),
-          "A4": ("MLflow experimento", a4_mlflow), "A5": ("Model Serving prescore-lgbm / embed-bge-m3", a5_serving), "A6": ("Cosmos DB", a6_cosmos), "A7": ("Function App /healthz", a7_function)}
+          "A4": ("MLflow experimento", a4_mlflow), "A5": ("Model Serving prescore-lgbm / embed-bge-m3", a5_serving), "A6": ("Cosmos DB", a6_cosmos), "A7": ("Function App /healthz", a7_function),
+          "A8": ("Trazas en ops.agent_turns", a8_trazas)}
+
+
+def segun_modos() -> list[str]:
+    """Checks de lo que la Function usa en real. A4 (MLflow) y A7 (/healthz) quedan fuera: el turno no usa MLflow y el smoke ya llama a /healthz."""
+    out = ["A1"]
+    out += ["A2"] * _real("sql") + ["A3"] * _real("llm") + ["A5"] * (_real("prescore") or _real("embed"))
+    out += ["A6"] * _real("store") + ["A8"] * _real("trace")
+    return out
 
 if __name__ == "__main__":
-    wanted = sys.argv[1:] or list(CHECKS)
+    args = sys.argv[1:]
+    if "--segun-modos" in args:  # mismo default que agent/config/settings.py: sin AGENT_<DEP>, la Function usa el mock
+        for dep in ("LLM", "SQL", "STORE", "EMBED", "PRESCORE", "TRACE"):
+            os.environ.setdefault(f"AGENT_{dep}", "mock")
+    wanted = segun_modos() if "--segun-modos" in args else (args or list(CHECKS))
     if not HOST:
         print("sin host: pon DATABRICKS_HOST en .env o DATABRICKS_CONFIG_PROFILE con un perfil de `databricks auth login`"); sys.exit(2)
     print(f"host={HOST} auth={dbx_auth.mode()}")

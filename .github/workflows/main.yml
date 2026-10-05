@@ -63,8 +63,9 @@ jobs:
     uses: ./.github/workflows/deploy.yml
 
   # Después de function: la UI nueva puede depender de rutas nuevas de la API (/meta en ADR-25).
+  # infra va explícito (ADR-28 F11): si infra falla, function queda skipped, no failure, y sin esto la UI salía igual.
   web:
-    needs: [changes, ci, function]
+    needs: [changes, ci, infra, function]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.web == 'true' }}
     uses: ./.github/workflows/deploy-web.yml
 
@@ -104,6 +105,33 @@ jobs:
             echo "intento $i: $code $(cat h.json 2>/dev/null)"; [ "$code" = 200 ] && exit 0; sleep 10
           done
           echo "::error::/healthz no respondió 200"; exit 1
+      # ADR-28 F09: los permisos de la identidad del agente (sp-agent-ro), los mismos que usa la Function.
+      # El secreto sale del SecretUri de sus app settings; solo se revisa lo que la Function usa en modo real (AGENT_*).
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11", cache: pip, cache-dependency-path: requirements*.txt }
+      - run: pip install -r requirements.txt
+      - name: API · permisos de la identidad del agente
+        run: |
+          set -euo pipefail
+          az functionapp config appsettings list -g "$RG" -n "$FUNC" -o json > s.json
+          get() { jq -r --arg k "$1" '.[] | select(.name == $k) | .value' s.json; }
+          kv() { get "$1" | sed -n 's/^@Microsoft.KeyVault(SecretUri=\(.*\))$/\1/p'; }
+          for k in DATABRICKS_HOST DATABRICKS_CLIENT_ID SQL_HTTP_PATH FM_ENDPOINT_MAIN FM_ENDPOINT_SMALL PRESCORE_ENDPOINT EMBED_ENDPOINT COSMOS_ENDPOINT \
+                   $(jq -r '.[].name | select(startswith("AGENT_"))' s.json); do
+            v=$(get "$k"); if [ -n "$v" ]; then export "$k=$v"; fi
+          done
+          uri=$(kv DATABRICKS_CLIENT_SECRET)
+          [ -n "$uri" ] || { echo "::error::DATABRICKS_CLIENT_SECRET de la Function no es una referencia a Key Vault"; exit 1; }
+          sec=$(az keyvault secret show --id "$uri" --query value -o tsv); echo "::add-mask::$sec"; export DATABRICKS_CLIENT_SECRET="$sec"
+          if [ "${AGENT_STORE:-}" = real ]; then
+            ck=$(az keyvault secret show --id "$(kv COSMOS_KEY)" --query value -o tsv); echo "::add-mask::$ck"; export COSMOS_KEY="$ck"
+          fi
+          rm s.json
+          rc=0; python scripts/check_access.py --segun-modos | tee acceso.txt || rc=$?
+          { echo "### Permisos de sp-agent-ro"; echo '```'; cat acceso.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          # 0 ok · 1 cold (scale-to-zero, no es fallo) · 2 down
+          [ "$rc" -lt 2 ] || { echo "::error::falta un permiso o un recurso del agente (ver arriba)"; exit 1; }
       - name: API · meta, sesión y un turno de chat
         run: |
           set -euo pipefail
