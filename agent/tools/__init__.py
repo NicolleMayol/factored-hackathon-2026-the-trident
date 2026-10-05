@@ -56,7 +56,19 @@ def get_customer_profile(deps: Deps, customer_id: str) -> dict[str, Any]:
 
 def get_customer_products(deps: Deps, customer_id: str) -> dict[str, Any]:
     rows = deps.sql.query("customer_products", {"customer_id": customer_id})
-    return {"products": [{k: r.get(k) for k in ("product_id", "product_type", "currency", "current_balance", "credit_limit", "days_past_due", "product_status")} for r in rows]}
+    out = [{k: r.get(k) for k in ("product_id", "product_type", "currency", "current_balance", "credit_limit", "days_past_due", "product_status")} for r in rows]
+    for r in out:  # gold.customer_products trae el nombre del dataset ("Tarjeta Crédito"); el catálogo, el canónico (credit_card). Puente: product_type_dataset (ADR-24)
+        r["product_type"] = canonical_product_type(deps, r.get("product_type"))
+    return {"products": out}
+
+
+def canonical_product_type(deps: Deps, value: str | None) -> str | None:
+    from agent.policy.engine import load_catalog
+    if not value:
+        return value
+    cat = load_catalog(str(deps.settings.catalog_path)) if getattr(deps, "settings", None) else []
+    by_dataset = {p.get("product_type_dataset"): p["product_type"] for p in cat if p.get("product_type_dataset")}
+    return by_dataset.get(value, value)
 
 
 SECTION_HINTS = {  # ontología ligera: la plantilla R1–R8 es fija, así que la pregunta se enruta a su sección
@@ -111,8 +123,13 @@ def search_policy(deps: Deps, query: str, country: str, language: str, product_c
 def get_prescore(deps: Deps, customer_id: str) -> dict[str, Any]:
     prof = (deps.sql.query("customer_profile", {"customer_id": customer_id}) or [{}])[0]
     beh = (deps.sql.query("customer_behavior", {"customer_id": customer_id}) or [{}])[0]
-    feats = {k: prof.get(k) for k in ("credit_score", "estimated_monthly_income", "segment", "country")}
+    feats = {k: prof.get(k) for k in ("credit_score", "estimated_monthly_income", "segment", "country", "country_code")}
     feats.update({k: beh.get(k) for k in ("n_tx", "amount_usd_12m", "declined_ratio", "max_days_past_due", "active_months")})
+    prods = deps.sql.query("customer_products", {"customer_id": customer_id})  # v2: cartera agregada, sin days_past_due (es el target del pre-score)
+    loans = ("personal_loan", "mortgage", "payroll_loan", "Préstamo Personal", "Préstamo Hipotecario")
+    feats.update({"n_products": len(prods), "n_active_products": sum(1 for p in prods if p.get("product_status") == "Active"),
+                  "credit_limit_total": sum(float(p.get("credit_limit") or 0) for p in prods), "balance_total": sum(float(p.get("current_balance") or 0) for p in prods),
+                  "n_cards": sum(1 for p in prods if p.get("product_type") in ("credit_card", "Tarjeta Crédito")), "n_loans": sum(1 for p in prods if p.get("product_type") in loans)})
     return deps.prescore.predict(feats)
 
 

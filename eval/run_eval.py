@@ -37,6 +37,8 @@ def run(limit: int | None = None, cases_path: Path | None = None, *, small: str 
     rt = runtime(Settings()) if (small or main) else runtime()
     _, deps, _ = rt
     cases = [json.loads(l) for l in open(cases_path or ROOT / "eval" / "cases.jsonl", encoding="utf-8")]
+    from eval.amounts import resolve_amounts
+    cases = [{**c, "message": resolve_amounts(c["message"], USERS[c["user"]], rt[0])} for c in cases]
     if limit:
         cases = cases[:limit]
     rows = []
@@ -53,7 +55,7 @@ def run(limit: int | None = None, cases_path: Path | None = None, *, small: str 
             for sp in deps.trace.spans[n0:]:
                 node_ms[sp.get("tool") and f"tool:{sp['tool']}" or sp["name"]].append(sp["ms"])
         informed = bool(st.get("reason_code")) and (r["action"] != "escalate" or bool(r.get("case_id")))
-        rows.append({**{k: c[k] for k in ("case_id", "category", "pair_id", "language", "expected_action", "message")}, "atlas": c.get("atlas"),
+        rows.append({**{k: c[k] for k in ("case_id", "category", "pair_id", "language", "expected_action", "message")}, "atlas": c.get("atlas"), "intent_expected": c.get("intent"), "intent": st.get("intent"),
                      "action": r["action"], "escalate_reason": st.get("escalate_reason", "none"), "rules_fired": st.get("rules_fired", []),
                      "informed": informed, "verify_ok": bool(st.get("verify_ok", True)), "citations": len(r["citations"]),
                      "latency_ms": round(ms, 1), "cost_usd": r.get("cost_usd", 0.0), "reply_source": st.get("reply_source", "template"), "fallback": st.get("_respond_fallback", ""), "reply": r["reply"], "tokens": getattr(deps.llm, "last_usage", {}).get("tokens_in", 0) + getattr(deps.llm, "last_usage", {}).get("tokens_out", 0)})

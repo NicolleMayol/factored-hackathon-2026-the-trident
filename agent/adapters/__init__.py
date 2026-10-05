@@ -43,6 +43,7 @@ class Deps:
     prescore: Prescore
     trace: Trace
     health: dict[str, str]  # llm|cosmos|prescore|embed|sql -> ok|cold|down
+    settings: Any = None  # rutas (catálogo) para los puentes de nombres en tools
 
 
 def build_deps(settings=None) -> Deps:
@@ -67,6 +68,8 @@ def build_deps(settings=None) -> Deps:
         from agent.adapters.embed_serving import EmbedServing as E
     if s.agent_prescore == "mock":
         from agent.adapters.prescore_mock import PrescoreMock as P
+    elif s.agent_prescore == "local":  # modelo exportado en proceso (sin Model Serving, SKU trial)
+        from agent.adapters.prescore_local import PrescoreLocal as P
     else:
         from agent.adapters.prescore_serving import PrescoreServing as P
     if s.agent_trace == "mock":
@@ -75,4 +78,4 @@ def build_deps(settings=None) -> Deps:
         from agent.adapters.trace_mlflow import TraceMlflow as T
     embed = E(s)
     return Deps(llm=L(s), sql=Q(s), store=St(s, embed), embed=embed, prescore=P(s), trace=T(s),
-                health={"llm": "ok", "cosmos": "ok", "prescore": "ok", "embed": "ok", "sql": "ok"})
+                health={"llm": "ok", "cosmos": "ok", "prescore": "ok", "embed": "ok", "sql": "ok"}, settings=s)

@@ -10,7 +10,7 @@ Requisitos de Tarjeta de crédito: ser mayor de edad; ingreso mensual demostrabl
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Tarjeta de crédito: entre 20.66 % y 25.5 % anual según perfil. La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera; el tope vigente para esta modalidad es 25.5 % EA. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Tarjeta de crédito: entre 20.66 % y 25.5 % anual según perfil. La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: Ley 1328/2009 (CO) · tasa de usura SFC -->
 
 ## R4

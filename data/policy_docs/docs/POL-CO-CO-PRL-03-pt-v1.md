@@ -10,7 +10,7 @@ Requisitos de Crédito consignado: ser maior de idade; renda mensal comprovável
 <!-- source: catálogo sintético -->
 
 ## R3
-Taxa de juros de Crédito consignado: entre 10.21 % e 19.71 % ao ano conforme o perfil. A taxa é efetiva anual (EA) e nunca supera a taxa de usura vigente certificada pela Superintendência Financeira; o teto vigente para esta modalidade é — % EA. A taxa definitiva é fixada na aprovação e não no chat.
+Taxa de juros de Crédito consignado: entre 10.21 % e 19.71 % ao ano conforme o perfil. A taxa é efetiva anual (EA) e nunca supera a taxa de usura vigente certificada pela Superintendência Financeira. A taxa definitiva é fixada na aprovação e não no chat.
 <!-- source: Ley 1328/2009 (CO) · tasa de usura SFC -->
 
 ## R4

@@ -10,7 +10,7 @@ Requisitos de Empréstimo pessoal: ser maior de idade; renda mensal comprovável
 <!-- source: catálogo sintético -->
 
 ## R3
-Taxa de juros de Empréstimo pessoal: entre 13.54 % e 26.5 % ao ano conforme o perfil. Antes de contratar informa-se o CAT (Custo Anual Total) para fins informativos e de comparação, conforme a CONDUSEF; a referência de mercado para esta modalidade é 60 % de CAT. A taxa definitiva é fixada na aprovação e não no chat.
+Taxa de juros de Empréstimo pessoal: entre 13.54 % e 26.5 % ao ano conforme o perfil. Antes de contratar informa-se o CAT (Custo Anual Total) para fins informativos e de comparação, conforme a CONDUSEF. A taxa definitiva é fixada na aprovação e não no chat.
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4

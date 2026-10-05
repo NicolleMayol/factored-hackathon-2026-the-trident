@@ -57,7 +57,15 @@ def a2_sql():
     r = requests.post(f"{HOST}/api/2.0/sql/statements", headers=H(), json={"warehouse_id": wid, "statement": "SELECT 1", "wait_timeout": "30s"}, timeout=60)
     r.raise_for_status(); dt = round(time.time() - t0, 1)
     ok = r.json().get("status", {}).get("state") == "SUCCEEDED"
-    return ("ok" if state == "RUNNING" else "cold") if ok else "down", f"estado={state} SELECT 1 en {dt}s"
+    detail = f"estado={state} SELECT 1 en {dt}s"
+    if ok:  # lectura real de gold con el adaptador del agente
+        from agent.adapters.sql_warehouse import SQLWarehouse
+        from agent.config.settings import Settings
+        q = SQLWarehouse(Settings())
+        prof = q.query("customer_profile", {"customer_id": "TEST-CO-001"})
+        rates = q.query("regulator_rates", {"country": "CO"})
+        detail += f" · customer_360 TEST-CO-001={'ok' if prof else 'SIN FILA (E1)'} ({q.last_ms} ms) · regulator_rates CO={len(rates)} filas"
+    return ("ok" if state == "RUNNING" else "cold") if ok else "down", detail
 
 
 def _chat(endpoint: str):

@@ -6,6 +6,14 @@ from pathlib import Path
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
+# Local: .env (ignorado por git) sin pisar lo ya definido en el entorno. En Azure no existe: las variables vienen de App Settings.
+if (REPO_ROOT / ".env").exists():
+    for _line in (REPO_ROOT / ".env").read_text(encoding="utf-8").splitlines():
+        _line = _line.strip()
+        if _line and not _line.startswith("#") and "=" in _line:
+            _k, _v = _line.split("=", 1)
+            os.environ.setdefault(_k.strip(), _v.strip().strip('"').strip("'"))
+
 
 def _env(name: str, default: str = "") -> str:
     return os.environ.get(name, default)

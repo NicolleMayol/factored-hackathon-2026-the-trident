@@ -10,7 +10,7 @@ Requisitos de Crédito consignado: ser maior de idade; renda mensal comprovável
 <!-- source: catálogo sintético -->
 
 ## R3
-Taxa de juros de Crédito consignado: entre 49.5 % e 99.04 % ao ano conforme o perfil. Informam-se TNA, TEA e CFT (Custo Financeiro Total) conforme o Regime de Transparência do BCRA; a referência de mercado de CFT para esta modalidade é — %. A taxa definitiva é fixada na aprovação e não no chat.
+Taxa de juros de Crédito consignado: entre 49.5 % e 99.04 % ao ano conforme o perfil. Informam-se TNA, TEA e CFT (Custo Financeiro Total) conforme o Regime de Transparência do BCRA. A taxa definitiva é fixada na aprovação e não no chat.
 <!-- source: Com. A 5460 BCRA (AR) · Régimen de Transparencia -->
 
 ## R4

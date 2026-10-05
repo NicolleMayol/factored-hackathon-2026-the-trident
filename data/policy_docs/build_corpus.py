@@ -36,13 +36,17 @@ SOURCES = {
 
 # Disclosure de costo total por país (R3)
 COST = {
-    "CO": {"es": "La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera; el tope vigente para esta modalidad es {cap} % EA.",
-           "pt": "A taxa é efetiva anual (EA) e nunca supera a taxa de usura vigente certificada pela Superintendência Financeira; o teto vigente para esta modalidade é {cap} % EA."},
-    "MX": {"es": "Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF; la referencia de mercado para esta modalidad es {cap} % de CAT.",
-           "pt": "Antes de contratar informa-se o CAT (Custo Anual Total) para fins informativos e de comparação, conforme a CONDUSEF; a referência de mercado para esta modalidade é {cap} % de CAT."},
-    "AR": {"es": "Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es {cap} %.",
-           "pt": "Informam-se TNA, TEA e CFT (Custo Financeiro Total) conforme o Regime de Transparência do BCRA; a referência de mercado de CFT para esta modalidade é {cap} %."},
+    "CO": {"es": "La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera{cap_es}.",
+           "pt": "A taxa é efetiva anual (EA) e nunca supera a taxa de usura vigente certificada pela Superintendência Financeira{cap_pt}."},
+    "MX": {"es": "Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF{cap_es}.",
+           "pt": "Antes de contratar informa-se o CAT (Custo Anual Total) para fins informativos e de comparação, conforme a CONDUSEF{cap_pt}."},
+    "AR": {"es": "Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA{cap_es}.",
+           "pt": "Informam-se TNA, TEA e CFT (Custo Financeiro Total) conforme o Regime de Transparência do BCRA{cap_pt}."},
 }
+# La cifra del tope solo se escribe si la fila de ref.regulator_rates tiene fuente oficial; una fila PENDIENTE (valor provisional, ADR-24 v1.1) guarda el motor pero no se cita.
+CAP_PHRASE = {"CO": ("; el tope vigente para esta modalidad es {cap} % EA", "; o teto vigente para esta modalidade é {cap} % EA"),
+              "MX": ("; la referencia de mercado para esta modalidad es {cap} % de CAT", "; a referência de mercado para esta modalidade é {cap} % de CAT"),
+              "AR": ("; la referencia de mercado de CFT para esta modalidad es {cap} %", "; a referência de mercado de CFT para esta modalidade é {cap} %")}
 CAP_KIND = {"CO": "usura", "MX": "cat", "AR": "cft"}
 
 GLOSSARY = {"es": "Glosario: tasa de interés (precio anual del crédito), cuota (pago periódico), plazo (meses del crédito), mora (atraso en el pago), desembolso (entrega del dinero), pre-evaluación (resultado preliminar no vinculante).",
@@ -56,12 +60,14 @@ def fmt_money(v: float) -> str:
 def sections(p: dict, lang: str, cap: float | None) -> dict[str, str]:
     cc = p["country"]; name = p["name_es"] if lang == "es" else p["name_pt"]; cty = COUNTRY[cc][lang]; cur = CUR_NAME[p["currency"]][lang]
     cuota = fmt_money(float(p["amount_max"]) / p["term_months_max"] * (1 + float(p["rate_max"]) / 100 / 2))
-    cap_txt = f"{cap:g}" if cap is not None else "—"
+    es_cap, pt_cap = ("", "")
+    if cap is not None:
+        es_cap, pt_cap = (t.format(cap=f"{cap:g}") for t in CAP_PHRASE[cc])
     if lang == "es":
         return {
             "R1": f"{name} en {cty}: producto de crédito para personas naturales clientes del banco. En este canal el agente informa condiciones y hace una pre-evaluación no vinculante; la aprobación, la negación y el cambio de condiciones los decide siempre un analista.",
             "R2": f"Requisitos de {name}: ser mayor de edad; ingreso mensual demostrable; antigüedad como cliente mayor a 6 meses; sin mora superior a 30 días en ningún producto; puntaje de crédito mínimo {p['min_score']}. Para la pre-evaluación se usan solo datos del propio cliente.",
-            "R3": f"Tasa de {name}: entre {p['rate_min']} % y {p['rate_max']} % anual según perfil. " + COST[cc]["es"].format(cap=cap_txt) + " La tasa definitiva se fija en la aprobación y no en el chat.",
+            "R3": f"Tasa de {name}: entre {p['rate_min']} % y {p['rate_max']} % anual según perfil. " + COST[cc]["es"].format(cap_es=es_cap) + " La tasa definitiva se fija en la aprobación y no en el chat.",
             "R4": f"Montos y plazos de {name}: desde {fmt_money(p['amount_min'])} hasta {fmt_money(p['amount_max'])} {cur}; plazo hasta {p['term_months_max']} meses. Cuota de referencia para el monto máximo al plazo máximo y tasa máxima: aproximadamente {cuota} {cur} al mes.",
             "R5": f"Proceso para {name}: 1) pre-evaluación no vinculante en el chat con tu autorización; 2) solicitud formal con un asesor; 3) análisis y decisión de un analista; 4) desembolso. El chat no recibe solicitudes formales ni desembolsa.",
             "R6": "Consentimiento y datos: la pre-evaluación usa tus datos de cliente solo con tu autorización explícita en esta conversación; puedes revocarla en cualquier momento. No se consultan datos de terceros ni se comparten los tuyos con terceros.",
@@ -71,7 +77,7 @@ def sections(p: dict, lang: str, cap: float | None) -> dict[str, str]:
     return {
         "R1": f"{name} em {cty}: produto de crédito para pessoas físicas clientes do banco. Neste canal o agente informa condições e faz uma pré-avaliação não vinculante; a aprovação, a negação e a mudança de condições são sempre decididas por um analista.",
         "R2": f"Requisitos de {name}: ser maior de idade; renda mensal comprovável; mais de 6 meses como cliente; sem atraso superior a 30 dias em nenhum produto; pontuação de crédito mínima {p['min_score']}. Para a pré-avaliação usam-se apenas dados do próprio cliente.",
-        "R3": f"Taxa de juros de {name}: entre {p['rate_min']} % e {p['rate_max']} % ao ano conforme o perfil. " + COST[cc]["pt"].format(cap=cap_txt) + " A taxa definitiva é fixada na aprovação e não no chat.",
+        "R3": f"Taxa de juros de {name}: entre {p['rate_min']} % e {p['rate_max']} % ao ano conforme o perfil. " + COST[cc]["pt"].format(cap_pt=pt_cap) + " A taxa definitiva é fixada na aprovação e não no chat.",
         "R4": f"Valores e prazos de {name}: de {fmt_money(p['amount_min'])} até {fmt_money(p['amount_max'])} {cur}; prazo até {p['term_months_max']} meses. Parcela de referência para o valor máximo no prazo máximo e taxa máxima: aproximadamente {cuota} {cur} por mês.",
         "R5": f"Processo para {name}: 1) pré-avaliação não vinculante no chat com sua autorização; 2) solicitação formal com um assessor; 3) análise e decisão de um analista; 4) liberação. O chat não recebe solicitações formais nem libera valores.",
         "R6": "Consentimento e dados: a pré-avaliação usa seus dados de cliente apenas com sua autorização explícita nesta conversa; você pode revogá-la a qualquer momento. Não se consultam dados de terceiros nem se compartilham os seus com terceiros.",
@@ -86,10 +92,10 @@ def build() -> list[dict]:
     OUT_DOCS.mkdir(parents=True, exist_ok=True)
     chunks = []
     for p in cat:
-        if p["product_type"] not in ("personal_loan", "credit_card", "payroll_loan"):
-            continue
+        # M10 (ADR-24): los 6 tipos del catálogo tienen R1–R8; el agente no ofrece lo que no puede citar
         cc = p["country"]
-        cap = next((float(r["rate_max"]) for r in rates if r["country"] == cc and r["product_type"] == p["product_type"] and r["rate_kind"] == CAP_KIND[cc]), None)
+        cap = next((float(r["rate_max"]) for r in rates if r["country"] == cc and r["product_type"] == p["product_type"] and r["rate_kind"] == CAP_KIND[cc]
+                    and r.get("rate_max") and not str(r.get("source", "")).upper().startswith("PENDIENTE")), None)
         for lang in ("es", "pt"):
             doc_id = f"POL-{cc}-{p['product_code']}-{lang}-{VERSION}"
             secs = sections(p, lang, cap)

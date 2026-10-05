@@ -10,7 +10,7 @@ Requisitos de Tarjeta de crédito: ser mayor de edad; ingreso mensual demostrabl
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Tarjeta de crédito: entre 61.67 % y 116.76 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA; la referencia de mercado de CFT para esta modalidad es — %. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Tarjeta de crédito: entre 61.67 % y 116.76 % anual según perfil. Se informan TNA, TEA y CFT (Costo Financiero Total) según el Régimen de Transparencia del BCRA. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: Com. A 5460 BCRA (AR) · Régimen de Transparencia -->
 
 ## R4
