@@ -12,6 +12,7 @@ resource "databricks_service_principal" "pipelines" {
 resource "databricks_service_principal" "agent_ro" {
   display_name          = "sp-agent-ro"
   databricks_sql_access = true # consultas a gold y ref por wh-agent
+  workspace_access      = true # sin esto los FM APIs responden 403 ("disabled for users without the workspace-access entitlement")
 }
 
 resource "databricks_service_principal_secret" "agent_ro" {
