@@ -1,12 +1,12 @@
 # ADR-27 · Pipeline de main. Un merge = un run con orden fijo; cada capa corre solo si cambió:
 #   changes → ci → infra (plan + apply con aprobación) → bundles ∥ function → web → smoke → resumen
 # Si ci falla no se despliega nada. Si infra espera aprobación, function y bundles esperan con ella.
-# Las piezas son workflows reutilizables (ci, infra, bundles, deploy, deploy-web, diagram-sync).
+# Las piezas son workflows reutilizables (ci, infra, bundles, deploy, deploy-web, diagram-export).
 name: main
 on:
   push:
     branches: [main]
-  workflow_dispatch: # corre todas las capas
+  workflow_dispatch: # corre todas las capas salvo infra (infra solo con cambios en .tf o en infra/scripts)
 
 permissions: { contents: write, pull-requests: write, id-token: write, actions: read }
 concurrency: { group: main-pipeline, cancel-in-progress: false }
@@ -34,7 +34,9 @@ jobs:
             base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/main.yml/runs?branch=main&status=success&per_page=1" \
               --jq '.workflow_runs[0].head_sha // empty' || true)
           fi
-          echo "base=${base:-<ninguna: todas las capas>}"
+          # Primer run del pipeline (sin run verde todavía): el push anterior.
+          [ -n "$base" ] || base="${{ github.event_name == 'push' && github.event.before || '' }}"
+          echo "base=${base:-<ninguna: todas las capas salvo infra>}"
           bash scripts/ci_changes.sh "$base" "$GITHUB_SHA"
 
   ci:
@@ -68,7 +70,7 @@ jobs:
   diagrams:
     needs: changes
     if: needs.changes.outputs.diagrams == 'true'
-    uses: ./.github/workflows/diagram-sync.yml
+    uses: ./.github/workflows/diagram-export.yml
 
   # De punta a punta contra lo desplegado: API (salud, /meta, sesión, un turno de chat real) y UI.
   smoke:

@@ -1,7 +1,8 @@
 # Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
 # Diagrama de arquitectura.
 # PR: solo valida (sin commits del bot en la rama: un commit nuevo vuelve a disparar todos los workflows del PR).
-# main: exporta los PNG una vez, al mergear, y los sube con [skip ci] para no disparar nada.
+# La exportación de PNG en main vive en diagram-export.yml: GitHub valida los permisos de todos los jobs
+# de una pieza reutilizable, y desde un PR no se puede pedir contents: write.
 name: diagram-sync
 on:
   # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
@@ -10,7 +11,6 @@ on:
 
 jobs:
   check:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions: { contents: read }
     steps:
@@ -24,25 +24,3 @@ jobs:
             echo "El .drawio está comprimido: desmarca 'Comprimido' en draw.io y vuelve a guardar"; exit 1; fi
       - name: Coherencia diagrama ↔ impact-map
         run: python scripts/drawio_tool.py sync diagrams/arquitectura.drawio
-
-  export:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions: { contents: write }
-    concurrency: { group: diagram-export, cancel-in-progress: true }
-    steps:
-      - uses: actions/checkout@v4
-      - name: Exportar PNG
-        uses: rlespinasse/drawio-export-action@v2
-        with:
-          path: diagrams
-          format: png
-          output: out
-          transparent: false
-          scale: 2
-          action-mode: all
-      - name: Subir exportes a main
-        run: |
-          git config user.name "diagram-bot"; git config user.email "bot@users.noreply.github.com"
-          git add diagrams/out
-          if git diff --cached --quiet; then echo "sin cambios"; else git commit -m "chore(diagrams): export [skip ci]" && git push; fi
