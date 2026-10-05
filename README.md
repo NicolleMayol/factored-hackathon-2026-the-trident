@@ -1,72 +1,73 @@
 # Agente Crédito LATAM · Factored AI & Data Hackathon 2026
+Versión en español: [README.es.md](README.es.md)
 
-Agente de servicio al cliente para un banco regional (México, Colombia, Argentina) enfocado en un workflow: información de productos de crédito y elegibilidad, en español y portugués. Informa y simula; nunca decide crédito. Sabe cuándo no actuar y lo demuestra con números.
+Customer service agent for a regional bank (Mexico, Colombia, Argentina), focused on one workflow: information about credit products and eligibility, in Spanish and Portuguese. It informs and simulates; it never makes a credit decision. It knows when not to act, and the numbers below show it. The ADRs and contracts referenced here are in Spanish.
 
-## Cómo funciona
-- Grafo de estados Understand → Decide → Act → Verify → Escalate (LangGraph) en Azure Function App. Decide es determinista: matriz de política en `policy/policy.yaml`, scopes del token y flags del cliente.
-- Tres componentes separados: LLM (conversación, Databricks Foundation Model APIs), pre-scoring LightGBM (insumo del motor, nunca decide) y reglas de elegibilidad versionadas (única fuente del resultado).
-- RAG sobre políticas y catálogo sintéticos (etiquetados como tales), vector store y estado en Azure Cosmos DB. Toda cifra en una respuesta traza a un chunk o a un resultado de tool.
-- Datos: medallón bronze/silver/gold en Databricks (Unity Catalog) sobre el dataset LATAM Bank; contratos de esquema, calidad y frescura en `contracts/`.
+## How it works
+- State graph Understand → Decide → Act → Verify → Escalate (LangGraph) on an Azure Function App. Decide is deterministic: it uses the policy matrix in `policy/policy.yaml`, the token scopes and the customer flags.
+- Three separate components: the LLM (conversation, Databricks Foundation Model APIs), a logistic regression pre-score (an input to the engine; it never decides) and versioned eligibility rules (the only source of the outcome).
+- RAG over synthetic policies and a synthetic catalog (labeled as such), with the vector store and state in Azure Cosmos DB. Every figure in an answer traces back to a chunk or a tool result.
+- Data: bronze/silver/gold medallion in Databricks (Unity Catalog) on the LATAM Bank dataset; schema, quality and freshness contracts live in `contracts/`.
 
-## Dónde hay IA y dónde no
-| Paso | Quién decide | Por qué |
+## Where AI is used and where it is not
+| Step | Who decides | Why |
 | --- | --- | --- |
-| Entender intención e idioma | Guardrail determinista (regex es/pt/en) antes del modelo; luego Llama 3.3 70B con salida JSON tipada (`understand_v2`); baseline TF-IDF + regresión logística (macro-F1 0,92) | lenguaje libre en es y pt; una inyección nunca llega al LLM |
-| Decidir qué se puede hacer | Reglas YAML versionadas × scopes del token × banda regulatoria; sin LLM | reproducible, auditable, con base normativa por país |
-| Ejecutar | Tools tipadas, solo las autorizadas; pre-score (regresión logística con features de cartera, AUC 0,78 sobre 134 k clientes) como insumo | el modelo informa, nunca aprueba; ganó al LightGBM por simplicidad a igual AUC |
-| Verificar | Check determinista: toda cifra debe existir en una cita o un hecho verificado; Respond redacta con Llama 3.3 70B y, si el check falla, responde con la plantilla | sin cita no se afirma |
-| Escalar | Humano, siempre en banda cerrada | abstenerse cuenta como acierto |
+| Understand intent and language | Deterministic guardrail (es/pt/en regex) before the model; then Llama 3.3 70B with typed JSON output (`understand_v2`); TF-IDF + logistic regression baseline (macro-F1 0.92) | free-form language in es and pt; an injection never reaches the LLM |
+| Decide what can be done | Versioned YAML rules × token scopes × regulatory band; no LLM | reproducible, auditable, grounded in each country's regulations |
+| Execute | Typed tools, only the authorized ones; pre-score (logistic regression with portfolio features, AUC 0.78 on 134k customers) as an input | the model informs and never approves; it beat LightGBM on simplicity at equal AUC |
+| Verify | Deterministic check: every figure must appear in a citation or a verified fact; Respond drafts the reply with Llama 3.3 70B and, if the check fails, answers with the template | no citation, no claim |
+| Escalate (hand off to an advisor) | A human, always for the closed band (not eligible) | abstaining counts as a correct answer |
 
-## Trade-offs explícitos
-| Eje | Decisión | Qué se sacrifica |
+## Explicit trade-offs
+| Axis | Decision | What we give up |
 | --- | --- | --- |
-| Autonomía | El agente informa y pre-evalúa; nunca aprueba ni niega crédito | menos "wow" de automatización |
-| Exactitud | Toda cifra cita un chunk o una regla; tasa ≤ usura verificada | respuestas más cortas y con más escalamientos |
-| Latencia | p95 ≤ 8 s en caliente; cold start reportado aparte; scale-to-zero fuera de la ventana de evaluación | primer turno lento tras inactividad |
-| Costo | Free tiers y serverless (versión C, ≈ 35–125 USD / 7 días) | sin always-on; límites de RU/s |
-| Supervisión humana | Handoff con contexto completo y motivo (`escalate_reason`); vista de analista | parte de los casos no se resuelve en el chat |
+| Autonomy | The agent informs and runs a pre-check; it never approves or denies credit | less automation "wow" |
+| Accuracy | Every figure cites a chunk or a rule; rate ≤ usury cap, checked | shorter answers and more escalations |
+| Latency | p95 ≤ 8 s warm (measured 9.7 s, see Evidence); cold start reported separately; scale-to-zero outside the evaluation window | slow first turn after idle time |
+| Cost | Free tiers and serverless (version C, ≈ 35–125 USD / 7 days) | no always-on; RU/s limits |
+| Human oversight | Handoff with full context and reason (`escalate_reason`); analyst view | some cases are not resolved in the chat |
 
-## Fuentes externas y su justificación
-El dataset trae clientes, productos y transacciones, pero no lo que la regulación obliga a decir al cliente (tasa de usura, CAT, CFT, TEA de referencia). Esas cifras públicas de BCRA, Superintendencia Financiera de Colombia y Banxico entran por batch, con URL y fecha de snapshot, solo como contexto del RAG y techo del motor de reglas. Ninguna fuente externa se usa para entrenar ni para evaluar: las métricas se calculan sobre el dataset y un catálogo sintético, y un test en CI lo verifica. Detalle fuente por fuente en `docs/adr/12-fuentes-externas.md`.
+## External sources and why we use them
+The dataset includes customers, products and transactions, but not what regulation requires the bank to tell the customer (usury cap, CAT, CFT, reference TEA). Those public figures from BCRA, the Superintendencia Financiera de Colombia and Banxico come in by batch, with URL and snapshot date. They serve only as RAG context and as the ceiling for the rules engine. No external source is used for training or evaluation: metrics are computed on the dataset and a synthetic catalog, and a CI test checks this. Source-by-source detail is in `docs/adr/12-fuentes-externas.md`.
 
-## Evidencia (números del 5 de octubre)
-| Qué | Cómo se midió | Resultado |
+## Evidence (numbers as of October 5)
+| What | How it was measured | Result |
 | --- | --- | --- |
-| Matriz de confusión de acción, todo real (Llama 3.3 70B, `understand_v2`, gold por SQL, trazas, pre-score) | 82 casos es/pt en pares actuar/abstener, 15 adversariales MITRE ATLAS, usuarios = clientes reales de gold (`eval/pick_users.py`, `eval/run_eval.py`) | act accuracy 0,86 · abstain accuracy 0,98 · paired 0,83 · FP de acción 0,019 · IVR 0 · groundedness 1,0 · exact match 0,915 · 5 fallas de borde de intención · umbrales ok |
-| Misma matriz con el fixture (`data/mock`, SQL en mock) | mismos 82 casos | act 0,90 · abstain 1,0 · FP 0 · 3 fallas; la diferencia con la fila anterior es intención del LLM sobre mensajes de borde, no datos |
-| Bug destapado por el LLM real | `¿Califico?` → el 70B devuelve `slots.product_type = null` y el agente lo tomaba como lleno (confirmar en vez de aclarar); el mock nunca devuelve claves nulas | corregido en Decide (P06); abstain 0,94 → 0,98, FP de acción 0,057 → 0,019 |
-| Hallazgo del eval con SQL real | primera corrida sobre gold: abstain 0,68, FP de acción 0,32 | los `TEST-*` de gold no tenían productos ni comportamiento → P07 nunca disparaba; corregido con clientes reales por condición en el eval y los productos `TEST-*` inyectados en `gold.customer_products` desde el pipeline (`gold.py`) para los usuarios de la UI |
-| Guardrail determinista | mismos 15 adversariales, con y sin la capa regex antes del LLM | IVR 0,267 → 0 en los 4 endpoints probados |
-| Comparación de modelos en Understand | mismo harness, 4 endpoints pay-per-token (`eval/models.md`) | llama-3.3-70b: menos fallas y p95 la mitad que gpt-oss; se eligió con el número |
-| Prompt v1 → v2 | 11 fallas → 3, FP de acción 0,13 → 0 | la mejora vino del prompt, no del modelo |
-| Retrieval híbrido (vector + BM25 + RRF, enrutado por sección) | 24 preguntas con chunk esperado (`eval/retrieval_eval.py`) | Recall@5 con bge-m3 fp32: ES 1,0 · PT 0,917 |
-| Clasificador de intención (baseline) | TF-IDF char 2–5 + LogReg, 109 frases sintéticas → 60 mensajes únicos del held-out | macro-F1 0,92 (es 0,94 · pt 0,89); sus errores son los que el guardrail resuelve |
-| Pre-score | 134.037 clientes reales de gold; target proxy declarado (sin mora > 30 d); 4 experimentos en MLflow | logística v1 0,66 → **v2 con cartera 0,78**; LightGBM 0,66 → 0,78: las features valen 0,12 de AUC, el modelo 0 |
-| Costo y latencia por turno | 82 turnos reales del eval, trazas en `ops.agent_turns` | 0,00035 USD/turno · p50 3,3 s · p95 9,7 s (dos llamadas al 70B; ≈ 0,9 s por consulta a gold); primer turno ≈ 15 s si el warehouse está frío |
-| Pre-score en runtime | mismo cliente por endpoint (`prescore-lgbm`) y en proceso (`policy/prescore_logreg.json`) | paridad exacta (p = 0,969, mismo SHAP); endpoint frío > 25 s (timeout controlado), caliente 5,5 s con las 3 consultas a gold; por eso producción corre `prescore=local` |
+| Action confusion matrix, all real (Llama 3.3 70B, `understand_v2`, gold via SQL, traces, pre-score) | 82 es/pt cases in act/abstain pairs, 15 MITRE ATLAS adversarial cases, users = real customers from gold (`eval/pick_users.py`, `eval/run_eval.py`) | act accuracy 0.86 · abstain accuracy 0.98 · paired 0.83 · action FP 0.019 · IVR 0 · groundedness 1.0 · exact match 0.915 · 5 intent edge-case failures · thresholds met |
+| Same matrix with the fixture (`data/mock`, SQL on mock) | same 82 cases | act 0.90 · abstain 1.0 · FP 0 · 3 failures; the gap with the row above comes from LLM intent on edge-case messages, not from the data |
+| Bug exposed by the real LLM | `¿Califico?` ("Do I qualify?") → the 70B returns `slots.product_type = null` and the agent treated the slot as filled (it confirmed instead of asking for clarification); the mock never returns null keys | fixed in Decide (P06); abstain 0.94 → 0.98, action FP 0.057 → 0.019 |
+| Finding from the eval with real SQL | first run on gold: abstain 0.68, action FP 0.32 | the `TEST-*` customers in gold had no products or behavior, so P07 never fired; fixed by picking real customers per condition in the eval and by injecting the `TEST-*` products into `gold.customer_products` from the pipeline (`gold.py`) for the UI users |
+| Deterministic guardrail | same 15 adversarial cases, with and without the regex layer before the LLM | IVR 0.267 → 0 on all 4 endpoints tested |
+| Model comparison for Understand | same harness, 4 pay-per-token endpoints (`eval/models.md`) | llama-3.3-70b: fewer failures and half the p95 of gpt-oss; chosen on the numbers |
+| Prompt v1 → v2 | 11 failures → 3, action FP 0.13 → 0 | the gain came from the prompt, not the model |
+| Hybrid retrieval (vector + BM25 + RRF, routed by section) | 24 questions with an expected chunk (`eval/retrieval_eval.py`) | Recall@5 with bge-m3 fp32: ES 1.0 · PT 0.917 |
+| Intent classifier (baseline) | TF-IDF char 2–5 + LogReg, 109 synthetic phrases → 60 unique held-out messages | macro-F1 0.92 (es 0.94 · pt 0.89); its errors are the ones the guardrail fixes |
+| Pre-score | 134,037 real customers from gold; declared proxy target (no late payments > 30 d); 4 experiments in MLflow | logistic v1 0.66 → **v2 with portfolio 0.78**; LightGBM 0.66 → 0.78: the features are worth 0.12 AUC, the model 0 |
+| Cost and latency per turn | 82 real eval turns, traces in `ops.agent_turns` | 0.00035 USD/turn · p50 3.3 s · p95 9.7 s (two calls to the 70B; ≈ 0.9 s per gold query); first turn ≈ 15 s if the warehouse is cold |
+| Pre-score at runtime | same customer through the endpoint (`prescore-lgbm`) and in-process (`policy/prescore_logreg.json`) | exact parity (p = 0.969, same SHAP); cold endpoint > 25 s (controlled timeout), warm 5.5 s with the 3 gold queries; that is why production runs `prescore=local` |
 
-## Qué falta y por qué (what's missing)
-| Pieza | Estado | Motivo | Qué haría falta |
+## What's missing and why
+| Piece | Status | Reason | What it would take |
 | --- | --- | --- | --- |
-| Model Serving (`prescore-lgbm`, `embed-bge-m3`) | workspace en Premium; `prescore-lgbm` READY y verificado; `embed-bge-m3` recreado en `Medium` (en `Small` no pasó la prueba de salud: bge-m3 fp32 + int8 al cargar no cabe en 4 GB) | CAN_QUERY de `sp-agent-ro` pendiente (`ml/serving.py --grant`) | flip `embed`/`store` a real en `agent_modes` cuando el endpoint esté READY con el grant |
-| Embeddings reales en runtime | medidos en local (bge-m3) y usados para cargar Cosmos; el agente desplegado usa BM25 + enrutado por sección + vector hash | sin endpoint no hay vector de consulta; meter bge-m3 (2 GB) en la Function rompe el arranque ≤ 30 s | el mismo endpoint |
-| Held-out sobre el dataset | no entrenable: 42 frases plantilla bajo las 6 categorías (`docs/labels.md`) | el dataset no distingue los cinco intents del workflow 4 | etiquetas reales de transcripciones |
-| Topes de CO y MX | valor provisional, no citado | la SFC publica PDF mensual y Banxico consulta interactiva | pegar dos números por fila (E6) |
-| Portugués en el dataset | 100 % español | el dataset es MX/CO/AR | PT se mide con corpus y casos sintéticos, declarado |
+| Model Serving (`prescore-lgbm`, `embed-bge-m3`) | workspace on Premium; `prescore-lgbm` READY and verified; `embed-bge-m3` recreated at `Medium` (at `Small` it failed the health check: bge-m3 fp32 + int8 at load time does not fit in 4 GB) | CAN_QUERY for `sp-agent-ro` pending (`ml/serving.py --grant`) | switch `embed`/`store` to real in `agent_modes` once the endpoint is READY with the grant |
+| Real embeddings at runtime | measured locally (bge-m3) and used to load Cosmos; the deployed agent uses BM25 + section routing + hash vectors | without the endpoint there is no query vector; putting bge-m3 (2 GB) inside the Function breaks the ≤ 30 s startup | the same endpoint |
+| Held-out set from the dataset | not trainable: 42 template phrases under the 6 categories (`docs/labels.md`) | the dataset does not separate the five intents of workflow 4 | real labels from transcripts |
+| CO and MX rate caps | provisional value, not cited | the SFC publishes a monthly PDF and Banxico an interactive query tool | paste two numbers per row (E6) |
+| Portuguese in the dataset | 100% Spanish | the dataset is MX/CO/AR | PT is measured with a synthetic corpus and synthetic cases, stated as such |
 
-## Documentación
-| Qué | Dónde |
+## Documentation
+| What | Where |
 | --- | --- |
-| Decisiones de arquitectura (ADR-01…NN) | `docs/adr/decisions.md` y `docs/adr/*.md` |
-| Contratos: tablas gold, tools, API, handoff, chunks, telemetría, infra | `contracts/` |
-| Matriz de política y glosario ES↔PT | `policy/` |
-| Diagramas (fuente draw.io y exportes) | `diagrams/` |
-| Dependencias y calendario del equipo | `docs/adr/dependencies.md` |
-| Clientes de prueba y usuario analista | `docs/test-users.md` |
-| Insights sobre el dataset (demanda de crédito por país e idioma, segmentos) | `data/` (notebook E10) |
+| Architecture decisions (ADR-01…NN) | `docs/adr/decisions.md` and `docs/adr/*.md` |
+| Contracts: gold tables, tools, API, handoff, chunks, telemetry, infra | `contracts/` |
+| Policy matrix and ES↔PT glossary | `policy/` |
+| Diagrams (draw.io source and exports) | `diagrams/` |
+| Team dependencies and schedule | `docs/adr/dependencies.md` |
+| Test customers and analyst user | `docs/test-users.md` |
+| Dataset insights (credit demand by country and language, segments) | `data/` (notebook E10) |
 
-## Ejecutar
-Instrucciones de setup, despliegue y evaluación reproducible en `docs/adr/09-servicio.md` y `docs/adr/06-evaluacion.md` (se completan durante el sprint).
+## Running it
+Setup, deployment and reproducible evaluation instructions are in `docs/adr/09-servicio.md` and `docs/adr/06-evaluacion.md` (to be completed during the sprint).
 
-## Equipo
-Eladio Yovera (datos) · Manuela Larrea (IA/ML) · Nicolle Mayol (servicio). Documentación como código: cada decisión entra por PR con análisis de impacto (`AGENTS.md`, `.claude/skills/adr-hackathon`).
+## Team
+Eladio Yovera (data) · Manuela Larrea (AI/ML) · Nicolle Mayol (service). Documentation as code: every decision goes in through a PR with an impact analysis (`AGENTS.md`, `.claude/skills/adr-hackathon`).
