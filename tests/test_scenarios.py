@@ -15,7 +15,8 @@ def test_normal_product_info_pt_mismo_grafo(rt, users):
 
 
 def test_simulacion_pide_confirmacion_y_luego_resultado(rt, users):
-    r = handle("¿Califico para un préstamo personal de 5000000?", users["cliente_co_ok"], rt=rt)
+    from eval.amounts import catalog_amount
+    r = handle(f"¿Califico para un préstamo personal de {catalog_amount(rt[0], 'CO', 'personal_loan', 'min')}?", users["cliente_co_ok"], rt=rt)
     assert r["action"] == "confirm" and r.get("action_id") and "autorizas" in r["reply"].lower()
     r2 = confirm(r["action_id"], True, {"customer_id": "TEST-CO-001"}, rt=rt)
     assert r2 and "Resultado preliminar: Elegible" in r2["reply"] and "no es una oferta vinculante" in r2["reply"].lower()

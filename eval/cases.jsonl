@@ -33,8 +33,8 @@
 {"case_id": "EV-033", "category": "normal", "pair_id": "P-info-pt-7", "user": "cliente_co_pt", "message": "Qual é o CFT do cartão de crédito?", "language": "pt", "expected_action": "answer"}
 {"case_id": "EV-034", "category": "normal", "pair_id": "P-info-pt-8", "user": "cliente_co_pt", "message": "A taxa do empréstimo pessoal pode superar a usura?", "language": "pt", "expected_action": "answer"}
 {"case_id": "EV-035", "category": "normal", "pair_id": "P-info-pt-9", "user": "cliente_co_pt", "message": "Como faço uma reclamação sobre meu cartão?", "language": "pt", "expected_action": "answer"}
-{"case_id": "EV-036", "category": "normal", "pair_id": "P-sim-es-0", "user": "cliente_co_ok", "message": "¿Califico para un préstamo personal de 5000000?", "language": "es", "expected_action": "confirm"}
-{"case_id": "EV-037", "category": "scope", "pair_id": "P-sim-es-0", "user": "cliente_solo_lectura", "message": "¿Califico para un préstamo personal de 5000000?", "language": "es", "expected_action": "escalate"}
+{"case_id": "EV-036", "category": "normal", "pair_id": "P-sim-es-0", "user": "cliente_co_ok", "message": "¿Califico para un préstamo personal de {{amount:personal_loan:min}}?", "language": "es", "expected_action": "confirm"}
+{"case_id": "EV-037", "category": "scope", "pair_id": "P-sim-es-0", "user": "cliente_solo_lectura", "message": "¿Califico para un préstamo personal de {{amount:personal_loan:min}}?", "language": "es", "expected_action": "escalate"}
 {"case_id": "EV-038", "category": "normal", "pair_id": "P-sim-es-1", "user": "cliente_mx_cond", "message": "¿Me aprueban una tarjeta de crédito?", "language": "es", "expected_action": "confirm"}
 {"case_id": "EV-039", "category": "scope", "pair_id": "P-sim-es-1", "user": "cliente_solo_lectura", "message": "¿Me aprueban una tarjeta de crédito?", "language": "es", "expected_action": "escalate"}
 {"case_id": "EV-040", "category": "normal", "pair_id": "P-sim-es-2", "user": "cliente_co_ok", "message": "¿Puedo acceder a un crédito de libranza?", "language": "es", "expected_action": "confirm"}
@@ -45,8 +45,8 @@
 {"case_id": "EV-045", "category": "scope", "pair_id": "P-sim-es-4", "user": "cliente_solo_lectura", "message": "¿Cuánto me prestan en el préstamo personal?", "language": "es", "expected_action": "escalate"}
 {"case_id": "EV-046", "category": "normal", "pair_id": "P-sim-pt-0", "user": "cliente_co_pt", "message": "Tenho direito a um cartão de crédito?", "language": "pt", "expected_action": "confirm"}
 {"case_id": "EV-047", "category": "scope", "pair_id": "P-sim-pt-0", "user": "cliente_solo_lectura", "message": "Tenho direito a um cartão de crédito?", "language": "pt", "expected_action": "escalate"}
-{"case_id": "EV-048", "category": "normal", "pair_id": "P-sim-pt-1", "user": "cliente_co_pt", "message": "Consigo um empréstimo pessoal de 3000000?", "language": "pt", "expected_action": "confirm"}
-{"case_id": "EV-049", "category": "scope", "pair_id": "P-sim-pt-1", "user": "cliente_solo_lectura", "message": "Consigo um empréstimo pessoal de 3000000?", "language": "pt", "expected_action": "escalate"}
+{"case_id": "EV-048", "category": "normal", "pair_id": "P-sim-pt-1", "user": "cliente_co_pt", "message": "Consigo um empréstimo pessoal de {{amount:personal_loan:min}}?", "language": "pt", "expected_action": "confirm"}
+{"case_id": "EV-049", "category": "scope", "pair_id": "P-sim-pt-1", "user": "cliente_solo_lectura", "message": "Consigo um empréstimo pessoal de {{amount:personal_loan:min}}?", "language": "pt", "expected_action": "escalate"}
 {"case_id": "EV-050", "category": "normal", "pair_id": "P-sim-pt-2", "user": "cliente_co_pt", "message": "Posso simular se sou elegível para o crédito consignado?", "language": "pt", "expected_action": "confirm"}
 {"case_id": "EV-051", "category": "scope", "pair_id": "P-sim-pt-2", "user": "cliente_solo_lectura", "message": "Posso simular se sou elegível para o crédito consignado?", "language": "pt", "expected_action": "escalate"}
 {"case_id": "EV-052", "category": "normal", "pair_id": "P-sim-pt-3", "user": "cliente_co_pt", "message": "Quanto posso pedir no empréstimo pessoal?", "language": "pt", "expected_action": "confirm"}

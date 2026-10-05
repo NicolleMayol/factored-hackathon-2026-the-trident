@@ -37,6 +37,8 @@ def run(limit: int | None = None, cases_path: Path | None = None, *, small: str 
     rt = runtime(Settings()) if (small or main) else runtime()
     _, deps, _ = rt
     cases = [json.loads(l) for l in open(cases_path or ROOT / "eval" / "cases.jsonl", encoding="utf-8")]
+    from eval.amounts import resolve_amounts
+    cases = [{**c, "message": resolve_amounts(c["message"], USERS[c["user"]], rt[0])} for c in cases]
     if limit:
         cases = cases[:limit]
     rows = []
