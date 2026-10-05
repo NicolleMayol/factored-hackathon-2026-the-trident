@@ -25,6 +25,7 @@ header .wrap{max-width:1200px;display:flex;align-items:center;justify-content:sp
 .brand{display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit}.brand img{height:40px;width:auto;display:block}
 .brand .sep{width:1px;height:30px;background:var(--line)}.brand b{font-weight:700}
 .hright{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.site{display:flex;gap:2px;flex-wrap:wrap}.site a{color:var(--mute);text-decoration:none;font-size:14px;font-weight:500;padding:8px 10px;border-radius:999px}.site a:hover{color:var(--ink);background:var(--soft)}
 .seg{display:flex;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px}
 .seg button{border:0;background:transparent;border-radius:999px;padding:6px 14px;font-size:13px;color:var(--mute);min-height:32px}
 .seg button[aria-pressed=true]{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(34,22,26,.12)}
@@ -85,10 +86,11 @@ details.tech dt{font-weight:700}details.tech dd{margin:0;color:var(--mute)}
 </svg>
 <header>
   <div class="wrap">
-    <a class="brand" id="home" href="index.html"><img src="logo-bank.png" alt="Bank Company"><span class="sep"></span><b data-t="text.title">Asistente de crédito</b></a>
+    <a class="brand" id="home" href="landing.html"><img src="logo-bank.png" alt="Bank Company"><span class="sep"></span><b data-t="text.title">Asistente de crédito</b></a>
     <div class="hright">
+      <nav class="site" aria-label="Sitio"><a href="index.html" data-t="nav.project"></a></nav>
       <div class="seg" id="langs" role="group"></div>
-      <a class="back" id="back" href="index.html"><svg class="i"><use href="#i-arrow"/></svg><span data-t="how_page.back">Volver al chat</span></a>
+      <a class="back" id="back" href="chat.html"><svg class="i"><use href="#i-arrow"/></svg><span data-t="how_page.back">Volver al chat</span></a>
     </div>
   </div>
 </header>
@@ -123,7 +125,7 @@ details.tech dt{font-weight:700}details.tech dd{margin:0;color:var(--mute)}
 
   <section class="card"><details class="tech"><summary data-t="how_page.tech_title"></summary><dl id="tech"></dl></details></section>
 
-  <div class="cta"><a id="back2" href="index.html" data-t="how_page.back">Volver al chat</a></div>
+  <div class="cta"><a id="back2" href="chat.html" data-t="how_page.back">Volver al chat</a></div>
 </main>
 
 <footer class="wrap pfoot"><span><span data-t="text.made_by">Hecho por</span> <b id="teamName">The Trident</b> · <span id="teamMembers"></span></span><span id="teamEvent"></span></footer>
@@ -144,7 +146,7 @@ function render(){
  document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));
  document.querySelectorAll("#langs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.l===lang)));
  // Volver al chat conserva el idioma elegido.
- for(const id of ["home","back","back2"])$(id).href=`index.html?lang=${lang}`;
+ $("home").href=`landing.html?lang=${lang}`;for(const id of ["back","back2"])$(id).href=`chat.html?lang=${lang}`;
  const li=(arr,icon)=>arr.map(x=>`<li>${ic(icon)}<span>${esc(x)}</span></li>`).join("");
  $("does").innerHTML=li(t("how_page.does"),"check");
  $("never").innerHTML=li(t("how_page.never"),"x");
