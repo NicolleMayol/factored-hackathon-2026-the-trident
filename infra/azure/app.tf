@@ -82,7 +82,10 @@ resource "azurerm_function_app_flex_consumption" "main" {
     COSMOS_ENDPOINT      = azurerm_cosmosdb_account.main.endpoint
     MLFLOW_TRACKING_URI  = "databricks"
     MLFLOW_EXPERIMENT    = "/Shared/fh26/agente"
-  })
+    # ADR-21: mock o real por dependencia. El paquete es de solo lectura en Flex; los adaptadores
+    # locales escriben en AGENT_MOCK_DIR (deploy/function/function_app.py copia data/mock ahí).
+    AGENT_MOCK_DIR = "/tmp/fh26-mock"
+  }, { for k, v in var.agent_modes : "AGENT_${upper(k)}" => v })
 }
 
 resource "azurerm_role_assignment" "func_kv" {
