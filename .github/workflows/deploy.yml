@@ -1,6 +1,6 @@
-# N10 · Despliegue del agente (Function App Flex) y del chat (Static Web App), con OIDC.
-# Push a main con cambios en el código del agente o en la UI, o manual. Sin secretos en GitHub:
-# el token de la Static Web App se pide en cada corrida con `az staticwebapp secrets list`.
+# N10 · Despliegue del agente en la Function App (Flex), con OIDC.
+# Push a main con cambios en el código del agente, o manual. La UI va aparte (deploy-web.yml):
+# un cambio solo de frontend no reconstruye ni reinicia el backend.
 name: deploy
 on:
   push:
@@ -10,7 +10,6 @@ on:
       - "policy/**"
       - "contracts/**"
       - "data/mock/**"
-      - "web/**"
       - "deploy/**"
       - "requirements.txt"
       - ".github/workflows/deploy.yml"
@@ -77,35 +76,3 @@ jobs:
           done
           echo "::error::/healthz no respondió 200"
           exit 1
-
-  web:
-    needs: function
-    # La UI sale aunque el smoke falle: así el link existe y /healthz se puede revisar desde ahí.
-    if: ${{ !cancelled() && needs.function.outputs.host != '' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Azure login (OIDC)
-        uses: azure/login@v2
-        with:
-          client-id: ${{ vars.AZURE_CLIENT_ID }}
-          tenant-id: ${{ vars.AZURE_TENANT_ID }}
-          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - name: URL de la API en la UI
-        run: echo "window.API_BASE = \"https://${{ needs.function.outputs.host }}\";" > web/config.js
-      - name: Token de la Static Web App
-        id: swa
-        run: |
-          t=$(az staticwebapp secrets list -n "$SWA" -g "$RG" --query properties.apiKey -o tsv)
-          echo "::add-mask::$t"
-          echo "token=$t" >> "$GITHUB_OUTPUT"
-      - name: Desplegar UI
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
-          action: upload
-          app_location: web
-          skip_app_build: true
-          skip_api_build: true
-      - name: Link
-        run: echo "Chat en https://$(az staticwebapp show -n "$SWA" -g "$RG" --query defaultHostname -o tsv)" | tee -a "$GITHUB_STEP_SUMMARY"
