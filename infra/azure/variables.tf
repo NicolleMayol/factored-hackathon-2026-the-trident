@@ -50,3 +50,20 @@ variable "fm_endpoint_small" {
   type    = string
   default = "databricks-meta-llama-3-1-8b-instruct"
 }
+
+variable "agent_modes" {
+  description = "AGENT_* de la Function (ADR-21): mock o real por dependencia. Real solo donde el recurso existe y responde."
+  type        = map(string)
+  default = {
+    llm      = "real" # FM APIs (llama-3.3-70b / llama-3.1-8b) con sp-agent-ro
+    sql      = "mock" # gold por wh-agent: pasar a real tras probar check_access A2 con sp-agent-ro
+    store    = "mock" # store_cosmos sin implementar: chunks desde data/mock con coseno + BM25 en memoria
+    embed    = "mock" # embed-bge-m3 sin registrar (M9)
+    prescore = "mock" # prescore-lgbm sin desplegar
+    trace    = "mock" # ops.agent_turns en /tmp; MLflow cuando trace_mlflow esté probado
+  }
+  validation {
+    condition     = alltrue([for v in values(var.agent_modes) : contains(["mock", "real"], v)])
+    error_message = "Cada modo debe ser mock o real."
+  }
+}

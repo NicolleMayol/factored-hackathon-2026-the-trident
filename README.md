@@ -14,7 +14,7 @@ Agente de servicio al cliente para un banco regional (México, Colombia, Argenti
 | Entender intención e idioma | LLM pequeño (Llama 8B) con salida JSON tipada; baseline TF-IDF + regresión logística | lenguaje libre en es y pt; se mide macro-F1 por idioma |
 | Decidir qué se puede hacer | Reglas YAML versionadas × scopes del token × banda regulatoria; sin LLM | reproducible, auditable, con base normativa por país |
 | Ejecutar | Tools tipadas, solo las autorizadas; pre-scoring LightGBM como insumo | el modelo informa, nunca aprueba |
-| Verificar | LLM grande (Claude Sonnet) exige cita por cifra; máx. 2 reintentos | sin cita no se afirma |
+| Verificar | Check determinista: toda cifra debe existir en una cita o un hecho verificado; Respond redacta con Llama 3.3 70B y, si el check falla, responde con la plantilla | sin cita no se afirma |
 | Escalar | Humano, siempre en banda cerrada | abstenerse cuenta como acierto |
 
 ## Trade-offs explícitos

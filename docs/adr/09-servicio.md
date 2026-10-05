@@ -118,8 +118,8 @@ El chat (Static Web App) llama a la Function App desde el navegador con el JWT. 
 | --- | --- | --- |
 | `infra.yml` | PR y push a `main` en `infra/**` | PR: backend, `init`, `validate`, `plan`, comentario en el PR. `main`: `plan` con tfplan guardado en el storage del tfstate y `apply` de ese mismo tfplan tras aprobar el environment `hackathon` |
 | `data-landing.yml` | cada 6 h (cron `17 */6 * * *`) y manual; sin aprobación (solo lee S3 y escribe en `landing`) | `azcopy` S3 → `adlsagentbankdev/landing/factored-datathon/data/`, incremental (`ifSourceNewer`); sube `_manifest/manifest-<fecha>.json` con inventario (archivos, bytes, MD5) y diferencias contra la corrida anterior (nuevos, cambiados). Carga inicial 2026-09-30: 7.671 archivos, 5,35 GB, 0 fallas |
-| `ci.yml` (pendiente) | PR | pytest, eval-harness (cuando exista M7), gitleaks |
-| `deploy.yml` (pendiente) | push a `main` | deploy de la Function App y de la Static Web App (el token de deploy se pide con `az staticwebapp secrets list`), smoke `/chat` (N8) |
+| `ci.yml` | PR y push a `main`, salvo cambios solo en `docs/`, `diagrams/` o `infra/` | con `AGENT_*=mock`: `pytest -q` (tests/ y eval/, incluido el guard de fuentes externas) y `python eval/run_eval.py`, que sale con 1 bajo umbral. gitleaks pendiente |
+| `deploy.yml` | push a `main` con cambios en `agent/`, `policy/`, `contracts/`, `data/mock/`, `web/`, `deploy/` o `requirements.txt`; manual | arma el paquete (`deploy/function/function_app.py` + `host.json` + agente) y lo despliega en Flex con build remoto; smoke `/healthz`; la UI de `web/` va a la Static Web App con la URL de la Function en `config.js` (token con `az staticwebapp secrets list`, sin secreto en GitHub) |
 | `bundles.yml` | PR y push a `main` con cambios en `data/` | `validate` en PR; `deploy -t prod` en `main` (X2), con `run_as` = `sp-pipelines`. El SP del pipeline y Eladio tienen `servicePrincipal.user` sobre `sp-pipelines` |
 | `adr-impact.yml`, `diagram-sync.yml` | PR | `diagram-sync` sube los PNG a la rama del PR y no corre en commits del bot |
 
