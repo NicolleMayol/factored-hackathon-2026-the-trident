@@ -164,6 +164,9 @@ details.tech{font-size:12px;color:var(--mute);padding:0 4px}
 details.tech summary{cursor:pointer}
 details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;line-height:1.5}
 .empty{font-size:14px;color:var(--mute)}
+/* Pie de página: equipo */
+.pfoot{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;padding-top:14px;padding-bottom:22px;border-top:1px solid var(--line);font-size:13px;color:var(--mute)}
+.pfoot b{color:var(--ink);font-family:var(--display);font-size:15px;letter-spacing:.01em}
 
 /* Vista del analista */
 #analyst{display:none;padding:24px;gap:16px}
@@ -249,6 +252,8 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
     <details class="tech" id="tech" hidden><summary data-t="text.tech"></summary><div id="techD"></div></details>
   </aside>
 </div>
+
+<footer class="wrap pfoot"><span><span data-t="text.made_by">Hecho por</span> <b id="teamName">The Trident</b> · <span id="teamMembers"></span></span><span id="teamEvent"></span></footer>
 
 <script>
 // Sin datos de negocio en este archivo (ADR-25):
@@ -472,11 +477,14 @@ $("change").onclick=showPicker;
 $("talkTop").onclick=()=>send(formalMsg());
 $("f").onsubmit=e=>{e.preventDefault();const v=$("m").value.trim();$("m").value="";send(v)};
 $("hf").onsubmit=e=>{e.preventDefault();const id=$("case").value.trim();if(id)openCase(id)};
+// Equipo: un solo lugar en ui.json (team), igual en todos los idiomas.
+function renderTeam(){const tm=UI.team||{};if(tm.name)$("teamName").textContent=tm.name;
+ $("teamMembers").textContent=(tm.members||[]).join(" · ");$("teamEvent").textContent=tm.event||""}
 function setHealth(cls,key){healthKey=key;const h=$("health");h.className=cls;h.querySelector("span").textContent=t(key)}
 // Arranque: textos (estáticos, mismo origen) y luego /meta. En frío la Function tarda: reintenta cada 10 s.
 async function boot(){
  try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){UI={default_lang:"es",lang:{es:{}}}}
- lang=chosen||langOf(navigator.language);renderLangs();i18n();$("loading").textContent=t("text.connecting");
+ lang=chosen||langOf(navigator.language);renderLangs();renderTeam();i18n();$("loading").textContent=t("text.connecting");
  const [r,m]=await call("/meta");
  if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");$("loading").textContent=t("text.starting");setTimeout(boot,10000);return}
  META=m;const hr=await fetch(API+"/healthz").catch(()=>null);setHealth(hr&&hr.ok?"up":"slow",hr&&hr.ok?"text.online":"text.degraded");

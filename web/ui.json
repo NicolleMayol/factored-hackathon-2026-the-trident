@@ -1,6 +1,15 @@
 {
   "_nota": "Solo textos de la interfaz, por idioma. Los datos (personas, países, productos, resultados, motivos, tools) llegan de GET /api/meta (ADR-25). Para otro idioma, copia el bloque es con la clave nueva; tests/test_meta.py exige las mismas claves.",
   "default_lang": "es",
+  "team": {
+    "name": "The Trident",
+    "members": [
+      "Eladio Yovera",
+      "Manuela Larrea",
+      "Nicolle Mayol"
+    ],
+    "event": "Factored AI & Data Hackathon 2026"
+  },
   "lang": {
     "es": {
       "text": {
@@ -45,7 +54,8 @@
         "continue_analyst": "Continuar con un analista",
         "can_do": "Lo que sí puedo hacer:",
         "term_value": "Hasta {n} meses",
-        "formal_msg": "Quiero hacer la solicitud formal de {product}"
+        "formal_msg": "Quiero hacer la solicitud formal de {product}",
+        "made_by": "Hecho por"
       },
       "tags": {
         "answer": "Con fuente",
@@ -288,7 +298,8 @@
         "continue_analyst": "Continuar com um analista",
         "can_do": "O que eu posso fazer:",
         "term_value": "Até {n} meses",
-        "formal_msg": "Quero solicitar formalmente: {product}"
+        "formal_msg": "Quero solicitar formalmente: {product}",
+        "made_by": "Feito por"
       },
       "tags": {
         "answer": "Com fonte",
