@@ -20,11 +20,11 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | N1 | Repo en NicolleMayol/factored-hackathon-2026-the-trident; workflow infra (plan en PR, apply con aprobación); OIDC hecho; pytest, eval y gitleaks pendientes; solo Nicolle mergea | hecho mié 30 | rama local |
 | N2 | Function App Flex Consumption 2048 MB + App Settings de contracts/infra.yaml v3 (+ APPLICATIONINSIGHTS_CONNECTION_STRING; secretos como referencias a Key Vault; credenciales de sp-agent-ro listas) | hecho mié 30 | func start + local.settings.json |
 | N3 | Cosmos free tier: conversations, handoffs, policy_chunks (DiskANN + full-text `text_es` es-ES / `text_pt` pt-BR), 400 RU/s dedicados por contenedor | hecho mar 29; full-text jue 1 | emulador / LanceDB |
-| N4 | Identidad mock POST /session + 5 clientes de prueba | Mar 29 | JWT local |
-| N5 | Static Web Apps Free: chat + /handoff (ADR-19 v3; recurso creado) | Mié 30 | curl |
+| N4 | Identidad mock POST /session + 5 clientes de prueba + analista (deploy/function/function_app.py) | hecho lun 5 | JWT local |
+| N5 | Static Web Apps Free: chat + vista de analista /handoff (web/index.html) | hecho lun 5 | curl |
 | N6 | App Insights + export ops.infra_requests | Jue 1 | logs locales |
-| N9 | endpoint Model Serving embed-bge-m3 + EMBED_ENDPOINT; App Settings AGENT_* (ADR-21) | Vie 2 | AGENT_EMBED=mock (embedding local) |
-| N10 | ci.yml (pytest + run_eval.py + guard de fuentes externas) y deploy.yml; bloqueantes de entrega | Sáb 3 | pytest local |
+| N9 | App Settings AGENT_* (ADR-21): llm real; sql, store, embed, prescore y trace en mock (hecho lun 5). embed-bge-m3 queda To-Be: M9 sin registrar | lun 5 | AGENT_EMBED=mock (embedding local) |
+| N10 | ci.yml (pytest + run_eval.py + guard de fuentes externas) y deploy.yml (Function + Static Web App, smoke /healthz) | hecho lun 5 | pytest local |
 | N7 | Carga 10/25/50 usuarios; p50/p95; costo por caso | Sáb 3 | — |
 | N8 | Job CI post-deploy: smoke /chat con subconjunto de eval/cases.jsonl; p95 en caliente separado de cold start | Vie 2 | func start local |
 

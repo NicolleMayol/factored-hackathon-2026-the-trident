@@ -1,0 +1,107 @@
+# N10 · Despliegue del agente (Function App Flex) y del chat (Static Web App), con OIDC.
+# Push a main con cambios en el código del agente o en la UI, o manual. Sin secretos en GitHub:
+# el token de la Static Web App se pide en cada corrida con `az staticwebapp secrets list`.
+name: deploy
+on:
+  push:
+    branches: [main]
+    paths:
+      - "agent/**"
+      - "policy/**"
+      - "contracts/**"
+      - "data/mock/**"
+      - "web/**"
+      - "deploy/**"
+      - "requirements.txt"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+permissions: { contents: read, id-token: write }
+concurrency: { group: deploy, cancel-in-progress: false }
+
+env:
+  RG: rg-ai-agents-dev
+  FUNC: func-agent-bank-dev
+  SWA: swa-agent-bank-dev
+
+jobs:
+  function:
+    runs-on: ubuntu-latest
+    outputs:
+      host: ${{ steps.host.outputs.host }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      # Raíz del paquete: function_app.py + host.json de deploy/function y lo que el agente lee
+      # en runtime (prompts, policy, contratos, mocks). requirements.txt se instala en Azure.
+      - name: Armar paquete
+        run: |
+          set -euo pipefail
+          mkdir -p dist/data
+          cp deploy/function/function_app.py deploy/function/host.json requirements.txt dist/
+          cp -r agent policy contracts dist/
+          cp -r data/mock dist/data/
+          find dist -name __pycache__ -prune -exec rm -rf {} +
+          ls dist
+
+      - name: Desplegar Function
+        uses: Azure/functions-action@v1
+        with:
+          app-name: ${{ env.FUNC }}
+          package: dist
+          sku: flexconsumption
+          remote-build: true
+
+      - name: Host de la Function
+        id: host
+        run: echo "host=$(az functionapp show -g "$RG" -n "$FUNC" --query defaultHostName -o tsv)" >> "$GITHUB_OUTPUT"
+
+      # Primer arranque en frío: reintenta hasta ~3 min. 503 = llm o cosmos down (api.yaml v1.2).
+      - name: Smoke /healthz
+        run: |
+          for i in $(seq 1 18); do
+            code=$(curl -s -o health.json -w '%{http_code}' "https://${{ steps.host.outputs.host }}/api/healthz" || true)
+            echo "intento $i: $code $(cat health.json 2>/dev/null)"
+            [ "$code" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::error::/healthz no respondió 200"
+          exit 1
+
+  web:
+    needs: function
+    # La UI sale aunque el smoke falle: así el link existe y /healthz se puede revisar desde ahí.
+    if: ${{ !cancelled() && needs.function.outputs.host != '' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: URL de la API en la UI
+        run: echo "window.API_BASE = \"https://${{ needs.function.outputs.host }}\";" > web/config.js
+      - name: Token de la Static Web App
+        id: swa
+        run: |
+          t=$(az staticwebapp secrets list -n "$SWA" -g "$RG" --query properties.apiKey -o tsv)
+          echo "::add-mask::$t"
+          echo "token=$t" >> "$GITHUB_OUTPUT"
+      - name: Desplegar UI
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
+          action: upload
+          app_location: web
+          skip_app_build: true
+          skip_api_build: true
+      - name: Link
+        run: echo "Chat en https://$(az staticwebapp show -n "$SWA" -g "$RG" --query defaultHostname -o tsv)" | tee -a "$GITHUB_STEP_SUMMARY"
