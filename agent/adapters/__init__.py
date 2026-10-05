@@ -68,6 +68,8 @@ def build_deps(settings=None) -> Deps:
         from agent.adapters.embed_serving import EmbedServing as E
     if s.agent_prescore == "mock":
         from agent.adapters.prescore_mock import PrescoreMock as P
+    elif s.agent_prescore == "local":  # modelo exportado en proceso (sin Model Serving, SKU trial)
+        from agent.adapters.prescore_local import PrescoreLocal as P
     else:
         from agent.adapters.prescore_serving import PrescoreServing as P
     if s.agent_trace == "mock":
