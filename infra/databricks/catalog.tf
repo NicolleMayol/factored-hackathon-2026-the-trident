@@ -59,8 +59,6 @@ locals {
       contains(["gold", "ref"], s) ? [for p in local.readers : { principal = p, privileges = tolist(["USE_SCHEMA", "SELECT"]) }] : [],
       s == "silver" ? [for p in local.iaml : { principal = p, privileges = tolist(["USE_SCHEMA"]) }] : [],
       s == "ops" ? [for p in local.iaml : { principal = p, privileges = tolist(["USE_SCHEMA", "SELECT", "CREATE_TABLE"]) }] : [],
-      # sp-agent-ro (la Function) escribe cada turno en ops.agent_turns (trace = real) y crea la tabla si no existe.
-      s == "ops" ? [{ principal = local.sp_agent, privileges = tolist(["USE_SCHEMA", "CREATE_TABLE"]) }] : [],
       s == "ml" ? [for p in local.iaml : { principal = p, privileges = tolist(["ALL_PRIVILEGES"]) }] : [],
     ))
   }
