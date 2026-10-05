@@ -109,6 +109,12 @@ def _eval_condition(cond: str, ctx: dict[str, Any]) -> bool:
 CAP_KIND = {"CO": "usura", "MX": "cat", "AR": "cft"}
 
 
+def monthly_payment(amount: float, product: dict) -> float:
+    """Cuota de referencia: monto al plazo máximo con la tasa máxima, interés simple medio (build_corpus.py, R4)."""
+    term = int(product.get("term_months_max") or 12)
+    return float(amount) / term * (1 + float(product.get("rate_max", 0)) / 100 / 2)
+
+
 def regulatory_cap(regulator_rates, country: str, product_type: str) -> float | None:
     kind = CAP_KIND.get(country, "usura")
     caps = [float(r["rate_max"]) for r in regulator_rates or [] if r.get("country") == country and r.get("product_type") == product_type and r.get("rate_kind", "usura") in (kind, "cap")]
@@ -153,7 +159,7 @@ def evaluate_eligibility(profile: dict[str, Any], behavior: dict[str, Any], prod
             rules.append("E07"); outcome = "Revisión humana" if outcome == "Elegible" else outcome
         if not income and amount > 0:  # ingreso ausente (20 % en customer_360, ADR-23): no se puede verificar capacidad de pago
             rules.append("E12"); outcome = "Revisión humana" if outcome == "Elegible" else outcome
-        elif income and amount > 0 and (amount / 12) > 0.4 * float(income):
+        elif income and amount > 0 and monthly_payment(amount, p) > 0.4 * float(income):  # cuota de referencia al plazo máximo (misma fórmula que el corpus R4)
             rules.append("E08"); outcome = "Revisión humana" if outcome == "Elegible" else outcome
     if prescore:
         lo, hi = prescore.get("ci_low", 0), prescore.get("ci_high", 1)

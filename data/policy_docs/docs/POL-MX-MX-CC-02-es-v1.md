@@ -10,7 +10,7 @@ Requisitos de Tarjeta de crédito: ser mayor de edad; ingreso mensual demostrabl
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Tarjeta de crédito: entre 20.69 % y 42.34 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF; la referencia de mercado para esta modalidad es 80 % de CAT. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Tarjeta de crédito: entre 20.69 % y 42.34 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4

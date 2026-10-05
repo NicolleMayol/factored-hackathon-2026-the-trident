@@ -61,15 +61,15 @@ variable "agent_modes" {
   description = "AGENT_* de la Function (ADR-21): mock o real por dependencia. Real solo donde el recurso existe y responde."
   type        = map(string)
   default = {
-    llm      = "real" # FM APIs (llama-3.3-70b / llama-3.1-8b) con sp-agent-ro
-    sql      = "mock" # gold por wh-agent: pasar a real tras probar check_access A2 con sp-agent-ro
-    store    = "mock" # store_cosmos sin implementar: chunks desde data/mock con coseno + BM25 en memoria
-    embed    = "mock" # embed-bge-m3 sin registrar (M9)
-    prescore = "mock" # prescore-lgbm sin desplegar
-    trace    = "mock" # ops.agent_turns en /tmp; MLflow cuando trace_mlflow esté probado
+    llm      = "real"  # FM APIs (llama-3.3-70b / llama-3.1-8b) con sp-agent-ro
+    sql      = "real"  # gold y ref por wh-agent (Statement API, sql_warehouse.py); A2 ok el 5 oct
+    store    = "mock"  # Cosmos cargado (288 chunks + vector bge-m3); pasa a real junto con embed, cuando embed-bge-m3 esté READY con CAN_QUERY para sp-agent-ro
+    embed    = "mock"  # endpoint embed-bge-m3 (hackathon.ml.bge_m3) en creación; real cuando esté READY y con CAN_QUERY (ml/serving.py --grant)
+    prescore = "local" # logística ganadora (UC hackathon.ml.prescore_lgbm) exportada a policy/prescore_logreg.json, en proceso; real cuando prescore-lgbm esté READY con CAN_QUERY
+    trace    = "real"  # cada turno a hackathon.ops.agent_turns por wh-agent, en hilo aparte (trace_mlflow.py)
   }
   validation {
-    condition     = alltrue([for v in values(var.agent_modes) : contains(["mock", "real"], v)])
-    error_message = "Cada modo debe ser mock o real."
+    condition     = alltrue([for v in values(var.agent_modes) : contains(["mock", "real", "local"], v)])
+    error_message = "Cada modo debe ser mock, real o local (local solo para prescore)."
   }
 }

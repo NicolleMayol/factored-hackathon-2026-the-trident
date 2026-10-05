@@ -10,7 +10,7 @@ Requisitos de Crédito de libranza: ser mayor de edad; ingreso mensual demostrab
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Crédito de libranza: entre 10.21 % y 19.71 % anual según perfil. La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera; el tope vigente para esta modalidad es — % EA. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Crédito de libranza: entre 10.21 % y 19.71 % anual según perfil. La tasa es efectiva anual (EA) y nunca supera la tasa de usura vigente certificada por la Superintendencia Financiera. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: Ley 1328/2009 (CO) · tasa de usura SFC -->
 
 ## R4

@@ -10,7 +10,7 @@ Requisitos de Crédito de libranza: ser mayor de edad; ingreso mensual demostrab
 <!-- source: catálogo sintético -->
 
 ## R3
-Tasa de Crédito de libranza: entre 10.15 % y 19.88 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF; la referencia de mercado para esta modalidad es — % de CAT. La tasa definitiva se fija en la aprobación y no en el chat.
+Tasa de Crédito de libranza: entre 10.15 % y 19.88 % anual según perfil. Antes de contratar se informa el CAT (Costo Anual Total) con fines informativos y de comparación, conforme a CONDUSEF. La tasa definitiva se fija en la aprobación y no en el chat.
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
