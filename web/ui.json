@@ -36,7 +36,8 @@
         "error": "Error",
         "change": "Cambiar de cliente",
         "account_in": "Cuenta en {country}",
-        "writes_in": "Escribe en {lang}"
+        "writes_in": "Escribe en {lang}",
+        "connecting": "Conectando con el asistente…"
       },
       "tags": {
         "answer": "Respondido con fuentes",
@@ -222,7 +223,8 @@
         "error": "Erro",
         "change": "Trocar de cliente",
         "account_in": "Conta em {country}",
-        "writes_in": "Escreve em {lang}"
+        "writes_in": "Escreve em {lang}",
+        "connecting": "Conectando ao assistente…"
       },
       "tags": {
         "answer": "Respondido com fontes",

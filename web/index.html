@@ -137,15 +137,16 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
 <nav id="current" class="wrap" hidden><span data-t="text.try_as"></span><b id="curLabel"></b><button type="button" class="pill sm" id="change" data-t="text.change"></button></nav>
 
 <div class="stage wrap">
-  <section id="picker" class="card" hidden>
-    <h1 data-t="picker.title"></h1>
-    <p data-t="picker.sub"></p>
+  <section id="picker" class="card">
+    <h1 data-t="picker.title">¿Con qué cliente quieres probar?</h1>
+    <p data-t="picker.sub">Son clientes de prueba con datos sintéticos.</p>
+    <p id="loading" class="empty" role="status">Conectando con el asistente…</p>
     <div class="pcards" id="pcards"></div>
-    <h3 data-t="picker.staff"></h3>
+    <h3 data-t="picker.staff" hidden></h3>
     <div class="pcards" id="acards"></div>
   </section>
 
-  <main id="chat" class="card">
+  <main id="chat" class="card" style="display:none">
     <div id="log" aria-live="polite"></div>
     <div id="sugg"></div>
     <form class="bar" id="f">
@@ -167,7 +168,7 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
     <div id="hand"></div>
   </main>
 
-  <aside id="side">
+  <aside id="side" style="display:none">
     <h2 id="whyTitle" data-t="text.why_title"></h2>
     <div id="steps" class="card"></div>
     <div class="never"><strong data-t="text.never_title"></strong><span data-t="text.never_body"></span></div>
@@ -282,7 +283,7 @@ function show(view){const chat=view==="chat",an=view==="analyst",pk=view==="pick
  $("picker").hidden=!pk;$("current").hidden=pk;$("side").style.display=pk?"none":"flex";
  $("chat").style.display=chat?"flex":"none";$("analyst").style.display=an?"flex":"none"}
 function showPicker(){cur=null;tok=null;conv=null;pending=null;lang=langOf(navigator.language);i18n();
- $("pcards").innerHTML="";$("acards").innerHTML="";
+ $("loading").hidden=true;$("pcards").innerHTML="";$("acards").innerHTML="";
  for(const u of META.users)(isAnalyst(u)?$("acards"):$("pcards")).appendChild(card(u));
  $("acards").previousElementSibling.hidden=!$("acards").children.length;
  try{history.replaceState(null,"",location.pathname)}catch(e){}
@@ -338,9 +339,9 @@ function setHealth(cls,key){const h=$("health");h.className=cls;h.querySelector(
 // Arranque: textos (estáticos, mismo origen) y luego /meta. En frío la Function tarda: reintenta cada 10 s.
 async function boot(){
  try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){UI={default_lang:"es",lang:{es:{}}}}
- lang=langOf(navigator.language);i18n();resetPanel();
+ lang=langOf(navigator.language);i18n();resetPanel();$("loading").textContent=t("text.connecting");
  const [r,m]=await call("/meta");
- if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");setTimeout(boot,10000);return}
+ if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");$("loading").textContent=t("text.starting");setTimeout(boot,10000);return}
  META=m;const hr=await fetch(API+"/healthz").catch(()=>null);setHealth(hr&&hr.ok?"up":"slow",hr&&hr.ok?"text.online":"text.degraded");
  // ?user=<clave> abre ese cliente directo (enlaces para la demo); si no, primero se elige.
  const q=new URLSearchParams(location.search).get("user");if(META.users.some(u=>u.key===q))login(q);else showPicker()}
