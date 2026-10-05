@@ -91,8 +91,9 @@ El parser con esquema JSON en Understand y la validación de `handoff.schema.jso
 | --- | --- |
 | Hallazgo | gold tiene los `TEST-*` en `customer_360` y no en `customer_products` ni `customer_behavior_12m` (400.000 productos, 0 de prueba); sin productos no hay mora, P07 no dispara: 14 pares de escalación respondían (abstain 0,68, FP de acción 0,32) |
 | Condición por alias | misma lectura que `data/mock`: CO activo ≥ 750 sin mora con tarjeta; MX 640–660 sin mora; AR < 600 con un producto en mora 31–90 d; CO ≥ 750 con préstamo personal; MX 690–710 con tarjeta. Determinista (`ORDER BY customer_id`). Vocabulario de gold (`Tarjeta Crédito`, `Préstamo Personal`) |
-| Resultado con LLM, SQL, trazas y pre-score reales (82 casos) | act 0,86 · abstain 0,94 · paired 0,83 · FP de acción 0,057 · IVR 0 · groundedness 1,0 · p50 3,3 s · p95 9,7 s · 0,00035 USD/turno · umbrales ok |
-| Diferencia con el fixture (0,90 · 1,0 · 0) | 7 mensajes de borde donde el 70B elige `confirm` en vez de `clarify` (`¿Califico?`, `¿Me aprueban?`) o `formal_application` para un reclamo; intención del LLM, no datos; se declara |
+| Resultado con LLM, SQL, trazas y pre-score reales (82 casos) | act 0,86 · abstain 0,98 · paired 0,83 · FP de acción 0,019 · IVR 0 · groundedness 1,0 · exact match 0,915 · p50 3,3 s · p95 9,7 s · 0,00035 USD/turno · umbrales ok |
+| Bug destapado por el LLM real | el 70B devuelve `slots.product_type = null` en `¿Califico?` y Decide lo contaba como presente (`k not in slots`): P02 confirmar en vez de P06 aclarar. Corregido: faltante = ausente o vacío; test con un LLM que devuelve null. Antes del fix: abstain 0,94, FP 0,057 |
+| Diferencia con el fixture (0,90 · 1,0 · 0) | 5 mensajes de borde: «hasta cuánto me prestan» leído como simulación (es/pt), un reclamo como `formal_application`, «Simula si soy elegible» con producto inferido; intención del LLM, no datos; se declara |
 | Pre-score en runtime | endpoint y modelo en proceso dan el mismo resultado (p = 0,969, mismo SHAP); endpoint frío > 25 s → timeout controlado; caliente 5,5 s con las 3 consultas a gold; producción `prescore=local` |
 
 | Alternativas descartadas | Por qué |
