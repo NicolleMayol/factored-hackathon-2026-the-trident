@@ -51,7 +51,8 @@
         "consent_denied": "No autorizaste el uso de tus datos · {when}",
         "nonbinding": "No es una oferta vinculante. Un analista confirma la aprobación y las condiciones finales.",
         "term_value": "Hasta {n} meses",
-        "made_by": "Hecho por"
+        "made_by": "Hecho por",
+        "slow": "Sigo trabajando. La primera respuesta tarda más mientras el servicio arranca."
       },
       "tags": {
         "answer": "Con fuente",
@@ -132,23 +133,33 @@
       "personas": {
         "cliente_co_ok": {
           "label": "perfil apto",
-          "desc": "Buen puntaje y sin mora. Pre-evalúa y sale elegible."
+          "desc": "Buen puntaje y sin mora. Pre-evalúa y sale elegible.",
+          "path": "Sale elegible",
+          "tone": "ok"
         },
         "cliente_mx_cond": {
           "label": "condicionado",
-          "desc": "Puntaje medio y verificación de identidad pendiente."
+          "desc": "Puntaje medio y verificación de identidad pendiente.",
+          "path": "Revisión humana",
+          "tone": "warn"
         },
         "cliente_ar_no": {
           "label": "no califica",
-          "desc": "Mora reciente. Explica el motivo y pasa el caso a un asesor."
+          "desc": "Mora reciente. Explica el motivo y pasa el caso a un asesor.",
+          "path": "Pasa a un asesor",
+          "tone": "stop"
         },
         "cliente_co_pt": {
           "label": "habla portugués",
-          "desc": "Mismo cliente apto, conversando en portugués."
+          "desc": "Mismo cliente apto, conversando en portugués.",
+          "path": "Elegible, en portugués",
+          "tone": "ok"
         },
         "cliente_solo_lectura": {
           "label": "solo consulta",
-          "desc": "Sin permiso para pre-evaluar: informa y escala si insiste."
+          "desc": "Sin permiso para pre-evaluar: informa y escala si insiste.",
+          "path": "Solo información",
+          "tone": "info"
         },
         "analista": {
           "label": "Analista del banco",
@@ -407,7 +418,8 @@
         "consent_denied": "Você não autorizou o uso dos seus dados · {when}",
         "nonbinding": "Não é uma oferta vinculante. Um analista confirma a aprovação e as condições finais.",
         "term_value": "Até {n} meses",
-        "made_by": "Feito por"
+        "made_by": "Feito por",
+        "slow": "Ainda trabalhando. A primeira resposta demora mais enquanto o serviço inicia."
       },
       "tags": {
         "answer": "Com fonte",
@@ -488,23 +500,33 @@
       "personas": {
         "cliente_co_ok": {
           "label": "perfil apto",
-          "desc": "Boa pontuação e sem atraso. Pré-avalia e sai elegível."
+          "desc": "Boa pontuação e sem atraso. Pré-avalia e sai elegível.",
+          "path": "Sai elegível",
+          "tone": "ok"
         },
         "cliente_mx_cond": {
           "label": "condicionado",
-          "desc": "Pontuação média e verificação de identidade pendente."
+          "desc": "Pontuação média e verificação de identidade pendente.",
+          "path": "Revisão humana",
+          "tone": "warn"
         },
         "cliente_ar_no": {
           "label": "não se qualifica",
-          "desc": "Atraso recente. Explica o motivo e passa o caso a um assessor."
+          "desc": "Atraso recente. Explica o motivo e passa o caso a um assessor.",
+          "path": "Vai para um assessor",
+          "tone": "stop"
         },
         "cliente_co_pt": {
           "label": "fala português",
-          "desc": "O mesmo cliente apto, conversando em português."
+          "desc": "O mesmo cliente apto, conversando em português.",
+          "path": "Elegível, em português",
+          "tone": "ok"
         },
         "cliente_solo_lectura": {
           "label": "só consulta",
-          "desc": "Sem permissão para pré-avaliar: informa e escala se insistir."
+          "desc": "Sem permissão para pré-avaliar: informa e escala se insistir.",
+          "path": "Só informação",
+          "tone": "info"
         },
         "analista": {
           "label": "Analista do banco",
@@ -762,7 +784,8 @@
         "consent_denied": "You didn't authorize use of your data · {when}",
         "nonbinding": "This is not a binding offer. An analyst confirms approval and final terms.",
         "term_value": "Up to {n} months",
-        "made_by": "Made by"
+        "made_by": "Made by",
+        "slow": "Still working. The first answer takes longer while the service starts."
       },
       "tags": {
         "answer": "Sourced",
@@ -843,23 +866,33 @@
       "personas": {
         "cliente_co_ok": {
           "label": "good profile",
-          "desc": "Good score, no late payments. The pre-check comes out eligible."
+          "desc": "Good score, no late payments. The pre-check comes out eligible.",
+          "path": "Comes out eligible",
+          "tone": "ok"
         },
         "cliente_mx_cond": {
           "label": "conditional",
-          "desc": "Mid-range score and identity check pending."
+          "desc": "Mid-range score and identity check pending.",
+          "path": "Human review",
+          "tone": "warn"
         },
         "cliente_ar_no": {
           "label": "doesn't qualify",
-          "desc": "Recent late payments. Explains why and hands the case to an advisor."
+          "desc": "Recent late payments. Explains why and hands the case to an advisor.",
+          "path": "Goes to an advisor",
+          "tone": "stop"
         },
         "cliente_co_pt": {
           "label": "speaks Portuguese",
-          "desc": "Same eligible customer, chatting in Portuguese."
+          "desc": "Same eligible customer, chatting in Portuguese.",
+          "path": "Eligible, in Portuguese",
+          "tone": "ok"
         },
         "cliente_solo_lectura": {
           "label": "info only",
-          "desc": "No pre-check permission: gives information and hands off to an advisor if they insist."
+          "desc": "No pre-check permission: gives information and hands off to an advisor if they insist.",
+          "path": "Information only",
+          "tone": "info"
         },
         "analista": {
           "label": "Bank analyst",
