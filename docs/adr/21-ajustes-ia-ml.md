@@ -1,6 +1,6 @@
 # 21-ajustes-ia-ml
 
-Owner: Manuela · v1.5 · 2026-10-05 (cierre: adaptadores reales SQL/trazas/pre-score/embeddings/Cosmos, clasificador baseline y M5) · v1.4 · 2026-10-02 (ADR-24: corpus para los 6 tipos, puente `product_type_dataset`, montos de los casos desde el catálogo, E08 con plazo) · v1.3 · 2026-10-02 (it. 3: credenciales por perfil OAuth, `main` = llama-3.3-70b, guardrail determinista antes del LLM, decisiones pedidas en ADR-22) · v1.2 · 2026-10-02 (revisión del PR #18: `text_es`/`text_pt` para full-text en Cosmos; fuente de verdad del corpus repo → volumen; held-out desde `gold.intent_labels`) · v1.1 · 2026-10-01 (revisión de servicio en el PR #16: tolerancia al frío y costo del keep-warm; /healthz con estados; usuario `cliente_co_pt`; Eladio consumer de los usuarios de prueba).
+Owner: Manuela · v1.6 · 2026-10-05 (evaluación sobre gold: usuarios reales por condición, TEST-* incompletos en gold, números con todo real) · v1.5 · 2026-10-05 (cierre: adaptadores reales SQL/trazas/pre-score/embeddings/Cosmos, clasificador baseline y M5) · v1.4 · 2026-10-02 (ADR-24: corpus para los 6 tipos, puente `product_type_dataset`, montos de los casos desde el catálogo, E08 con plazo) · v1.3 · 2026-10-02 (it. 3: credenciales por perfil OAuth, `main` = llama-3.3-70b, guardrail determinista antes del LLM, decisiones pedidas en ADR-22) · v1.2 · 2026-10-02 (revisión del PR #18: `text_es`/`text_pt` para full-text en Cosmos; fuente de verdad del corpus repo → volumen; held-out desde `gold.intent_labels`) · v1.1 · 2026-10-01 (revisión de servicio en el PR #16: tolerancia al frío y costo del keep-warm; /healthz con estados; usuario `cliente_co_pt`; Eladio consumer de los usuarios de prueba).
 
 ## ADR-21 · Ajustes de ia-ml tras ADR-19 y ADR-20  ·  rol: ia-ml  ·  2026-10-01  ·  estado: cerrada
 
@@ -82,6 +82,28 @@ Factored autorizó fuentes externas con dos condiciones: justificar explícitame
 ### 5 · Jev / TypeSafe AI → To-Be (cierra ADR-14)
 
 El parser con esquema JSON en Understand y la validación de `handoff.schema.json` cubren el tipado de salida que Jev daría. Añadir una librería a cuatro días de la entrega es riesgo sin métrica que lo justifique.
+
+### 7 · Evaluación sobre gold (5 oct): el dev set corre con clientes reales
+
+**Decisión.** Con `AGENT_SQL=real` el dev set usa clientes reales de gold elegidos por condición (`eval/pick_users.py`), no los `TEST-*` del fixture; los ids no se versionan (ADR-12). Los `TEST-*` que usa la UI se completan en gold con `scripts/seed_test_customers.py` (MERGE solo de esas filas) para que puedan mostrar una escalación por riesgo.
+
+| Punto | Valor |
+| --- | --- |
+| Hallazgo | gold tiene los `TEST-*` en `customer_360` y no en `customer_products` ni `customer_behavior_12m` (400.000 productos, 0 de prueba); sin productos no hay mora, P07 no dispara: 14 pares de escalación respondían (abstain 0,68, FP de acción 0,32) |
+| Condición por alias | misma lectura que `data/mock`: CO activo ≥ 750 sin mora con tarjeta; MX 640–660 sin mora; AR < 600 con un producto en mora 31–90 d; CO ≥ 750 con préstamo personal; MX 690–710 con tarjeta. Determinista (`ORDER BY customer_id`). Vocabulario de gold (`Tarjeta Crédito`, `Préstamo Personal`) |
+| Resultado con LLM, SQL, trazas y pre-score reales (82 casos) | act 0,86 · abstain 0,94 · paired 0,83 · FP de acción 0,057 · IVR 0 · groundedness 1,0 · p50 3,3 s · p95 9,7 s · 0,00035 USD/turno · umbrales ok |
+| Diferencia con el fixture (0,90 · 1,0 · 0) | 7 mensajes de borde donde el 70B elige `confirm` en vez de `clarify` (`¿Califico?`, `¿Me aprueban?`) o `formal_application` para un reclamo; intención del LLM, no datos; se declara |
+| Pre-score en runtime | endpoint y modelo en proceso dan el mismo resultado (p = 0,969, mismo SHAP); endpoint frío > 25 s → timeout controlado; caliente 5,5 s con las 3 consultas a gold; producción `prescore=local` |
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Dejar el eval con el fixture y SQL en mock | mide el agente contra datos que gold no tiene; el 1,0 de abstención era del fixture |
+| Fallback del adaptador SQL al CSV para ids `TEST-*` | mezcla dos fuentes en producción y esconde el hueco de datos |
+| Versionar `eval/users_gold.json` | ids del dataset en un repo público (ADR-12, guard F13) |
+
+**Hackathon vs To-Be.** Hackathon: usuarios por condición + seed de `TEST-*`. To-Be: fixture de prueba cargado por el pipeline de datos (E-x) con `es_sintetico = true`, y casos de borde de intención con `clarify` reforzado en el prompt o umbral de confianza por intención.
+
+**Dependencias.** M11 (abajo).
 
 ### 6 · Dimensiones del reto y entregables bloqueantes
 
