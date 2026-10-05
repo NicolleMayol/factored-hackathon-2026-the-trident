@@ -1,0 +1,138 @@
+# ADR-27 · Pipeline de main. Un merge = un run con orden fijo; cada capa corre solo si cambió:
+#   changes → ci → infra (plan + apply con aprobación) → bundles ∥ function → web → smoke → resumen
+# Si ci falla no se despliega nada. Si infra espera aprobación, function y bundles esperan con ella.
+# Las piezas son workflows reutilizables (ci, infra, bundles, deploy, deploy-web).
+# Diagramas: si cambia un .drawio, diagram-export.yml sube los PNG a main con la GitHub App del equipo (bypass del ruleset).
+name: main
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # corre todas las capas salvo infra (infra solo con cambios en .tf o en infra/scripts)
+
+permissions: { contents: write, pull-requests: write, id-token: write, actions: read }
+concurrency: { group: main-pipeline, cancel-in-progress: false }
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      ci: ${{ steps.c.outputs.ci }}
+      infra: ${{ steps.c.outputs.infra }}
+      function: ${{ steps.c.outputs.function }}
+      web: ${{ steps.c.outputs.web }}
+      bundles: ${{ steps.c.outputs.bundles }}
+      drawio: ${{ steps.c.outputs.drawio }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      # Base = commit del último run verde de este pipeline, no el push anterior: si un run falla o la
+      # cola de concurrency descarta uno pendiente, sus cambios se vuelven a desplegar en el siguiente.
+      - id: c
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          base=""
+          if [ "$GITHUB_EVENT_NAME" = push ]; then
+            base=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/main.yml/runs?branch=main&status=success&per_page=1" \
+              --jq '.workflow_runs[0].head_sha // empty' || true)
+          fi
+          # Primer run del pipeline (sin run verde todavía): el push anterior.
+          [ -n "$base" ] || base="${{ github.event_name == 'push' && github.event.before || '' }}"
+          echo "base=${base:-<ninguna: todas las capas salvo infra>}"
+          bash scripts/ci_changes.sh "$base" "$GITHUB_SHA"
+
+  ci:
+    needs: changes
+    if: needs.changes.outputs.ci == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  infra:
+    needs: [changes, ci]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.infra == 'true' }}
+    uses: ./.github/workflows/infra.yml
+    secrets: inherit
+
+  bundles:
+    needs: [changes, ci, infra]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.bundles == 'true' }}
+    uses: ./.github/workflows/bundles.yml
+    secrets: inherit
+
+  function:
+    needs: [changes, ci, infra]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.function == 'true' }}
+    uses: ./.github/workflows/deploy.yml
+
+  # Después de function: la UI nueva puede depender de rutas nuevas de la API (/meta en ADR-25).
+  web:
+    needs: [changes, ci, function]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.web == 'true' }}
+    uses: ./.github/workflows/deploy-web.yml
+
+  diagrams:
+    needs: changes
+    if: needs.changes.outputs.drawio == 'true'
+    uses: ./.github/workflows/diagram-export.yml
+    secrets: inherit
+
+  # De punta a punta contra lo desplegado: API (salud, /meta, sesión, un turno de chat real) y UI.
+  smoke:
+    needs: [changes, infra, bundles, function, web]
+    if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && (needs.function.result == 'success' || needs.web.result == 'success' || needs.infra.result == 'success') }}
+    runs-on: ubuntu-latest
+    env:
+      RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+      FUNC: ${{ vars.FUNCTION_APP_NAME }}
+      SWA: ${{ vars.STATIC_WEB_APP_NAME }}
+    steps:
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      - name: Hosts
+        run: |
+          api=$(az resource show -g "$RG" -n "$FUNC" --resource-type Microsoft.Web/sites --query properties.defaultHostName -o tsv)
+          web=$(az staticwebapp show -n "$SWA" -g "$RG" --query defaultHostname -o tsv)
+          [ -n "$api" ] && [ -n "$web" ] || { echo "::error::sin host de la API o de la UI"; exit 1; }
+          echo "API=https://$api" >> "$GITHUB_ENV"; echo "WEB=https://$web" >> "$GITHUB_ENV"
+      # En frío la Function tarda: hasta ~3 min.
+      - name: API · healthz
+        run: |
+          for i in $(seq 1 18); do
+            code=$(curl -s -o h.json -w '%{http_code}' "$API/api/healthz" || true)
+            echo "intento $i: $code $(cat h.json 2>/dev/null)"; [ "$code" = 200 ] && exit 0; sleep 10
+          done
+          echo "::error::/healthz no respondió 200"; exit 1
+      - name: API · meta, sesión y un turno de chat
+        run: |
+          set -euo pipefail
+          curl -sf "$API/api/meta" -o meta.json
+          user=$(jq -r '[.users[] | select(.scopes | index("handoff:read") | not)][0].key' meta.json)
+          [ "$user" != null ] || { echo "::error::/meta sin usuarios de prueba"; exit 1; }
+          tok=$(curl -sf -X POST "$API/api/session" -H 'content-type: application/json' -d "{\"user\":\"$user\"}" | jq -r .token)
+          curl -sf -X POST "$API/api/chat" -H 'content-type: application/json' -H "authorization: Bearer $tok" \
+            -d '{"message":"¿Qué requisitos tiene el préstamo personal?"}' -o chat.json
+          jq '{action, citations: (.citations | length), latency_ms, trace_id}' chat.json
+          jq -e '.action and .trace_id' chat.json >/dev/null || { echo "::error::/chat sin action o trace_id"; exit 1; }
+      - name: UI · página, textos y config
+        run: |
+          set -euo pipefail
+          curl -sf "$WEB/" -o /dev/null
+          curl -sf "$WEB/ui.json" | jq -e '.lang' >/dev/null
+          curl -sf "$WEB/config.js" | grep -q "$API" || { echo "::error::config.js no apunta a $API"; exit 1; }
+          echo "### Chat en $WEB" >> "$GITHUB_STEP_SUMMARY"
+
+  resumen:
+    needs: [changes, ci, infra, bundles, function, web, diagrams, smoke]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resultado
+        env:
+          R: ${{ toJSON(needs) }}
+        run: |
+          { echo "| Pieza | Resultado |"; echo "| --- | --- |"
+            echo "$R" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'; } | tee -a "$GITHUB_STEP_SUMMARY"
+          bad=$(echo "$R" | jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")')
+          [ -z "$bad" ] || { echo "::error::fallaron: $bad"; exit 1; }

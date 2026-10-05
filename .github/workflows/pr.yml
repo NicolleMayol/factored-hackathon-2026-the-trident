@@ -1,0 +1,62 @@
+# ADR-27 · Puerta de entrada de los PR. Corre solo las piezas de las capas que tocó el PR y
+# termina en un único check, `pr-gate`, que es el que pide la protección de main.
+# adr-impact sigue aparte: también corre cuando se edita la descripción del PR.
+name: pr
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions: { contents: read, pull-requests: write, id-token: write }
+concurrency: { group: "pr-${{ github.event.pull_request.number || github.ref }}", cancel-in-progress: true }
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      ci: ${{ steps.c.outputs.ci }}
+      infra: ${{ steps.c.outputs.infra }}
+      bundles: ${{ steps.c.outputs.bundles }}
+      diagrams: ${{ steps.c.outputs.diagrams }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - id: c
+        run: bash scripts/ci_changes.sh "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha || github.sha }}"
+
+  ci:
+    needs: changes
+    if: needs.changes.outputs.ci == 'true'
+    uses: ./.github/workflows/ci.yml
+
+  # Plan con comentario en el PR; el apply de infra.yml no corre en pull_request.
+  infra:
+    needs: changes
+    if: needs.changes.outputs.infra == 'true'
+    uses: ./.github/workflows/infra.yml
+    secrets: inherit
+
+  # bundle validate (el deploy y la copia a volúmenes solo corren en main).
+  bundles:
+    needs: changes
+    if: needs.changes.outputs.bundles == 'true'
+    uses: ./.github/workflows/bundles.yml
+    secrets: inherit
+
+  diagrams:
+    needs: changes
+    if: needs.changes.outputs.diagrams == 'true'
+    uses: ./.github/workflows/diagram-sync.yml
+
+  pr-gate:
+    needs: [changes, ci, infra, bundles, diagrams]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resultado
+        env:
+          R: ${{ toJSON(needs) }}
+        run: |
+          { echo "| Pieza | Resultado |"; echo "| --- | --- |"
+            echo "$R" | jq -r 'to_entries[] | "| \(.key) | \(.value.result) |"'; } | tee -a "$GITHUB_STEP_SUMMARY"
+          bad=$(echo "$R" | jq -r '[to_entries[] | select(.value.result == "failure" or .value.result == "cancelled") | .key] | join(", ")')
+          [ -z "$bad" ] || { echo "::error::fallaron: $bad"; exit 1; }

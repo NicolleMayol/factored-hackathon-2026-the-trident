@@ -24,6 +24,15 @@ resource "azurerm_role_assignment" "kv_admins" {
   principal_id         = each.value
 }
 
+# ia-ml lee solo cosmos-key (rol sobre el secreto, no sobre el vault): para correr el agente en
+# local con AGENT_STORE=real. La Function no lo necesita: lee el secreto con su identidad.
+resource "azurerm_role_assignment" "kv_iaml_cosmos_key" {
+  for_each             = toset(var.iaml_object_ids)
+  scope                = azurerm_key_vault_secret.cosmos_key.resource_versionless_id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = each.value
+}
+
 # Los permisos de RBAC tardan en propagarse; sin esta espera el primer apply falla con 403.
 resource "time_sleep" "kv_rbac" {
   depends_on      = [azurerm_role_assignment.kv_deployer]

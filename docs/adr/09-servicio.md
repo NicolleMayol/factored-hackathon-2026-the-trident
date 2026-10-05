@@ -1,6 +1,6 @@
 # 09-servicio
 
-Owner: Nicolle · v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
+Owner: Nicolle · v3.7 · 2026-10-05 (workspace trial → premium: el trial no trae Model Serving). v3.6 · 2026-10-05 (ADR-27: un pipeline por PR y uno por merge, con orden fijo). v3.5 · 2026-10-05 (ADR-26: versiones con tags y GitHub Release). v3.4 · 2026-10-05 (ADR-25: UI sin datos quemados, `GET /meta`, nombres de recursos en variables del repo). v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
 
 ## ADR-19 · Plan de infraestructura en Terraform  ·  rol: servicio  ·  2026-09-29  ·  estado: cerrada
 
@@ -36,7 +36,7 @@ Región: `eastus2` (Claude Sonnet 5 verificado por Nicolle el 2026-09-29). Nombr
 | Function App | `func-agent-bank-dev` | Flex Consumption, Linux, python3.11, 2048 MB | máx. 10 instancias; always-ready 0 (1 en ventana de jurado); identidad administrada |
 | Frontend | `swa-agent-bank-dev` | Static Web Apps Free | chat + vista `/handoff/{case_id}`; llama a la Function App desde el navegador (CORS) |
 | Cosmos DB | `cosmos-agent-bank-dev` | NoSQL, free tier, capabilities `EnableNoSQLVectorSearch` y `EnableNoSQLFullTextSearchPreviewFeatures` (`azapi`) | ver "Cosmos" |
-| Databricks | `dbw-agent-bank-dev` | Premium trial (14 días), como en el diagrama | solo cómputo serverless |
+| Databricks | `dbw-agent-bank-dev` | Premium (v3.7; antes Premium trial de 14 días, que no trae Model Serving) | solo cómputo serverless |
 | ADLS Gen2 | `adlsagentbankdev` | Standard LRS, HNS | contenedores `unity-catalog` (storage del catálogo), `landing` (copia de S3), `ops-export`, y uno por esquema: `bronze`, `silver`, `gold`, `ref`, `ops`, `ml-data` (el de `ml`; Azure pide 3 a 63 caracteres) (ADR-20) |
 | Access Connector | `acc-agent-bank-dev` | — | identidad de Databricks sobre ADLS |
 | SQL Warehouse | `wh-agent` | serverless 2X-Small, auto-stop 10 min | lectura de gold/ref |
@@ -240,3 +240,145 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | N5 (cambia) | Static Web Apps Free: chat + vista `/handoff` | Nicolle → Manuela | Azure | recurso creado; UI mié 30 | curl |
 
 **Base regulatoria.** No aplica en el hackathon: el dataset es de Factored y todo queda en East US 2 dentro del tenant. Residencia y retención por país quedan en To-Be, a validar con legal.
+
+
+## ADR-25 · UI sin datos quemados: `GET /meta` y textos en `web/ui.json`  ·  rol: servicio  ·  2026-10-05  ·  estado: cerrada
+
+**Decisión.** La UI lee los datos de negocio de `GET /api/meta` (servicio), que los arma con los mismos archivos que lee el agente; los textos por idioma viven en `web/ui.json`; los workflows de despliegue toman los nombres de recursos de variables del repo.
+
+| Qué estaba quemado | De dónde sale ahora |
+| --- | --- |
+| Personas de prueba | `SESSION_USERS` de `/session` (+ `country` de las filas `TEST-*`, ADR-22) |
+| Países y productos (nombres es/pt, tasa, plazo, montos) | `policy/catalog.yaml` |
+| Tasa y plazo de la tarjeta de resultado (antes regex sobre el texto) | catálogo del producto citado (`product_code` del `chunk_id`) |
+| Resultados posibles | `contracts/tools.yaml` · `evaluate_eligibility.outcome` |
+| Motivos de escalamiento (la UI usaba códigos que no estaban en el enum) | `contracts/handoff.schema.json` · `reason_code` |
+| Monto de las sugerencias (5.000.000 fijo: en MX, catálogo en USD, la pre-evaluación salía "No elegible" por monto) | `amount_min × 10` del producto del país del cliente, con tope `amount_max` |
+| Textos es/pt dentro del JS | `web/ui.json` (otro idioma = un bloque nuevo) |
+| `RG`, `FUNC`, `SWA` en `deploy.yml` y `deploy-web.yml` | variables del repo `AZURE_RESOURCE_GROUP`, `FUNCTION_APP_NAME`, `STATIC_WEB_APP_NAME`; el job falla si falta una |
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Copiar `catalog.yaml` a `web/` en el deploy | La UI y el agente podrían leer versiones distintas; `deploy-web` no corre cuando cambia el catálogo |
+| Textos en `/meta` | Si la Function está en frío, la UI no tendría ni los textos; `ui.json` es estático y del mismo origen |
+| Leer el país del cliente con `get_customer_profile` | Pide JWT y despierta el warehouse; `/meta` es público y no toca datos de clientes |
+| Variables de environment `hackathon` | Los jobs de deploy no usan environment (sin aprobación); las variables del repo bastan |
+
+**Impacto.**
+
+| Elemento | Estado | Owner | Consumers afectados | Qué deben hacer | Fecha límite |
+| --- | --- | --- | --- | --- | --- |
+| `api.GET_/meta` | nuevo | servicio | — | nada | — |
+| `contracts/api.yaml` | cambia (v1.3.0) | ia-ml / servicio | ia-ml | revisar que `/meta` no choca con rutas del agente | lun 5 |
+| `gold.credit_product_catalog` (`policy/catalog.yaml`) | existe; nuevo lector | datos | servicio | no renombrar los campos que lee `/meta` sin avisar | — |
+| `handoff.schema` · `reason_code` | existe; nuevo lector | ia-ml | servicio | un código nuevo necesita texto en `web/ui.json` (el test falla si falta) | — |
+| `tools.*` · `evaluate_eligibility.outcome` | existe; nuevo lector | ia-ml | servicio | igual: un resultado nuevo necesita texto en `web/ui.json` | — |
+| `infra.ci_cd` | cambia | servicio | — | Nicolle crea las 3 variables del repo antes del merge | lun 5 |
+
+**Cómo se prueba.** `tests/test_meta.py` en CI: `/meta` devuelve exactamente los productos, países, usuarios, resultados y motivos de las fuentes; no expone `customer_id`; `web/ui.json` tiene texto para cada código y las mismas claves en cada idioma. Flujos de la UI en Playwright contra el agente con mocks (CO, MX, AR, pt, solo lectura, analista).
+
+**Hackathon vs To-Be.**
+
+| Hackathon | To-Be |
+| --- | --- |
+| `/meta` lee archivos del paquete; cache 5 min | `/meta` desde `gold.credit_product_catalog` con versión y ETag |
+| País de la persona desde las filas `TEST-*` del mock | personas reales con Entra External ID; país del perfil |
+| El resultado se sigue leyendo del texto (frase que exige el nodo verify) | `/chat/confirm` devuelve `result` estructurado (propuesta a ia-ml) |
+| Variables del repo puestas a mano | Terraform escribe las variables con el provider de GitHub |
+
+**Dependencias.** Sin filas nuevas ni fechas que cambien en `dependencies.md`. Propuesta abierta a ia-ml: campo `result` en `/chat/confirm`.
+
+## ADR-26 · Versiones con tags y GitHub Release  ·  rol: servicio  ·  2026-10-05  ·  estado: cerrada
+
+**Decisión.** Cada versión es un tag anotado `vX.Y.Z` (SemVer) sobre un commit de main; el workflow `release` crea el GitHub Release con las notas de los PRs mergeados. `v0.x` sale como pre-release; `v1.0.0` es lo que se entrega a Factored. Solo Nicolle crea tags. Los deploys siguen saliendo de main.
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Sin tags; el jurado mira main | Seguimos haciendo commits después de la entrega; el tag fija lo evaluado |
+| Desplegar desde el tag | Cambia el camino de despliegue el día de la entrega; hoy hay un solo ambiente |
+| Versión en un archivo (`VERSION`) | Un commit extra por versión; el tag ya es la fuente |
+| Notas a mano | Los PRs ya traen título con rol (`adr(<rol>):`); `--generate-notes` los lista |
+
+**Impacto.** Ningún elemento del mapa cambia; ningún consumer distinto de servicio.
+
+| Elemento | Estado | Owner | Consumers afectados | Qué deben hacer | Fecha límite |
+| --- | --- | --- | --- | --- | --- |
+| `.github/workflows/release.yml` | nuevo | servicio | — | nada | — |
+
+**Cómo se prueba.** Push de `v0.1.0` sobre main: el job crea el pre-release con las notas. Un tag sobre un commit fuera de main falla en el paso "El tag apunta a main".
+
+**Hackathon vs To-Be.**
+
+| Hackathon | To-Be |
+| --- | --- |
+| Tag manual de Nicolle; deploy desde main | main → dev; tag → staging y prod con aprobación |
+| Notas generadas de los PRs | changelog por rol con etiquetas de PR |
+| Sin firma de tags | tags firmados y protección de tags `v*` |
+
+**Dependencias.** Sin cambios en `dependencies.md`.
+
+## ADR-27 · Un pipeline por PR y uno por merge, con orden fijo  ·  rol: servicio  ·  2026-10-05  ·  estado: cerrada
+
+**Decisión.** Dos puertas de entrada: `pr.yml` (cada PR, termina en el check único `pr-gate`) y `main.yml` (cada merge). Los workflows de cada capa pasan a ser piezas reutilizables (`workflow_call`, más `workflow_dispatch` para correrlas a mano). En main el orden es fijo y cada capa corre solo si cambió desde el último run verde:
+
+```
+changes → ci → infra (plan + apply con aprobación) → bundles ∥ function → web → smoke e2e → resumen
+```
+
+Si `ci` falla no se despliega nada. Si el apply espera aprobación, function y bundles esperan con él. Infra solo corre si cambian los `.tf` o `infra/scripts/`: un cambio del pipeline o de `infra.yml` no planea ni pide aprobación (para forzarlo, `workflow_dispatch` de `infra.yml`). Los PNG del diagrama: `diagram-sync` los deja como vista previa en el PR; al mergear un cambio en un `.drawio`, `diagram-export` los sube a main con una GitHub App propia (solo `contents: write` en este repo, token de 1 hora, llave en el environment `diagrams` restringido a main), que es el único actor en el bypass del ruleset de main; `GITHUB_TOKEN` no puede saltarse la protección. `adr-impact`, `data-landing` y `release` quedan aparte; `release` exige `main.yml` en verde para el commit del tag.
+
+| Antes (9 workflows sueltos) | Ahora |
+| --- | --- |
+| `deploy` corría junto a `ci`: un test en rojo igual publicaba la Function | `function` y `web` esperan a `ci` |
+| Infra, Function, bundles y UI en paralelo: la UI podía salir antes que `/meta`; un App Setting nuevo podía llegar después del código que lo usa | Orden infra → function → web |
+| Un cambio en `policy/catalog.yaml` disparaba 4 workflows sin coordinar | Un run; `scripts/ci_changes.sh` decide qué capas corren |
+| Sin señal de "todo desplegado" por commit | Smoke e2e (`/healthz`, `/meta`, `/session`, un turno de `/chat`, UI y `config.js`) y tabla de resultados |
+| Diff contra el push anterior | Diff contra el último run verde: un run fallido o descartado por la cola no pierde cambios |
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Encadenar con `workflow_run` | Cadena difícil de seguir; cada eslabón es un run aparte y no hay un resultado único |
+| Un solo workflow monolítico | Se pierde correr una capa a mano; archivo de cientos de líneas |
+| `dorny/paths-filter` | Dependencia externa para un `git diff` de 20 líneas; el script se prueba en local |
+| Meter `adr-impact` en `pr.yml` | Corre al editar la descripción del PR; un run `edited` con el resto en `skipped` dejaría `pr-gate` en verde sobre un commit con `ci` en rojo |
+
+**Impacto.**
+
+| Elemento | Estado | Owner | Consumers afectados | Qué deben hacer | Fecha límite |
+| --- | --- | --- | --- | --- | --- |
+| `infra.ci_cd` (`contracts/infra.yaml`) | cambia | servicio | datos, ia-ml | nada en su código; sus PR muestran `pr-gate`; `bundles` (datos) corre después de infra; `ci` (ia-ml) frena el deploy si falla | lun 5 |
+| `.github/workflows/main.yml`, `pr.yml`, `scripts/ci_changes.sh` | nuevo | servicio | — | — | — |
+
+**Cómo se prueba.** `actionlint` sin errores; `scripts/ci_changes.sh` contra los merges #41–#46 (capas esperadas); este PR corre `pr.yml` completo (toca el pipeline, así que todas las capas en true); el merge corre `main.yml` completo y el smoke e2e contra lo desplegado.
+
+**Hackathon vs To-Be.**
+
+| Hackathon | To-Be |
+| --- | --- |
+| Un ambiente; main despliega | main → dev; tag → staging y prod con aprobación |
+| Smoke con un turno de chat | suite e2e con Playwright sobre la UI y eval contra el agente real |
+| `pr-gate` como check obligatorio (protección de rama a mano) | protección de rama en Terraform (provider de GitHub) |
+
+**Dependencias.** Sin cambios en `dependencies.md`. Protección de main: pedir el check `pr-gate` (Settings → Branches).
+
+### v3.7 · 2026-10-05 · workspace trial → premium
+
+El SKU `trial` devuelve `404 FEATURE_DISABLED: Model serving is not available for trial workspaces` al crear endpoints propios. Las FM APIs (`databricks-meta-llama-3-3-70b-instruct`, `llama-3.1-8b`) sí funcionan en trial, pero `embed-bge-m3` y `prescore-lgbm` (ADR-21) necesitan Model Serving. Se adelanta al 5 oct el paso a `premium` que estaba previsto para el vencimiento del trial (~13 oct). En `azurerm_databricks_workspace` el cambio de SKU es en el lugar: no recrea el workspace ni toca Unity Catalog.
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Seguir en trial: pre-score por lote en gold y búsqueda solo full-text en Cosmos | Reescribe trabajo de ia-ml el día de la entrega y cambia ADR-21 |
+| Embeddings en la Function | bge-m3 no cabe en el arranque de 30 s ni en 2048 MB (ADR-21) |
+
+**Costo.** Desde el cambio, los DBUs (serverless SQL, jobs, Model Serving) se cobran. Los endpoints escalan a cero; el consumo se sigue en `system.billing.usage` y el presupuesto de Azure avisa al 50 %.
+
+### v3.8 · 2026-10-05 · ia-ml lee silver.call_transcripts (M5)
+
+ia-ml necesita los textos de llamadas para el etiquetado de intención (M5). `data.silver` ya tiene a ia-ml como consumer en el impact-map, pero ADR-20 solo le daba gold, ref, ops y ml. Se agrega `USE SCHEMA` en silver y `SELECT` solo en `silver.call_transcripts`, con `databricks_grant` (no autoritativo: no toca los permisos de datos ni de sp-pipelines sobre la tabla). La lista de tablas está en `local.iaml_silver_tables`: otra tabla de silver es una línea más.
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| `SELECT` en todo el esquema silver | Más de lo que M5 necesita; silver tiene datos de clientes, transacciones y encuestas |
+| Exportar un CSV con `customer_text` | Las filas del dataset saldrían del tenant (regla de Factored, ADR-12) |
+| Grant a mano en el workspace | Se pierde en el próximo apply; los grants viven en Terraform |
+

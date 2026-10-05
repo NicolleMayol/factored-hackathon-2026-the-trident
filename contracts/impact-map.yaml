@@ -27,8 +27,8 @@ elements:
   - id: gold.credit_product_catalog
     file: contracts/gold.yaml
     owner: datos
-    consumers: [ia-ml]
-    used_by: ["policy/catalog.yaml generado por data/ref/build_catalog.py (ADR-24)", search_policy, evaluate_eligibility, "product_type_dataset: join con gold.customer_products"]
+    consumers: [ia-ml, servicio]
+    used_by: ["policy/catalog.yaml generado por data/ref/build_catalog.py (ADR-24)", search_policy, evaluate_eligibility, "product_type_dataset: join con gold.customer_products", "GET /meta lee policy/catalog.yaml: product_code, country, country_name, name_es, name_pt, product_type, currency, rate_min, rate_max, amount_min, amount_max, term_months_max (ADR-25)"]
   - id: gold.policy_chunks
     file: contracts/chunks.yaml
     owner: ia-ml
@@ -88,6 +88,12 @@ elements:
     file: contracts/handoff.schema.json
     owner: ia-ml
     consumers: [servicio]
+    used_by: ["GET /meta expone el enum reason_code; cada código necesita texto en web/ui.json (tests/test_meta.py, ADR-25)"]
+  - id: api.GET_/meta
+    file: contracts/api.yaml
+    owner: servicio
+    consumers: []
+    used_by: ["chat en Static Web Apps: personas, países, productos, resultados, motivos y tools sin datos quemados en web/ (ADR-25)"]
   - id: infra.function_app_settings
     file: contracts/infra.yaml
     owner: servicio

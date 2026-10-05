@@ -1,19 +1,14 @@
+# Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
 # N10 · Gate de código: tests y harness de evaluación en cada PR y en main.
 # Todo corre con mocks (AGENT_*=mock): sin secretos, sin red hacia Azure ni Databricks.
 # Lo pidió el #30: main estuvo con 17 tests en rojo desde el #27 y ningún workflow lo vio.
 name: ci
 on:
-  pull_request:
-    # infra/ tiene su plan; docs/ y diagrams/ no tienen código. Los .md no se excluyen:
-    # los prompts del agente y el corpus de policy_docs son .md y los tests los leen.
-    paths-ignore: ["docs/**", "diagrams/**", "infra/**"]
-  push:
-    branches: [main]
-    paths-ignore: ["docs/**", "diagrams/**", "infra/**"]
+  # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
+  workflow_call:
   workflow_dispatch:
 
 permissions: { contents: read }
-concurrency: { group: "ci-${{ github.ref }}", cancel-in-progress: true }
 
 env:
   AGENT_LLM: mock

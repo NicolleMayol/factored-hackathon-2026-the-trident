@@ -1,17 +1,15 @@
-# Diagrama de arquitectura.
-# PR: solo valida (sin commits del bot en la rama: un commit nuevo vuelve a disparar todos los workflows del PR).
-# main: exporta los PNG una vez, al mergear, y los sube con [skip ci] para no disparar nada.
+# Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
+# Diagrama de arquitectura. Lo llama pr.yml cuando cambian diagrams/ o el impact-map.
+# Valida y exporta los PNG como artifact del run, para revisar el dibujo antes del merge. No sube nada:
+# al mergear, main.yml (diagram-export.yml) exporta y sube los PNG a main con la GitHub App del equipo.
 name: diagram-sync
 on:
-  pull_request:
-    paths: ["diagrams/**", "contracts/impact-map.yaml"]
-  push:
-    branches: [main]
-    paths: ["diagrams/**", "!diagrams/out/**"]
+  # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   check:
-    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     permissions: { contents: read }
     steps:
@@ -25,14 +23,6 @@ jobs:
             echo "El .drawio está comprimido: desmarca 'Comprimido' en draw.io y vuelve a guardar"; exit 1; fi
       - name: Coherencia diagrama ↔ impact-map
         run: python scripts/drawio_tool.py sync diagrams/arquitectura.drawio
-
-  export:
-    if: github.event_name == 'push'
-    runs-on: ubuntu-latest
-    permissions: { contents: write }
-    concurrency: { group: diagram-export, cancel-in-progress: true }
-    steps:
-      - uses: actions/checkout@v4
       - name: Exportar PNG
         uses: rlespinasse/drawio-export-action@v2
         with:
@@ -42,8 +32,12 @@ jobs:
           transparent: false
           scale: 2
           action-mode: all
-      - name: Subir exportes a main
+      - name: Subir PNG como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagramas-png
+          path: diagrams/out/*.png
+          retention-days: 7
+      - name: Aviso
         run: |
-          git config user.name "diagram-bot"; git config user.email "bot@users.noreply.github.com"
-          git add diagrams/out
-          if git diff --cached --quiet; then echo "sin cambios"; else git commit -m "chore(diagrams): export [skip ci]" && git push; fi
+          echo "Vista previa en el artifact «diagramas-png». Al mergear, main sube los PNG solo." | tee -a "$GITHUB_STEP_SUMMARY"
