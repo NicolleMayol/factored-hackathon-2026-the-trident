@@ -93,7 +93,7 @@ class Nodes:
         ctx = {
             "intent": st.get("intent"), "intent_confidence": st.get("intent_confidence"), "mixed_language": st.get("_mixed_language"),
             "scopes": st.get("scopes", []), "jwt_valid": True,
-            "missing_required_slots": any(k not in st.get("slots", {}) for k in REQUIRED_SLOTS.get(st.get("intent", ""), [])),
+            "missing_required_slots": any(not (st.get("slots") or {}).get(k) for k in REQUIRED_SLOTS.get(st.get("intent", ""), [])),  # el LLM devuelve la clave con null: cuenta como faltante (P06)
             "clarifications": sum(1 for h in st.get("history", []) if h.get("action") == "clarify"),
             "days_past_due": max([int(p.get("days_past_due") or 0) for p in prods], default=0),
             "customer_status": prof.get("customer_status"), "fraud_flag": False,
