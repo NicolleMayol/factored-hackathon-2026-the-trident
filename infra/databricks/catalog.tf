@@ -94,3 +94,12 @@ resource "databricks_grant" "iaml_silver_select" {
   privileges = ["SELECT"]
 }
 
+
+# sp-agent-ro escribe cada turno en ops.agent_turns (trace = real). La tabla ya existe y es de ia-ml, así que
+# CREATE_TABLE en ops no alcanza: escribir pide MODIFY y SELECT sobre la tabla (Unity Catalog). Lo detectó A8
+# de check_access.py en el smoke (ADR-28 F09). No autoritativo: no toca los permisos de la dueña.
+resource "databricks_grant" "sp_agent_agent_turns" {
+  table      = "${databricks_catalog.hackathon.name}.${databricks_schema.this["ops"].name}.agent_turns"
+  principal  = local.sp_agent
+  privileges = ["SELECT", "MODIFY"]
+}
