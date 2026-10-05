@@ -8,6 +8,7 @@ Solo API (no SDK): usa las credenciales de dbx_auth (perfil local). Un endpoint 
 request tras el frío tarda ~30 s (run_tool lo tolera una vez por dependencia y conversación)."""
 from __future__ import annotations
 import argparse
+import os
 import sys
 import time
 from pathlib import Path
@@ -70,6 +71,17 @@ def upsert(name: str, model: str, version: str, size: str) -> None:
         print(f"actualizado {name} ← {model} v{version}")
 
 
+def grant_query(name: str, app_id: str) -> None:
+    """CAN_QUERY para el service principal del agente (sp-agent-ro): sin esto, en Azure el endpoint responde 403 (revisión #51)."""
+    r = requests.get(f"{HOST}/api/2.0/serving-endpoints/{name}", headers=h(), timeout=30); r.raise_for_status()
+    eid = r.json()["id"]
+    body = {"access_control_list": [{"service_principal_name": app_id, "permission_level": "CAN_QUERY"}]}
+    r = requests.patch(f"{HOST}/api/2.0/permissions/serving-endpoints/{eid}", headers=h(), json=body, timeout=30)
+    if not r.ok:
+        _fail(r, f"CAN_QUERY en {name} para {app_id}")
+    print(f"CAN_QUERY en {name} → {app_id}")
+
+
 def wait(name: str, minutes: int = 45) -> None:
     t0 = time.time()
     while time.time() - t0 < minutes * 60:
@@ -84,9 +96,17 @@ def wait(name: str, minutes: int = 45) -> None:
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(); ap.add_argument("name"); ap.add_argument("model", nargs="?"); ap.add_argument("version", nargs="?", default="latest")
     ap.add_argument("--size", default="Small"); ap.add_argument("--status", action="store_true"); ap.add_argument("--wait", action="store_true")
+    ap.add_argument("--grant", default=os.environ.get("SP_AGENT_RO_APP_ID", ""), help="application id de sp-agent-ro: da CAN_QUERY (también SP_AGENT_RO_APP_ID en .env)")
+    ap.add_argument("--grant-only", action="store_true", help="solo dar CAN_QUERY a un endpoint que ya existe")
     a = ap.parse_args()
-    if a.status or not a.model:
+    if a.status:
+        print(status(a.name)); sys.exit(0)
+    if a.grant_only:
+        grant_query(a.name, a.grant or sys.exit("falta --grant <app id>")); sys.exit(0)
+    if not a.model:
         print(status(a.name)); sys.exit(0)
     upsert(a.name, a.model, a.version, a.size)
+    if a.grant:
+        grant_query(a.name, a.grant)
     if a.wait:
         wait(a.name)

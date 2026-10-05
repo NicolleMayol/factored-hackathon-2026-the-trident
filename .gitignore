@@ -20,3 +20,6 @@ ml/mlflow.db
 ml/mlruns/
 ml/results/
 ml/artifacts/
+
+data/ref/customer_text_phrases.csv
+docs/labels.csv

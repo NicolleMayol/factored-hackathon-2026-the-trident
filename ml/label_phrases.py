@@ -57,8 +57,8 @@ def main(path: str):
         w = csv.DictWriter(f, fieldnames=list(rows[0])); w.writeheader(); w.writerows(rows)
     md = ROOT / "docs" / "labels.md"; s = md.read_text(encoding="utf-8")
     table = "| # | customer_text | intent_label | action_label | fuente |\n| --- | --- | --- | --- | --- |\n" + "\n".join(f"| {i+1} | {r['customer_text']} | `{r['intent_label']}` | `{r['action_label']}` | {r['label_source']} ({r['rule']}) |" for i, r in enumerate(rows))
-    s = re.sub(r"<!-- tabla:inicio -->.*?<!-- tabla:fin -->", f"<!-- tabla:inicio -->\n{table}\n<!-- tabla:fin -->", s, flags=re.S)
-    md.write_text(s, encoding="utf-8")
+    # la tabla con las frases no se escribe en docs/labels.md (no se versionan filas del dataset); queda en docs/labels.csv, ignorado
+    _ = table
     from collections import Counter
     print(f"{len(rows)} frases → docs/labels.csv · {dict(Counter(r['intent_label'] for r in rows))} · fuentes {dict(Counter(r['label_source'] for r in rows))}")
 

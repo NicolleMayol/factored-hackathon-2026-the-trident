@@ -1,3 +1,4 @@
 -r requirements.txt
 pytest>=8
 python-dotenv>=1.0
+scikit-learn>=1.4  # tests del pre-score en proceso (no va en requirements.txt: la Function no lo necesita)

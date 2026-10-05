@@ -21,12 +21,6 @@ variable "admin_object_ids" {
   default     = []
 }
 
-variable "iaml_object_ids" {
-  description = "Object ids de Entra de ia-ml con lectura del secreto cosmos-key (correr el agente en local con AGENT_STORE=real)."
-  type        = list(string)
-  default     = []
-}
-
 variable "function_always_ready" {
   description = "true solo en la ventana de jurado (1 instancia caliente)."
   type        = bool
@@ -63,9 +57,9 @@ variable "agent_modes" {
   default = {
     llm      = "real"  # FM APIs (llama-3.3-70b / llama-3.1-8b) con sp-agent-ro
     sql      = "real"  # gold y ref por wh-agent (Statement API, sql_warehouse.py); A2 ok el 5 oct
-    store    = "real"  # Cosmos policy_chunks cargado con 288 chunks + vector bge-m3 (ml/load_cosmos.py, 5 oct); handoffs en Cosmos
-    embed    = "real"  # endpoint embed-bge-m3 (hackathon.ml.bge_m3, Premium desde el 5 oct); el mismo vector para chunk y consulta
-    prescore = "real"  # endpoint prescore-lgbm (hackathon.ml.prescore_lgbm: logística con cartera, AUC 0,78); "local" = mismo modelo en proceso si el endpoint no responde
+    store    = "mock"  # Cosmos cargado (288 chunks + vector bge-m3); pasa a real junto con embed, cuando embed-bge-m3 esté READY con CAN_QUERY para sp-agent-ro
+    embed    = "mock"  # endpoint embed-bge-m3 (hackathon.ml.bge_m3) en creación; real cuando esté READY y con CAN_QUERY (ml/serving.py --grant)
+    prescore = "local" # logística ganadora (UC hackathon.ml.prescore_lgbm) exportada a policy/prescore_logreg.json, en proceso; real cuando prescore-lgbm esté READY con CAN_QUERY
     trace    = "real"  # cada turno a hackathon.ops.agent_turns por wh-agent, en hilo aparte (trace_mlflow.py)
   }
   validation {

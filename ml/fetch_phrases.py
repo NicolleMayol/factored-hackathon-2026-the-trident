@@ -1,5 +1,6 @@
-"""M5 · Extrae las frases plantilla distintas de customer_text (silver.call_transcripts, o bronze si silver no está) a data/ref/customer_text_phrases.csv.
-Son plantillas sin PII (medición de datos en el PR #31: 42 textos distintos sobre 171.321 filas). Luego: python ml/label_phrases.py data/ref/customer_text_phrases.csv
+"""M5 · Extrae las frases plantilla distintas de customer_text (silver.call_transcripts) a data/ref/customer_text_phrases.csv, IGNORADO por git:
+las filas del dataset no salen del workspace (ADR-12, revisión #51). El etiquetado (ml/label_phrases.py) corre en local o en un notebook de
+Databricks; lo que entra al repo es la regla (docs/labels.md: overrides por prefijo + modelo), no las frases. E3 aplica la misma regla en el pipeline.
 
     python ml/fetch_phrases.py
 """
