@@ -176,7 +176,7 @@ elements:
   - {id: tools.limits,               file: contracts/tools.yaml,  owner: ia-ml,    consumers: [servicio],        used_by: ["timeout 8 s, retries 2, circuit breaker 5", "cold_start: timeout extendido una vez; keep-warm solo en demos (ADR-21 v1.1)"]}
   - {id: api.scopes,                 file: contracts/api.yaml,    owner: ia-ml,    consumers: [servicio],        used_by: ["customer:read, credit:simulate, handoff:read, public", "JWT HS256 validado en código (auth_level anonymous)"]}
   - {id: eval.external_data_guard,   file: eval/,                 owner: ia-ml,    consumers: [datos],           used_by: ["regla Factored: fuentes externas justificadas y fuera de entrenamiento y evaluación", "test en CI: 0 columnas ref.* en features; eval solo dataset + catálogo sintético"]}
-  - {id: data.analytics_insights,    file: data/,                 owner: datos,    consumers: [ia-ml, servicio], used_by: ["notebook de insights (E10): demanda de crédito por país e idioma, segmentos, por qué workflow 4", "dimensión Data Analytics del reto", slides]}
+  - {id: data.analytics_insights,    file: data/,                 owner: datos,    consumers: [ia-ml, servicio], used_by: ["data/insights/insights_demanda.py (E10): Producto 22 % con FCR 0,897; 48 % de Basic a ±25 del umbral y 50 % por debajo; 15 % sin score y 20 % sin ingreso", "dimensión Data Analytics del reto", slides]}
 
   # --- añadidos 2026-10-01 por ADR-22 (contrato de bronze y silver, E9) ---
   - {id: data.bronze,                file: contracts/gold.yaml,   owner: datos,    consumers: [],                used_by: ["13 tablas 1:1 con el diccionario de Factored v1.0.0", "+ _ingested_at, _source_file, _rescued_data", "pobladas por Auto Loader desde landing (ADR-20)"]}
