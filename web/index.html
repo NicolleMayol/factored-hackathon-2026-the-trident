@@ -35,13 +35,11 @@ header .wrap{display:flex;align-items:center;justify-content:space-between;gap:1
 .seg{display:flex;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px}
 .seg button{border:0;background:transparent;border-radius:999px;padding:6px 14px;font-size:13px;color:var(--mute);min-height:32px}
 .seg button[aria-pressed=true]{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(34,22,26,.12)}
-.obtn{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--card);border-radius:999px;padding:8px 16px;font-size:14px;font-weight:600;min-height:40px}
-.obtn:hover{background:var(--soft)}
-@media (max-width:640px){.brand img{height:32px}.brand .sep,.brand .tt b{display:none}#talkTop span{display:none}}
+@media (max-width:640px){.brand img{height:32px}.brand .sep,.brand .tt b{display:none}}
 
 /* Fila de etapas y cliente activo */
 #bar{display:flex;align-items:center;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;padding-top:18px}
-#bar[hidden],#stages[hidden],.obtn[hidden]{display:none}
+#bar[hidden],#stages[hidden]{display:none}
 #stages{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0;padding:0;list-style:none;font-size:13px}
 #stages li{display:flex;align-items:center;gap:8px;color:var(--mute)}
 #stages li i{width:22px;height:22px;border-radius:50%;border:1.5px solid #CDBDB7;display:grid;place-items:center;font:600 11px/1 'Plus Jakarta Sans',sans-serif;font-style:normal}
@@ -164,6 +162,9 @@ details.tech{font-size:12px;color:var(--mute);padding:0 4px}
 details.tech summary{cursor:pointer}
 details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;line-height:1.5}
 .empty{font-size:14px;color:var(--mute)}
+/* Pie de página: equipo */
+.pfoot{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;padding-top:14px;padding-bottom:22px;border-top:1px solid var(--line);font-size:13px;color:var(--mute)}
+.pfoot b{color:var(--ink);font-family:var(--display);font-size:15px;letter-spacing:.01em}
 
 /* Vista del analista */
 #analyst{display:none;padding:24px;gap:16px}
@@ -198,7 +199,6 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
       <div class="tt"><b data-t="text.title">Asistente de crédito</b><div id="health" role="status"><i></i><span>…</span></div></div></div>
     <div class="hright">
       <div class="seg" id="langs" role="group"></div>
-      <button type="button" class="obtn" id="talkTop" hidden><svg class="i"><use href="#i-user"/></svg><span data-t="text.talk_advisor"></span></button>
     </div>
   </div>
 </header>
@@ -249,6 +249,8 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
     <details class="tech" id="tech" hidden><summary data-t="text.tech"></summary><div id="techD"></div></details>
   </aside>
 </div>
+
+<footer class="wrap pfoot"><span><span data-t="text.made_by">Hecho por</span> <b id="teamName">The Trident</b> · <span id="teamMembers"></span></span><span id="teamEvent"></span></footer>
 
 <script>
 // Sin datos de negocio en este archivo (ADR-25):
@@ -308,10 +310,6 @@ const OUTCLS=o=>{const i=META.outcomes.indexOf(o);return ["","no","rev"][i]??""}
 const CHIPCLS=o=>({"":"ok",no:"no",rev:"rev"})[OUTCLS(o)];
 const TAG={answer:["t-ok","doc"],answer_plain:["t-ok","check"],confirm:["t-info","lock"],clarify:["t-info","help"],escalate:["t-warn","user"],blocked:["t-warn","ban"],reject:["t-stop","ban"],error:["t-stop","ban"]};
 const tag=k=>{const [c,i]=TAG[k]||["t-info","info"];return `<span class="tag ${c}">${ic(i)}${esc(k==="error"?t("text.error"):t("tags."+k))}</span>`};
-// El agente no tiene intent "hablar con una persona"; la solicitud formal (formal_application, P03) sí escala con case_id.
-function formalMsg(){const u=curU;let code=S&&S.product;
- if(!code&&u){const ps=Object.entries(META.products).filter(([,p])=>p.country===u.country);code=(ps.find(([,p])=>p.type==="personal_loan")||ps[0]||[])[0]}
- const n=code?prodName(code):"";return fill(t("text.formal_msg"),{product:n.charAt(0).toLowerCase()+n.slice(1)})}
 const now=()=>new Date().toLocaleTimeString(lang,{hour:"2-digit",minute:"2-digit"});
 
 function scroll(){$("log").scrollTop=$("log").scrollHeight}
@@ -343,7 +341,6 @@ function renderBot(j){
    ${pr?`<span class="prod">${esc(prodName(p.product))} · ${esc(ctryName(pr.country))}</span>`:""}</div>
    <div class="rbody">${m.length?`<div class="metrics">${m.join("")}</div>`:""}<div class="txt">${p.html}</div>
    <div class="note">${ic("info")}<span>${esc(t("text.nonbinding"))}</span></div>
-   <div class="acts"><button type="button" class="btn pri" data-talk>${esc(t("text.continue_analyst"))}</button></div>
    <details class="how" open><summary>${esc(t("text.how_result"))} · ${esc(t("text.sources"))} (${p.src.length})</summary>${howSteps(j,p)}</details></div></div>`,true);
  }else{
   const k=j.action==="answer"&&!p.src.length?"answer_plain":j.action;
@@ -351,14 +348,11 @@ function renderBot(j){
   let extra="";
   if(j.action==="confirm")extra=`<div class="cbox">${t("consent_box").map(([b,s])=>`<div><b>${esc(b)}</b> ${esc(s)}</div>`).join("")}</div>`;
   if(j.case_id)extra+=`<div class="case">${esc(t("text.case_for"))}: <b>${esc(j.case_id)}</b></div>`;
-  if(j.action==="blocked"){const alt=sugg()[0];extra+=`<b>${esc(t("text.can_do"))}</b><div class="acts"><button type="button" class="btn sec" data-talk>${esc(t("text.continue_analyst"))}</button>${alt?`<button type="button" class="btn sec" data-say="${esc(alt)}">${esc(alt)}</button>`:""}</div>`}
   if(p.src.length&&j.action!=="confirm")extra+=`<details class="src"><summary>${esc(t("text.sources"))} (${p.src.length})</summary>${srcList(p.src)}</details>`;
   el=addRow(`<div class="bot${cls}">${tag(k)}<div class="txt">${p.html}</div>${extra}</div>`);
   if(j.action==="confirm")go(1);
   if(j.action==="escalate")go(2);
  }
- el.querySelectorAll("[data-talk]").forEach(b=>b.onclick=()=>send(formalMsg()));
- el.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>send(b.dataset.say));
  tech(j,p);side();return el}
 
 // Etapas: Consulta → Pre-evaluación → Revisión con analista → Condiciones finales. La última siempre la da una persona.
@@ -369,17 +363,16 @@ function stages(){const names=t("stages");$("stages").innerHTML=names.map((n,i)=
 // Panel "Tu solicitud" y "Cómo funciona": solo lo que dijo la API en esta conversación.
 function side(){if(!curU||!S)return;const s=t("summary"),pr=S.product&&META.products[S.product];
  const dash=`<span class="chip">${esc(s.pending)}</span>`;
- let next=s.next_start,btn="";
+ let next=s.next_start;
  if(S.caseId)next=`${s.next_case} <b style="font-family:var(--mono);font-weight:400">${esc(S.caseId)}</b>`;
- else if(S.outcome){next=esc(s.next_result);btn=`<button type="button" class="btn pri" data-talk>${esc(t("text.continue_analyst"))}</button>`}
+ else if(S.outcome){next=esc(s.next_result)}
  else if(pending){next=esc(s.next_consent)}else next=esc(next);
  $("sumCard").innerHTML=`<h2>${esc(s.title)}</h2><dl class="kv">
   <dt>${esc(s.product)}</dt><dd>${pr?esc(prodName(S.product)):"—"}</dd>
   <dt>${esc(s.country)}</dt><dd>${curU.country?esc(ctryName(curU.country)):"—"}</dd>
   <dt>${esc(s.result)}</dt><dd>${S.outcome?`<span class="chip ${CHIPCLS(S.outcome)}">${esc(t("outcomes."+S.outcome))}</span>`:dash}</dd>
   <dt>${esc(s.consent)}</dt><dd>${S.consent==null?"—":esc(S.consent?s.yes:s.no)}</dd></dl>
-  <div class="next"><small>${esc(s.next)}</small><div>${next}</div>${btn}</div>`;
- $("sumCard").querySelectorAll("[data-talk]").forEach(b=>b.onclick=()=>send(formalMsg()));
+  <div class="next"><small>${esc(s.next)}</small><div>${next}</div></div>`;
  const icons=["bank","doc","user"];
  $("howCard").innerHTML=`<h2>${esc(t("how.title"))}</h2><ul class="howl">${t("how.items").map((x,i)=>`<li>${ic(icons[i]||"info")}<span>${esc(x)}</span></li>`).join("")}</ul>`}
 function tech(j,p){const x=[j.latency_ms!=null?`${Math.round(j.latency_ms)} ms`:null,j.cost_usd!=null?`${Number(j.cost_usd).toFixed(4)} USD`:null,j.trace_id?`trace ${esc(String(j.trace_id).slice(0,8))}`:null,`action ${esc(j.action)}`].filter(Boolean).join(" · ");
@@ -411,7 +404,7 @@ function card(u){const p=persona(u),b=document.createElement("button");b.type="b
   (p.desc?`<span class="d">${esc(p.desc)}</span>`:"")+(isAnalyst(u)?"":`<span class="l">${esc(fill(t("text.writes_in"),{lang:t("lang_names."+langOf(u.locale))}))}</span>`);
  b.onclick=()=>login(u.key);return b}
 function show(view){const chat=view==="chat",an=view==="analyst",pk=view==="picker";
- $("picker").hidden=!pk;$("bar").hidden=pk;$("stages").hidden=!chat;$("talkTop").hidden=!chat;
+ $("picker").hidden=!pk;$("bar").hidden=pk;$("stages").hidden=!chat;
  $("side").style.display=chat?"flex":"none";$("chat").style.display=chat?"flex":"none";$("analyst").style.display=an?"flex":"none"}
 function showPicker(){curU=null;tok=null;conv=null;pending=null;lang=chosen||langOf(navigator.language);i18n();renderPicker();
  try{history.replaceState(null,"",location.pathname)}catch(e){}
@@ -469,14 +462,16 @@ async function openCase(id){const [r,j]=await call("/handoff/"+encodeURIComponen
   <details class="tech"><summary>${esc(t("analyst.raw"))}</summary><pre>${esc(JSON.stringify(j,null,2))}</pre></details></div>`}
 
 $("change").onclick=showPicker;
-$("talkTop").onclick=()=>send(formalMsg());
 $("f").onsubmit=e=>{e.preventDefault();const v=$("m").value.trim();$("m").value="";send(v)};
 $("hf").onsubmit=e=>{e.preventDefault();const id=$("case").value.trim();if(id)openCase(id)};
+// Equipo: un solo lugar en ui.json (team), igual en todos los idiomas.
+function renderTeam(){const tm=UI.team||{};if(tm.name)$("teamName").textContent=tm.name;
+ $("teamMembers").textContent=(tm.members||[]).join(" · ");$("teamEvent").textContent=tm.event||""}
 function setHealth(cls,key){healthKey=key;const h=$("health");h.className=cls;h.querySelector("span").textContent=t(key)}
 // Arranque: textos (estáticos, mismo origen) y luego /meta. En frío la Function tarda: reintenta cada 10 s.
 async function boot(){
  try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){UI={default_lang:"es",lang:{es:{}}}}
- lang=chosen||langOf(navigator.language);renderLangs();i18n();$("loading").textContent=t("text.connecting");
+ lang=chosen||langOf(navigator.language);renderLangs();renderTeam();i18n();$("loading").textContent=t("text.connecting");
  const [r,m]=await call("/meta");
  if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");$("loading").textContent=t("text.starting");setTimeout(boot,10000);return}
  META=m;const hr=await fetch(API+"/healthz").catch(()=>null);setHealth(hr&&hr.ok?"up":"slow",hr&&hr.ok?"text.online":"text.degraded");
