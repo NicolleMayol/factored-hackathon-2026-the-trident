@@ -38,13 +38,14 @@ def main(path: str):
     from sklearn.linear_model import LogisticRegression
     from sklearn.pipeline import make_pipeline
     from ml.intent_classifier import load_train
-    phrases = [r[0].strip() for r in csv.reader(open(path, encoding="utf-8")) if r and r[0].strip() and r[0].strip().lower() != "customer_text"]
+    phrases = [r[0].strip() for r in csv.reader(open(path, encoding="utf-8")) if r and r[0].strip() and r[0].strip().lower() != "customer_text"]  # columnas extra (n) se ignoran
     Xtr, ytr, _ = load_train()
     clf = make_pipeline(TfidfVectorizer(analyzer="char_wb", ngram_range=(2, 5), sublinear_tf=True), LogisticRegression(max_iter=2000, C=5.0, class_weight="balanced")).fit(Xtr, ytr)
     ov = overrides(); rows = []
     for ph in phrases:
-        if ph in ov:
-            it, src, rule = ov[ph], "manual", "override"
+        hit = next((k for k in ov if ph == k or ph.startswith(k)), None)  # override exacto o por prefijo (las 42 son 2 aperturas + muletillas)
+        if hit:
+            it, src, rule = ov[hit], "manual", f"override:{hit[:40]}…"
         else:
             proba = clf.predict_proba([ph])[0]; k = int(proba.argmax()); conf = float(proba[k]); it = clf.classes_[k]
             src, rule = ("model", f"p={conf:.2f}") if conf >= 0.6 else ("low_confidence", f"p={conf:.2f}")
