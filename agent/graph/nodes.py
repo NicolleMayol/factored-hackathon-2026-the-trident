@@ -143,7 +143,7 @@ class Nodes:
                     elif tool == "evaluate_eligibility":
                         results[tool] = T.run_tool(tool, lambda: T.evaluate_eligibility_tool(self.d, self.s, cid, country, slots.get("product_type", "personal_loan"), slots.get("amount"), results.get("get_prescore")), self.d, self.s, cold_used=cold_used)
                     called.append(tool)
-        except T.ToolTimeout:
+        except Exception:  # noqa: BLE001  — ADR-28 F08: timeout, 403, SQL fallido o red: la dependencia falló, se escala (nunca 500)
             return {**st, "tool_results": results, "tools_called": called, "action": "escalate", "_policy_action": "escalate",
                     "reason_code": "missing_data", "escalate_reason": "timeout_tool", "node_path": st["node_path"] + ["act"], "_cold_used": list(cold_used)}
         return {**st, "tool_results": results, "tools_called": called, "iterations": st.get("iterations", 0) + 1,
