@@ -58,9 +58,13 @@ jobs:
           sku: flexconsumption
           remote-build: true
 
+      # En Flex, `az functionapp show --query defaultHostName` viene vacío: se lee del recurso ARM.
       - name: Host de la Function
         id: host
-        run: echo "host=$(az functionapp show -g "$RG" -n "$FUNC" --query defaultHostName -o tsv)" >> "$GITHUB_OUTPUT"
+        run: |
+          h=$(az resource show -g "$RG" -n "$FUNC" --resource-type Microsoft.Web/sites --query properties.defaultHostName -o tsv)
+          [ -n "$h" ] || { echo "::error::sin defaultHostName para $FUNC"; exit 1; }
+          echo "host=$h" | tee -a "$GITHUB_OUTPUT"
 
       # Primer arranque en frío: reintenta hasta ~3 min. 503 = llm o cosmos down (api.yaml v1.2).
       - name: Smoke /healthz
