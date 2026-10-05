@@ -63,8 +63,8 @@ variable "agent_modes" {
   default = {
     llm      = "real"  # FM APIs (llama-3.3-70b / llama-3.1-8b) con sp-agent-ro
     sql      = "real"  # gold y ref por wh-agent (Statement API, sql_warehouse.py); A2 ok el 5 oct
-    store    = "mock"  # Cosmos cargado (288 chunks + vector bge-m3); pasa a real junto con embed, cuando embed-bge-m3 esté READY con CAN_QUERY para sp-agent-ro
-    embed    = "mock"  # endpoint embed-bge-m3 (hackathon.ml.bge_m3) en creación; real cuando esté READY y con CAN_QUERY (ml/serving.py --grant)
+    store    = "real"  # Cosmos: 288 chunks con vector bge-m3 v5, hybrid search; A6 ok el 5 oct
+    embed    = "real"  # embed-bge-m3 (hackathon.ml.bge_m3 v5) READY, CAN_QUERY para sp-agent-ro, sin scale-to-zero en la ventana de evaluación; si no responde en 8 s, search_policy sigue léxico (embed_fallback)
     prescore = "local" # logística ganadora (UC hackathon.ml.prescore_lgbm) exportada a policy/prescore_logreg.json, en proceso; real cuando prescore-lgbm esté READY con CAN_QUERY
     trace    = "real"  # cada turno a hackathon.ops.agent_turns por wh-agent, en hilo aparte (trace_mlflow.py)
   }
