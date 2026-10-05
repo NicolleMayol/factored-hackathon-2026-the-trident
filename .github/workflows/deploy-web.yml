@@ -1,0 +1,51 @@
+# N5 · Despliegue del chat (web/) en la Static Web App, con OIDC. Solo frontend: no toca la Function.
+# Lee el host de la Function del recurso ARM y lo escribe en config.js. Sin secretos en GitHub:
+# el token de la Static Web App se pide en cada corrida con `az staticwebapp secrets list`.
+name: deploy-web
+on:
+  push:
+    branches: [main]
+    paths: ["web/**", ".github/workflows/deploy-web.yml"]
+  workflow_dispatch:
+
+permissions: { contents: read, id-token: write }
+concurrency: { group: deploy-web, cancel-in-progress: true }
+
+env:
+  RG: rg-ai-agents-dev
+  FUNC: func-agent-bank-dev
+  SWA: swa-agent-bank-dev
+
+jobs:
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+      # En Flex, `az functionapp show --query defaultHostName` viene vacío: se lee del recurso ARM.
+      - name: URL de la API en la UI
+        run: |
+          h=$(az resource show -g "$RG" -n "$FUNC" --resource-type Microsoft.Web/sites --query properties.defaultHostName -o tsv)
+          [ -n "$h" ] || { echo "::error::sin defaultHostName para $FUNC"; exit 1; }
+          echo "window.API_BASE = \"https://$h\";" > web/config.js
+          cat web/config.js
+      - name: Token de la Static Web App
+        id: swa
+        run: |
+          t=$(az staticwebapp secrets list -n "$SWA" -g "$RG" --query properties.apiKey -o tsv)
+          echo "::add-mask::$t"
+          echo "token=$t" >> "$GITHUB_OUTPUT"
+      - name: Desplegar UI
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ steps.swa.outputs.token }}
+          action: upload
+          app_location: web
+          skip_app_build: true
+      - name: Link
+        run: echo "Chat en https://$(az staticwebapp show -n "$SWA" -g "$RG" --query defaultHostname -o tsv)" | tee -a "$GITHUB_STEP_SUMMARY"
