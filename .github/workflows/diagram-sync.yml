@@ -1,13 +1,12 @@
+# Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
 # Diagrama de arquitectura.
 # PR: solo valida (sin commits del bot en la rama: un commit nuevo vuelve a disparar todos los workflows del PR).
 # main: exporta los PNG una vez, al mergear, y los sube con [skip ci] para no disparar nada.
 name: diagram-sync
 on:
-  pull_request:
-    paths: ["diagrams/**", "contracts/impact-map.yaml"]
-  push:
-    branches: [main]
-    paths: ["diagrams/**", "!diagrams/out/**"]
+  # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
+  workflow_call:
+  workflow_dispatch:
 
 jobs:
   check:

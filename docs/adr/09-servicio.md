@@ -1,6 +1,6 @@
 # 09-servicio
 
-Owner: Nicolle · v3.5 · 2026-10-05 (ADR-26: versiones con tags y GitHub Release). v3.4 · 2026-10-05 (ADR-25: UI sin datos quemados, `GET /meta`, nombres de recursos en variables del repo). v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
+Owner: Nicolle · v3.6 · 2026-10-05 (ADR-27: un pipeline por PR y uno por merge, con orden fijo). v3.5 · 2026-10-05 (ADR-26: versiones con tags y GitHub Release). v3.4 · 2026-10-05 (ADR-25: UI sin datos quemados, `GET /meta`, nombres de recursos en variables del repo). v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
 
 ## ADR-19 · Plan de infraestructura en Terraform  ·  rol: servicio  ·  2026-09-29  ·  estado: cerrada
 
@@ -316,4 +316,48 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | Sin firma de tags | tags firmados y protección de tags `v*` |
 
 **Dependencias.** Sin cambios en `dependencies.md`.
+
+## ADR-27 · Un pipeline por PR y uno por merge, con orden fijo  ·  rol: servicio  ·  2026-10-05  ·  estado: cerrada
+
+**Decisión.** Dos puertas de entrada: `pr.yml` (cada PR, termina en el check único `pr-gate`) y `main.yml` (cada merge). Los workflows de cada capa pasan a ser piezas reutilizables (`workflow_call`, más `workflow_dispatch` para correrlas a mano). En main el orden es fijo y cada capa corre solo si cambió desde el último run verde:
+
+```
+changes → ci → infra (plan + apply con aprobación) → bundles ∥ function → web → smoke e2e → resumen
+```
+
+Si `ci` falla no se despliega nada. Si el apply espera aprobación, function y bundles esperan con él. `adr-impact`, `data-landing` y `release` quedan aparte; `release` exige `main.yml` en verde para el commit del tag.
+
+| Antes (9 workflows sueltos) | Ahora |
+| --- | --- |
+| `deploy` corría junto a `ci`: un test en rojo igual publicaba la Function | `function` y `web` esperan a `ci` |
+| Infra, Function, bundles y UI en paralelo: la UI podía salir antes que `/meta`; un App Setting nuevo podía llegar después del código que lo usa | Orden infra → function → web |
+| Un cambio en `policy/catalog.yaml` disparaba 4 workflows sin coordinar | Un run; `scripts/ci_changes.sh` decide qué capas corren |
+| Sin señal de "todo desplegado" por commit | Smoke e2e (`/healthz`, `/meta`, `/session`, un turno de `/chat`, UI y `config.js`) y tabla de resultados |
+| Diff contra el push anterior | Diff contra el último run verde: un run fallido o descartado por la cola no pierde cambios |
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Encadenar con `workflow_run` | Cadena difícil de seguir; cada eslabón es un run aparte y no hay un resultado único |
+| Un solo workflow monolítico | Se pierde correr una capa a mano; archivo de cientos de líneas |
+| `dorny/paths-filter` | Dependencia externa para un `git diff` de 20 líneas; el script se prueba en local |
+| Meter `adr-impact` en `pr.yml` | Corre al editar la descripción del PR; un run `edited` con el resto en `skipped` dejaría `pr-gate` en verde sobre un commit con `ci` en rojo |
+
+**Impacto.**
+
+| Elemento | Estado | Owner | Consumers afectados | Qué deben hacer | Fecha límite |
+| --- | --- | --- | --- | --- | --- |
+| `infra.ci_cd` (`contracts/infra.yaml`) | cambia | servicio | datos, ia-ml | nada en su código; sus PR muestran `pr-gate`; `bundles` (datos) corre después de infra; `ci` (ia-ml) frena el deploy si falla | lun 5 |
+| `.github/workflows/main.yml`, `pr.yml`, `scripts/ci_changes.sh` | nuevo | servicio | — | — | — |
+
+**Cómo se prueba.** `actionlint` sin errores; `scripts/ci_changes.sh` contra los merges #41–#46 (capas esperadas); este PR corre `pr.yml` completo (toca el pipeline, así que todas las capas en true); el merge corre `main.yml` completo y el smoke e2e contra lo desplegado.
+
+**Hackathon vs To-Be.**
+
+| Hackathon | To-Be |
+| --- | --- |
+| Un ambiente; main despliega | main → dev; tag → staging y prod con aprobación |
+| Smoke con un turno de chat | suite e2e con Playwright sobre la UI y eval contra el agente real |
+| `pr-gate` como check obligatorio (protección de rama a mano) | protección de rama en Terraform (provider de GitHub) |
+
+**Dependencias.** Sin cambios en `dependencies.md`. Protección de main: pedir el check `pr-gate` (Settings → Branches).
 

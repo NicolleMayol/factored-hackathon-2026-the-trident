@@ -1,22 +1,14 @@
+# Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
 # N10 · Despliegue del agente en la Function App (Flex), con OIDC.
-# Push a main con cambios en el código del agente, o manual. La UI va aparte (deploy-web.yml):
+# main.yml lo corre cuando cambia el código del agente, después de ci e infra. La UI va aparte (deploy-web.yml):
 # un cambio solo de frontend no reconstruye ni reinicia el backend.
 name: deploy
 on:
-  push:
-    branches: [main]
-    paths:
-      - "agent/**"
-      - "policy/**"
-      - "contracts/**"
-      - "data/mock/**"
-      - "deploy/**"
-      - "requirements.txt"
-      - ".github/workflows/deploy.yml"
+  # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
+  workflow_call:
   workflow_dispatch:
 
 permissions: { contents: read, id-token: write }
-concurrency: { group: deploy, cancel-in-progress: false }
 
 # Nombres de recursos en variables del repo (Settings → Variables), no en el workflow: otro ambiente
 # solo cambia las variables. Valores = outputs de infra/azure (resource_group, function_app_name, chat_url).
