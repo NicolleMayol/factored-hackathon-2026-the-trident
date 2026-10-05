@@ -56,15 +56,48 @@ header .wrap{display:flex;align-items:center;justify-content:space-between;gap:1
 
 /* Elegir cliente */
 #picker[hidden]{display:none}
-#picker{flex:1 1 100%;padding:28px;display:flex;flex-direction:column;gap:18px}
-#picker h1{margin:0;font:600 28px/1.15 var(--display)}#picker>p{margin:0;color:var(--mute);max-width:680px}
-#picker h3{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--mute)}
-.pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.pcard{text-align:left;border:1px solid var(--line);background:var(--soft);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-height:44px}
-.pcard:hover,.pcard:focus-visible{border-color:var(--ink);outline:none}
-.pcard:disabled{opacity:.45;cursor:progress}.pcard.busy{opacity:1;border-color:var(--ink)}
-.pcard b{font-size:16px}.pcard .d{font-size:14px;color:var(--mute)}.pcard .l{font-size:12px;color:var(--mute)}
-@media (max-width:640px){#picker{padding:20px}}
+/* Selector de cliente: a la izquierda qué es, a la derecha la lista; cada fila dice qué camino muestra */
+#picker{flex:1 1 100%;padding:40px;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,8fr);gap:48px;align-items:start}
+.pk-intro{display:flex;flex-direction:column;gap:16px;position:sticky;top:24px}
+#picker h1{margin:0;font:700 36px/1.08 var(--display);letter-spacing:-.01em}
+.pk-intro p{margin:0;color:var(--mute)}
+.pk-list{display:flex;flex-direction:column;gap:28px;min-width:0}
+.staff{display:flex;flex-direction:column;gap:10px}
+#picker h3{margin:0;font-size:14px;font-weight:600;color:var(--mute)}
+.pcards{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--card)}
+.pcard{display:grid;grid-template-columns:44px minmax(0,1fr) auto 20px;grid-template-areas:"cc main out go";align-items:center;gap:6px 16px;
+ padding:18px 20px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer;min-height:44px}
+.pcard:last-child{border-bottom:0}
+.pcard:hover{background:var(--soft)}
+.pcard:focus-visible{outline:2px solid var(--brand);outline-offset:-2px}
+.pcard:disabled{cursor:progress;opacity:.5}.pcard.busy{opacity:1;background:var(--soft)}
+.cc{grid-area:cc;width:44px;height:44px;border-radius:50%;background:var(--me);color:var(--brand-dk);display:grid;place-items:center;font:700 14px var(--display)}
+.pc-main{grid-area:main;display:flex;flex-direction:column;gap:3px;min-width:0}
+.pc-main b{font:600 18px/1.2 var(--display)}
+.pc-main .d{font-size:14px;color:var(--mute)}
+.pc-main .l{font-size:13px;color:var(--mute);display:flex;flex-wrap:wrap;column-gap:14px}
+.pc-out{grid-area:out;justify-self:end;display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:5px 11px;border-radius:999px;white-space:nowrap}
+.pc-out::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+.o-ok{color:var(--ok);background:var(--ok-bg)}.o-warn{color:var(--warn);background:var(--warn-bg)}
+.o-stop{color:var(--stop);background:var(--stop-bg)}.o-info{color:var(--info);background:var(--info-bg)}
+.go{grid-area:go;color:var(--mute);transition:transform .15s,color .15s}
+.pcard:hover .go{transform:translateX(3px);color:var(--brand)}
+.pcard .spin{grid-area:go;display:none}.pcard.busy .spin{display:block}.pcard.busy .go{display:none}
+#acards{border-color:var(--ink)}
+#acards .pcard{background:var(--ink);color:#fff}#acards .pcard:hover{background:#33252A}
+#acards .cc{background:#3A2A2F;color:#fff}#acards .pc-main .d{color:#CDBFBB}#acards .go{color:#CDBFBB}
+@media (max-width:900px){#picker{grid-template-columns:1fr;gap:24px;padding:24px}.pk-intro{position:static}#picker h1{font-size:28px}}
+@media (max-width:640px){#picker{padding:18px}
+ .pcard{grid-template-columns:40px minmax(0,1fr) 18px;grid-template-areas:"cc main go" "cc out go";padding:16px}
+ .cc{width:40px;height:40px;align-self:start}.pc-out{justify-self:start}}
+/* Espera: anillo que gira y segundos transcurridos; sin movimiento si el sistema lo pide */
+.spin{width:18px;height:18px;flex:none;border:2px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none;border-color:var(--brand)}.go{transition:none}}
+#loading{display:flex;align-items:center;gap:10px}#loading[hidden]{display:none}
+.wbox{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;background:var(--soft);border:1px solid var(--line);border-radius:6px 18px 18px 18px;padding:12px 16px;color:var(--mute);font-size:14px}
+.wbox .ws{font-variant-numeric:tabular-nums;opacity:.8}
+.wbox .slow{flex-basis:100%;margin:0;font-size:13px}
 
 /* Área principal */
 .stage{flex:1;display:flex;flex-wrap:wrap;gap:20px;padding-top:16px;padding-bottom:28px;align-items:flex-start}
@@ -214,12 +247,15 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
 
 <div class="stage wrap">
   <section id="picker" class="card">
-    <h1 data-t="picker.title">¿Con qué cliente quieres probar?</h1>
-    <p data-t="picker.sub">Son clientes de prueba con datos sintéticos.</p>
-    <p id="loading" class="empty" role="status">Conectando con el asistente…</p>
-    <div class="pcards" id="pcards"></div>
-    <h3 data-t="picker.staff" hidden></h3>
-    <div class="pcards" id="acards"></div>
+    <div class="pk-intro">
+      <h1 data-t="picker.title">¿Con qué cliente quieres probar?</h1>
+      <p data-t="picker.sub">Son clientes de prueba con datos sintéticos.</p>
+      <p id="loading" class="empty" role="status"><span class="spin" aria-hidden="true"></span><span>Conectando con el asistente…</span></p>
+    </div>
+    <div class="pk-list">
+      <div class="pcards" id="pcards"></div>
+      <div class="staff" hidden><h3 data-t="picker.staff"></h3><div class="pcards" id="acards"></div></div>
+    </div>
   </section>
 
   <main id="chat" class="card" style="display:none">
@@ -323,7 +359,12 @@ function scroll(){$("log").scrollTop=$("log").scrollHeight}
 function addMe(text){const d=document.createElement("div");d.className="me";d.textContent=text;$("log").appendChild(d);scroll()}
 function addRow(inner,wide){const r=document.createElement("div");r.className="row"+(wide?" wide":"");
  r.innerHTML=`<div class="av" aria-hidden="true"><img src="favicon.png" alt=""></div>${inner}`;$("log").appendChild(r);scroll();return r.lastElementChild}
-function addTyping(key){const d=document.createElement("div");d.className="typing";d.textContent=t(key);$("log").appendChild(d);scroll();return d}
+function addTyping(key){const r=document.createElement("div");r.className="row";
+ r.innerHTML=`<div class="av" aria-hidden="true"><img src="favicon.png" alt=""></div><div class="wbox" role="status"><span class="spin" aria-hidden="true"></span><span class="wt"></span><span class="ws" aria-hidden="true"></span><p class="slow" hidden></p></div>`;
+ r.querySelector(".wt").textContent=t(key);const t0=Date.now();
+ const iv=setInterval(()=>{const s=Math.round((Date.now()-t0)/1000);if(s>=2)r.querySelector(".ws").textContent=`${s} s`;
+  if(s===8){const p=r.querySelector(".slow");p.textContent=t("text.slow");p.hidden=false;scroll()}},1000);
+ const rm=r.remove.bind(r);r.remove=()=>{clearInterval(iv);rm()};$("log").appendChild(r);scroll();return r}
 const srcList=src=>`<ol class="srcs">${src.map((id,i)=>`<li title="${esc(id)}"><b>${i+1}</b>${ic("doc")}<span>${esc(srcLabel(id))}</span></li>`).join("")}</ol>`;
 
 // Pasos de "¿Cómo llegué a este resultado?": consentimiento de esta conversación, reglas y fuentes de la respuesta.
@@ -407,10 +448,14 @@ const isAnalyst=u=>u&&u.scopes.includes("handoff:read");
 function persona(u){const p=t("personas."+u.key);return typeof p==="object"?p:{label:u.key,desc:""}}
 function personaLabel(u){const p=persona(u);
  return isAnalyst(u)||!u.country?p.label:`${fill(t("text.account_in"),{country:ctryName(u.country)})} · ${p.label}`}
-function card(u){const p=persona(u),b=document.createElement("button");b.type="button";b.className="pcard";b.dataset.k=u.key;
- const head=isAnalyst(u)||!u.country?p.label:fill(t("text.account_in"),{country:ctryName(u.country)});
- b.innerHTML=`<b>${esc(head)}</b>${!isAnalyst(u)&&u.country?`<span class="tag t-info">${esc(p.label)}</span>`:""}`+
-  (p.desc?`<span class="d">${esc(p.desc)}</span>`:"")+(isAnalyst(u)?"":`<span class="l">${esc(fill(t("text.writes_in"),{lang:t("lang_names."+langOf(u.locale))}))}</span>`);
+// Fila: el título es lo que muestra el cliente; el país va en la insignia y el resultado esperado, con su color, a la derecha.
+const cap=x=>String(x||"").charAt(0).toUpperCase()+String(x||"").slice(1);
+function card(u){const p=persona(u),an=isAnalyst(u),b=document.createElement("button");b.type="button";b.className="pcard";b.dataset.k=u.key;
+ const meta=an||!u.country?"":`<span class="l"><span>${esc(fill(t("text.account_in"),{country:ctryName(u.country)}))}</span><span>${esc(fill(t("text.writes_in"),{lang:t("lang_names."+langOf(u.locale))}))}</span></span>`;
+ b.innerHTML=`<span class="cc" aria-hidden="true">${an?ic("bank"):esc(u.country||"")}</span>`+
+  `<span class="pc-main"><b>${esc(cap(p.label))}</b>${p.desc?`<span class="d">${esc(p.desc)}</span>`:""}${meta}</span>`+
+  (p.path?`<span class="pc-out o-${esc(p.tone||"info")}">${esc(p.path)}</span>`:"<span></span>")+
+  `<svg class="i go" aria-hidden="true"><use href="#i-arrow"/></svg><span class="spin" aria-hidden="true"></span>`;
  b.onclick=()=>login(u.key);return b}
 function show(view){const chat=view==="chat",an=view==="analyst",pk=view==="picker";
  $("picker").hidden=!pk;$("bar").hidden=pk;$("stages").hidden=!chat;
@@ -420,10 +465,12 @@ function showPicker(){seq++;curU=null;tok=null;conv=null;pending=null;lang=chose
  show("picker")}
 function renderPicker(){$("loading").hidden=true;$("pcards").innerHTML="";$("acards").innerHTML="";
  for(const u of META.users)(isAnalyst(u)?$("acards"):$("pcards")).appendChild(card(u));
- $("acards").previousElementSibling.hidden=!$("acards").children.length}
+ $("acards").parentElement.hidden=!$("acards").children.length}
 // Mientras abre la sesión: tarjetas bloqueadas, la elegida marcada y el aviso de conexión visible.
 function busy(k){if($("picker").hidden)return;for(const b of document.querySelectorAll(".pcard")){b.disabled=true;if(b.dataset.k===k){b.classList.add("busy");b.setAttribute("aria-busy","true")}}
- const l=$("loading");l.textContent=t("text.connecting");l.hidden=false}
+ loadMsg("text.connecting")}
+// Aviso de espera del selector: el anillo queda y solo cambia el texto.
+function loadMsg(key){const l=$("loading");l.lastElementChild.textContent=t(key);l.hidden=false}
 // Sugerencias con {name:<product_type>} y {amount:<product_type>}: nombre y un monto dentro del rango del producto del país del cliente.
 function sugg(){const u=curU;if(!u)return [];const byType=ty=>Object.values(META.products).find(p=>p.country===u.country&&p.type===ty);const out=[];
  for(const tpl of t("suggestions")){let ok=true;
@@ -490,9 +537,9 @@ async function boot(){
  const ql=new URLSearchParams(location.search).get("lang");
  try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){UI={default_lang:"es",lang:{es:{}}}}
  if(ql&&!chosen&&UI.lang[ql])chosen=ql;
- lang=chosen||langOf(navigator.language);renderLangs();renderTeam();i18n();$("loading").textContent=t("text.connecting");
+ lang=chosen||langOf(navigator.language);renderLangs();renderTeam();i18n();loadMsg("text.connecting");
  const [r,m]=await call("/meta");
- if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");$("loading").textContent=t("text.starting");setTimeout(boot,10000);return}
+ if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");loadMsg("text.starting");setTimeout(boot,10000);return}
  META=m;const hr=await fetch(API+"/healthz").catch(()=>null);setHealth(hr&&hr.ok?"up":"slow",hr&&hr.ok?"text.online":"text.degraded");
  // ?user=<clave> abre ese cliente directo (enlaces para la demo); si no, primero se elige.
  const q=new URLSearchParams(location.search).get("user");if(META.users.some(u=>u.key===q))login(q);else showPicker()}
