@@ -56,7 +56,19 @@ def get_customer_profile(deps: Deps, customer_id: str) -> dict[str, Any]:
 
 def get_customer_products(deps: Deps, customer_id: str) -> dict[str, Any]:
     rows = deps.sql.query("customer_products", {"customer_id": customer_id})
-    return {"products": [{k: r.get(k) for k in ("product_id", "product_type", "currency", "current_balance", "credit_limit", "days_past_due", "product_status")} for r in rows]}
+    out = [{k: r.get(k) for k in ("product_id", "product_type", "currency", "current_balance", "credit_limit", "days_past_due", "product_status")} for r in rows]
+    for r in out:  # gold.customer_products trae el nombre del dataset ("Tarjeta Crédito"); el catálogo, el canónico (credit_card). Puente: product_type_dataset (ADR-24)
+        r["product_type"] = canonical_product_type(deps, r.get("product_type"))
+    return {"products": out}
+
+
+def canonical_product_type(deps: Deps, value: str | None) -> str | None:
+    from agent.policy.engine import load_catalog
+    if not value:
+        return value
+    cat = load_catalog(str(deps.settings.catalog_path)) if getattr(deps, "settings", None) else []
+    by_dataset = {p.get("product_type_dataset"): p["product_type"] for p in cat if p.get("product_type_dataset")}
+    return by_dataset.get(value, value)
 
 
 SECTION_HINTS = {  # ontología ligera: la plantilla R1–R8 es fija, así que la pregunta se enruta a su sección
