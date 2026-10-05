@@ -1,7 +1,7 @@
 # ADR-27 · Pipeline de main. Un merge = un run con orden fijo; cada capa corre solo si cambió:
 #   changes → ci → infra (plan + apply con aprobación) → bundles ∥ function → web → smoke → resumen
 # Si ci falla no se despliega nada. Si infra espera aprobación, function y bundles esperan con ella.
-# Las piezas son workflows reutilizables (ci, infra, bundles, deploy, deploy-web, diagram-sync).
+# Las piezas son workflows reutilizables (ci, infra, bundles, deploy, deploy-web, diagram-export).
 name: main
 on:
   push:
@@ -68,7 +68,7 @@ jobs:
   diagrams:
     needs: changes
     if: needs.changes.outputs.diagrams == 'true'
-    uses: ./.github/workflows/diagram-sync.yml
+    uses: ./.github/workflows/diagram-export.yml
 
   # De punta a punta contra lo desplegado: API (salud, /meta, sesión, un turno de chat real) y UI.
   smoke:
