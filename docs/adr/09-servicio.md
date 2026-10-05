@@ -325,7 +325,7 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 changes → ci → infra (plan + apply con aprobación) → bundles ∥ function → web → smoke e2e → resumen
 ```
 
-Si `ci` falla no se despliega nada. Si el apply espera aprobación, function y bundles esperan con él. Infra solo corre si cambian los `.tf` o `infra/scripts/`: un cambio del pipeline o de `infra.yml` no planea ni pide aprobación (para forzarlo, `workflow_dispatch` de `infra.yml`). `adr-impact`, `data-landing` y `release` quedan aparte; `release` exige `main.yml` en verde para el commit del tag.
+Si `ci` falla no se despliega nada. Si el apply espera aprobación, function y bundles esperan con él. Infra solo corre si cambian los `.tf` o `infra/scripts/`: un cambio del pipeline o de `infra.yml` no planea ni pide aprobación (para forzarlo, `workflow_dispatch` de `infra.yml`). Los PNG del diagrama no se exportan en main (protegida, todo entra por PR): `diagram-sync` los exporta en el PR como artifact y quien abre el PR los sube. `adr-impact`, `data-landing` y `release` quedan aparte; `release` exige `main.yml` en verde para el commit del tag.
 
 | Antes (9 workflows sueltos) | Ahora |
 | --- | --- |

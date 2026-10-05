@@ -1,8 +1,8 @@
 # Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
-# Diagrama de arquitectura.
-# PR: solo valida (sin commits del bot en la rama: un commit nuevo vuelve a disparar todos los workflows del PR).
-# La exportación de PNG en main vive en diagram-export.yml: GitHub valida los permisos de todos los jobs
-# de una pieza reutilizable, y desde un PR no se puede pedir contents: write.
+# Diagrama de arquitectura. Lo llama pr.yml cuando cambian diagrams/ o el impact-map.
+# Valida y exporta los PNG como artifact del run; quien abre el PR los baja y los sube a diagrams/out/.
+# Sin commits del bot: main está protegida (todo entra por PR) y un commit del bot en la rama del PR
+# volvería a disparar todos los workflows.
 name: diagram-sync
 on:
   # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
@@ -24,3 +24,21 @@ jobs:
             echo "El .drawio está comprimido: desmarca 'Comprimido' en draw.io y vuelve a guardar"; exit 1; fi
       - name: Coherencia diagrama ↔ impact-map
         run: python scripts/drawio_tool.py sync diagrams/arquitectura.drawio
+      - name: Exportar PNG
+        uses: rlespinasse/drawio-export-action@v2
+        with:
+          path: diagrams
+          format: png
+          output: out
+          transparent: false
+          scale: 2
+          action-mode: all
+      - name: Subir PNG como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: diagramas-png
+          path: diagrams/out/*.png
+          retention-days: 7
+      - name: Aviso
+        run: |
+          echo "PNG exportados en el artifact «diagramas-png» de este run. Bájalos y súbelos a diagrams/out/ en este PR si cambió el dibujo." | tee -a "$GITHUB_STEP_SUMMARY"
