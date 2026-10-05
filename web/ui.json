@@ -361,7 +361,11 @@
         "final_title": "Pregunta lo que necesites.",
         "final_cta": "Abrir el chat"
       },
-      "product_types": {}
+      "product_types": {},
+      "nav": {
+        "project": "Sobre el proyecto",
+        "site": "Inicio"
+      }
     },
     "pt": {
       "text": {
@@ -712,7 +716,11 @@
         "final_title": "Pergunte o que precisar.",
         "final_cta": "Abrir o chat"
       },
-      "product_types": {}
+      "product_types": {},
+      "nav": {
+        "project": "Sobre o projeto",
+        "site": "Início"
+      }
     },
     "en": {
       "text": {
@@ -1071,6 +1079,10 @@
         "payroll_loan": "Payroll loan",
         "low_amount_consumer": "Small consumer loan",
         "microcredit": "Microcredit"
+      },
+      "nav": {
+        "project": "About the project",
+        "site": "Home"
       }
     }
   }

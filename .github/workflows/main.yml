@@ -146,7 +146,8 @@ jobs:
       - name: UI · página, textos y config
         run: |
           set -euo pipefail
-          curl -sf "$WEB/" -o /dev/null
+          curl -sf "$WEB/" -o /dev/null          # portada del proyecto
+          curl -sf "$WEB/chat.html" -o /dev/null  # el chat
           curl -sf "$WEB/ui.json" | jq -e '.lang' >/dev/null
           curl -sf "$WEB/config.js" | grep -q "$API" || { echo "::error::config.js no apunta a $API"; exit 1; }
           echo "### Chat en $WEB" >> "$GITHUB_STEP_SUMMARY"

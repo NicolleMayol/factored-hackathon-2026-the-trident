@@ -1,0 +1,502 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistente de crédito · Bank Company</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+:root{color-scheme:light;--bg:#FAF6F4;--card:#FFFFFF;--soft:#F7F2EF;--ink:#22161A;--mute:#6B5A5F;--line:#EADBD5;--brand:#B0243A;--brand-dk:#861B2C;--me:#F6E1E1;
+--ok:#145C3B;--ok-bg:#E3F3EA;--info:#1D3F8A;--info-bg:#E8EEFA;--warn:#7A4B00;--warn-bg:#FDF1DE;--stop:#7A1D1D;--stop-bg:#FBEAEA;
+--display:'Bricolage Grotesque',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif;min-height:100vh;display:flex;flex-direction:column}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--info)}a:hover{color:var(--ink)}
+svg.i{width:16px;height:16px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding-left:28px;padding-right:28px}
+@media (max-width:640px){.wrap{padding-left:16px;padding-right:16px}}
+
+/* Cabecera */
+header{background:var(--card);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}
+.brand{display:flex;align-items:center;gap:16px}.brand img{height:40px;width:auto;display:block}
+.brand .sep{width:1px;height:30px;background:var(--line)}
+.brand .tt{display:flex;flex-direction:column;line-height:1.25}.brand .tt b{font-weight:700}
+#health{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--mute)}
+#health i{width:7px;height:7px;border-radius:50%;background:#C9B8B2}
+#health.up i{background:#1F7A55}#health.slow i{background:#D08A00}#health.down i{background:var(--brand)}
+.hright{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.site{display:flex;gap:2px;flex-wrap:wrap}.site a{color:var(--mute);text-decoration:none;font-size:14px;font-weight:500;padding:8px 10px;border-radius:999px}.site a:hover{color:var(--ink);background:var(--soft)}
+.seg{display:flex;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;border-radius:999px;padding:6px 14px;font-size:13px;color:var(--mute);min-height:32px}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(34,22,26,.12)}
+@media (max-width:640px){.brand img{height:32px}.brand .sep,.brand .tt b{display:none}}
+
+/* Fila de etapas y cliente activo */
+#bar{display:flex;align-items:center;justify-content:space-between;gap:12px 24px;flex-wrap:wrap;padding-top:18px}
+#bar[hidden],#stages[hidden]{display:none}
+#stages{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0;padding:0;list-style:none;font-size:13px}
+#stages li{display:flex;align-items:center;gap:8px;color:var(--mute)}
+#stages li i{width:22px;height:22px;border-radius:50%;border:1.5px solid #CDBDB7;display:grid;place-items:center;font:600 11px/1 'Plus Jakarta Sans',sans-serif;font-style:normal}
+#stages li.done{color:var(--ok);font-weight:600}#stages li.done i{background:#1F7A55;border-color:#1F7A55;color:#fff}
+#stages li.now{color:var(--ink);font-weight:700}#stages li.now i{border:2px solid var(--ink)}
+#stages li+li::before{content:"";width:40px;height:2px;background:#E2D3CD;margin-right:2px}
+#stages li.done+li::before{background:#1F7A55}
+@media (max-width:640px){#stages li+li::before{width:12px}#stages li:not(.now) span{display:none}}
+#current{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px}
+#current>span{color:var(--mute)}#current b{font-weight:700}
+.pill{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 14px;min-height:36px;font-size:13px}
+.pill:hover{border-color:var(--ink)}
+
+/* Elegir cliente */
+#picker[hidden]{display:none}
+#picker{flex:1 1 100%;padding:28px;display:flex;flex-direction:column;gap:18px}
+#picker h1{margin:0;font:600 28px/1.15 var(--display)}#picker>p{margin:0;color:var(--mute);max-width:680px}
+#picker h3{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--mute)}
+.pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.pcard{text-align:left;border:1px solid var(--line);background:var(--soft);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-height:44px}
+.pcard:hover,.pcard:focus-visible{border-color:var(--ink);outline:none}
+.pcard:disabled{opacity:.45;cursor:progress}.pcard.busy{opacity:1;border-color:var(--ink)}
+.pcard b{font-size:16px}.pcard .d{font-size:14px;color:var(--mute)}.pcard .l{font-size:12px;color:var(--mute)}
+@media (max-width:640px){#picker{padding:20px}}
+
+/* Área principal */
+.stage{flex:1;display:flex;flex-wrap:wrap;gap:20px;padding-top:16px;padding-bottom:28px;align-items:flex-start}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px}
+#chat,#analyst{flex:999 1 560px;min-width:0;display:flex;flex-direction:column}
+#log{padding:24px;display:flex;flex-direction:column;gap:18px;overflow:auto;min-height:440px;max-height:calc(100vh - 300px)}
+@media (max-width:640px){#log{padding:14px;max-height:70vh;min-height:360px}}
+.hello{display:flex;flex-direction:column;gap:4px;max-width:85%}
+.hello h1{margin:0;font:600 24px/1.2 var(--display)}.hello p{margin:0;color:var(--mute)}
+.me{align-self:flex-end;max-width:72%;background:var(--me);padding:11px 16px;border-radius:18px 18px 6px 18px;white-space:pre-wrap;overflow-wrap:anywhere}
+.row{display:flex;gap:12px;align-items:flex-start;max-width:88%}
+.row.wide{max-width:100%}
+.av{flex:none;width:32px;height:32px;border-radius:50%;background:#F3E4E2;display:grid;place-items:center}
+.av img{width:20px;height:auto}
+.bot{flex:1;min-width:0;background:var(--soft);border:1px solid var(--line);border-radius:6px 18px 18px 18px;padding:14px 18px;display:flex;flex-direction:column;gap:10px}
+.bot .txt{white-space:pre-wrap;overflow-wrap:anywhere}
+.bot.warn{background:var(--warn-bg);border-color:#F1DDBB}
+.bot.stop{background:var(--stop-bg);border-color:#F1CFCF;color:var(--stop)}
+.typing{color:var(--mute);font-size:14px;padding-left:44px}
+.tag{align-self:flex-start;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;background:var(--card)}
+.tag svg.i{width:13px;height:13px}
+.t-ok{color:var(--ok);background:var(--ok-bg)}.t-info{color:var(--info);background:var(--info-bg)}
+.t-warn{color:var(--warn)}.t-stop{color:var(--stop)}
+sup.ref{color:var(--brand);font-weight:700;font-size:11px;margin-left:1px}
+.case{font-size:13px}.case b{font-family:var(--mono);font-weight:400}
+details.src{border-top:1px solid var(--line);padding-top:8px;font-size:13px}
+details.src summary{cursor:pointer;color:var(--mute)}
+.srcs{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.srcs li{display:flex;gap:8px;align-items:flex-start;color:var(--info)}
+.srcs li b{color:var(--brand);min-width:12px}
+.acts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{border-radius:999px;padding:10px 20px;min-height:44px;font-weight:600}
+.btn.pri{background:var(--brand);color:#fff;border:0}.btn.pri:hover{background:var(--brand-dk)}
+.btn.sec{background:var(--card);border:1.5px solid var(--ink)}
+.bot .btn{padding:7px 16px;min-height:38px;font-size:14px;font-weight:500}.btn.sec:hover{background:var(--soft)}
+/* Autorización */
+.cbox{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:4px;font-size:14px}
+.cbox b{font-weight:700}
+.cdone{display:flex;align-items:center;gap:8px;border-radius:10px;padding:10px 14px;font-size:14px;font-weight:600}
+.cdone.yes{background:var(--ok-bg);color:var(--ok)}.cdone.no{background:var(--card);color:var(--mute);border:1px solid var(--line)}
+/* Resultado */
+.result{flex:1;min-width:0;background:var(--card);border:1.5px solid #BFE0CC;border-radius:18px;overflow:hidden}
+.result.no{border-color:#EBC3C3}.result.rev{border-color:#C7D5F2}
+.rhead{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:var(--ok-bg);padding:16px 20px}
+.result.no .rhead{background:var(--stop-bg)}.result.rev .rhead{background:var(--info-bg)}
+.rhead .ttl{display:flex;align-items:center;gap:12px}
+.rhead .dot{width:34px;height:34px;border-radius:50%;background:#1F7A55;color:#fff;display:grid;place-items:center}
+.result.no .dot{background:var(--stop)}.result.rev .dot{background:var(--info)}
+.rhead .dot svg.i{width:18px;height:18px;stroke-width:3}
+.rhead small{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ok);font-weight:600}
+.result.no .rhead small{color:var(--stop)}.result.rev .rhead small{color:var(--info)}
+.rhead strong{font:700 22px/1.2 var(--display)}
+.rhead .prod{font-size:13px;color:var(--ok)}.result.no .rhead .prod{color:var(--stop)}.result.rev .rhead .prod{color:var(--info)}
+.rbody{padding:18px 20px;display:flex;flex-direction:column;gap:14px}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px}
+.metrics div{display:flex;flex-direction:column;gap:2px}.metrics span{font-size:12px;color:var(--mute)}
+.metrics strong{font:700 22px/1.2 var(--display)}
+.note{display:flex;gap:10px;align-items:flex-start;background:var(--soft);border-radius:10px;padding:10px 14px;font-size:14px}
+details.how{border-top:1px solid var(--line);padding-top:10px}
+details.how summary{cursor:pointer;font-size:14px}
+.steps{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.step{display:flex;gap:12px}
+.step>i{flex:none;width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;font:700 11px/24px 'Plus Jakarta Sans',sans-serif;text-align:center;font-style:normal}
+.step.last>i{background:var(--brand)}
+.step div{display:flex;flex-direction:column;gap:4px;font-size:14px}.step strong{font-weight:700}
+.step span{font-size:13px;color:var(--mute)}.step span.good{color:#1F6B4A}.step span.bad{color:var(--stop)}
+.step ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13px}
+.step ol b{color:var(--brand);margin-right:6px}
+@media (max-width:640px){.row{max-width:100%}.av{display:none}.metrics strong{font-size:19px}}
+/* Sugerencias, entrada y pie */
+.composer{border-top:1px solid var(--line);padding:14px 18px 12px;display:flex;flex-direction:column;gap:10px}
+#sugg{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:640px){#sugg{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#sugg>*{flex:none}}
+.sg{border:1px solid var(--line);background:var(--soft);border-radius:999px;padding:6px 14px;font-size:13px;min-height:36px}
+.sg:hover{border-color:var(--ink)}
+form.bar{display:flex;gap:8px;align-items:center;border:1.5px solid var(--line);border-radius:14px;padding:6px 6px 6px 16px;background:var(--card)}
+form.bar:focus-within{border-color:var(--ink)}
+form.bar input{flex:1;min-width:0;border:0;padding:8px 0;font:inherit;background:transparent;color:var(--ink);outline:none}
+form.bar button{width:40px;height:40px;border-radius:10px;border:0;background:var(--brand);color:#fff;display:grid;place-items:center}
+form.bar button:hover{background:var(--brand-dk)}
+.foot{display:flex;gap:8px;align-items:center;font-size:12px;color:var(--mute)}
+/* Panel lateral */
+aside{flex:1 1 280px;max-width:340px;display:flex;flex-direction:column;gap:16px}
+@media (max-width:900px){aside{max-width:none}}
+aside .card{padding:18px 20px}
+aside h2{margin:0 0 12px;font:700 16px/1.3 'Plus Jakarta Sans',sans-serif}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:10px 12px;font-size:14px;margin:0}
+.kv dt{color:var(--mute);white-space:nowrap}.kv dd{margin:0;text-align:right;font-weight:600}
+.chip{display:inline-block;font-size:12px;font-weight:600;padding:2px 10px;border-radius:999px;background:var(--soft);color:var(--mute)}
+.chip.ok{background:var(--ok-bg);color:var(--ok)}.chip.no{background:var(--stop-bg);color:var(--stop)}.chip.rev{background:var(--info-bg);color:var(--info)}
+.next{border-top:1px solid var(--line);margin-top:14px;padding-top:14px;display:flex;flex-direction:column;gap:10px;font-size:14px}
+.next small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:600}
+.next .btn{width:100%}
+.howl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;font-size:14px}
+.more{display:inline-block;margin-top:14px;font-size:14px;font-weight:600;color:var(--brand);text-decoration:none}.more:hover{color:var(--brand-dk)}
+.howl li{display:flex;gap:10px;align-items:flex-start}.howl svg.i{color:var(--info);margin-top:2px}
+details.tech{font-size:12px;color:var(--mute);padding:0 4px}
+details.tech summary{cursor:pointer}
+details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;line-height:1.5}
+.empty{font-size:14px;color:var(--mute)}
+/* Pie de página: equipo */
+.pfoot{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;padding-top:14px;padding-bottom:22px;border-top:1px solid var(--line);font-size:13px;color:var(--mute)}
+.pfoot b{color:var(--ink);font-family:var(--display);font-size:15px;letter-spacing:.01em}
+
+/* Vista del analista */
+#analyst{display:none;padding:24px;gap:16px}
+#analyst h1{margin:0;font:600 26px/1.15 var(--display)}#analyst p{margin:0;color:var(--mute)}
+#cases{display:flex;gap:6px;flex-wrap:wrap}
+#cases button{font-family:var(--mono);font-size:13px}
+#hf{display:flex;gap:8px;flex-wrap:wrap}
+#hf input{flex:1;min-width:200px;border:1px solid var(--line);border-radius:999px;padding:12px 18px;font:inherit;font-family:var(--mono);background:var(--soft)}
+.hand{background:var(--soft);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.hand dl{margin:0;display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;font-size:14px}
+.hand dt{color:var(--mute)}.hand dd{margin:0;overflow-wrap:anywhere}
+.hand ul{margin:0;padding-left:18px}
+.hand pre{margin:6px 0 0;font:12px/1.45 var(--mono);white-space:pre-wrap;overflow-wrap:anywhere}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.6 5.6l12.8 12.8"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-bank" viewBox="0 0 24 24"><path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6v.6M12 17v.5"/></symbol>
+</svg>
+<header>
+  <div class="wrap">
+    <div class="brand"><img src="logo-bank.png" alt="Bank Company"><span class="sep"></span>
+      <div class="tt"><b data-t="text.title">Asistente de crédito</b><div id="health" role="status"><i></i><span>…</span></div></div></div>
+    <div class="hright">
+      <nav class="site" aria-label="Sitio"><a id="navHome" href="landing.html" data-t="nav.site"></a><a href="index.html" data-t="nav.project"></a></nav>
+      <div class="seg" id="langs" role="group"></div>
+    </div>
+  </div>
+</header>
+
+<div id="bar" class="wrap" hidden>
+  <ol id="stages"></ol>
+  <div id="current"><span data-t="text.try_as"></span><b id="curLabel"></b><button type="button" class="pill" id="change" data-t="text.change"></button></div>
+</div>
+
+<div class="stage wrap">
+  <section id="picker" class="card">
+    <h1 data-t="picker.title">¿Con qué cliente quieres probar?</h1>
+    <p data-t="picker.sub">Son clientes de prueba con datos sintéticos.</p>
+    <p id="loading" class="empty" role="status">Conectando con el asistente…</p>
+    <div class="pcards" id="pcards"></div>
+    <h3 data-t="picker.staff" hidden></h3>
+    <div class="pcards" id="acards"></div>
+  </section>
+
+  <main id="chat" class="card" style="display:none">
+    <div id="log" aria-live="polite"></div>
+    <div class="composer">
+      <div id="sugg"></div>
+      <form class="bar" id="f">
+        <label for="m" class="sr" data-t="text.placeholder">Mensaje</label>
+        <input id="m" autocomplete="off" data-tp="text.placeholder">
+        <button type="submit"><svg class="i"><use href="#i-arrow"/></svg><span class="sr" data-t="text.send">Enviar</span></button>
+      </form>
+      <div class="foot"><svg class="i"><use href="#i-shield"/></svg><span><span data-t="text.footer"></span> <a id="howLink" href="como-funciona.html" data-t="text.how_link"></a></span></div>
+    </div>
+  </main>
+
+  <main id="analyst" class="card">
+    <h1 data-t="analyst.title"></h1>
+    <p data-t="analyst.sub"></p>
+    <div id="cases"></div>
+    <form id="hf">
+      <label for="case" class="sr" data-t="analyst.fields.case"></label>
+      <input id="case" placeholder="case-…">
+      <button class="btn pri" type="submit" data-t="analyst.open"></button>
+    </form>
+    <div id="hand"></div>
+  </main>
+
+  <aside id="side" style="display:none">
+    <section class="card" id="sumCard"></section>
+    <section class="card" id="howCard"></section>
+    <details class="tech" id="tech" hidden><summary data-t="text.tech"></summary><div id="techD"></div></details>
+  </aside>
+</div>
+
+<footer class="wrap pfoot"><span><span data-t="text.made_by">Hecho por</span> <b id="teamName">The Trident</b> · <span id="teamMembers"></span></span><span id="teamEvent"></span></footer>
+
+<script>
+// Sin datos de negocio en este archivo (ADR-25):
+//  - datos (personas, países, productos, resultados, motivos, tools) → GET /api/meta, que lee los mismos archivos que el agente;
+//  - textos por idioma → ui.json.
+const API=(window.API_BASE||"").replace(/\/$/,"")+"/api";
+let UI=null,META={users:[],countries:{},products:{},tools:[],outcomes:[],reason_codes:[]};
+// chosen: idioma elegido arriba; si es null, manda el locale del cliente.
+let tok=null,conv=null,curU=null,pending=null,lang="es",chosen=null,healthKey=null;
+// Estado de la conversación que alimenta las etapas y "Tu solicitud". Solo datos que devolvió la API.
+// seq: sube con cada login o vuelta al selector; una respuesta con un seq viejo se descarta.
+let seq=0;
+let S=null;const fresh=()=>({stage:0,seen:new Set([0]),product:null,outcome:null,consent:null,caseId:null,last:null});
+const cases=[];
+const $=id=>document.getElementById(id);
+const ic=n=>`<svg class="i"><use href="#i-${n}"/></svg>`;
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+// t("text.send") → texto del idioma activo; si falta, el del idioma por defecto; si tampoco, la clave.
+function t(path,l=lang){const get=x=>path.split(".").reduce((o,k)=>o==null?o:o[k],UI&&UI.lang[x]);const v=get(l);return v!=null?v:(get(UI?UI.default_lang:"es")??path)}
+const fill=(str,o)=>String(str).replace(/\{(\w+)\}/g,(_,k)=>o[k]??"");
+const langOf=locale=>{const l=String(locale||"").slice(0,2);return UI&&UI.lang[l]?l:(UI?UI.default_lang:"es")};
+async function call(path,opt={}){
+ try{const r=await fetch(API+path,{...opt,headers:{"content-type":"application/json",...(tok?{authorization:"Bearer "+tok}:{}),...(opt.headers||{})}});
+  let j={};try{j=await r.json()}catch(e){}return [r,j]}
+ catch(e){return [{ok:false,status:0},{error:"network"}]}}
+
+// Ids del corpus: POL-<país>-<product_code>-<idioma>-v<n>-R<k> y catalog:<product_code> (template.md, ADR-03).
+const CHUNK=/^POL-[A-Z]{2}-([A-Z]{2}-[A-Z]+-\d+)-([a-z]{2})-v\d+-(R\d+)$/,CAT=/^catalog:([A-Z]{2}-[A-Z]+-\d+)$/;
+const ptype=p=>((UI&&UI.lang[lang]&&UI.lang[lang].product_types)||{})[p.type];
+const prodName=code=>{const p=META.products[code];return p?(p.name[lang]||ptype(p)||p.name[UI.default_lang]||code):code};
+const ctryName=c=>META.countries[c]||c;
+function srcLabel(id){
+ let m=CHUNK.exec(id);
+ if(m){const p=META.products[m[1]];return [prodName(m[1]),p?ctryName(p.country):null,t("sections."+m[3])].filter(Boolean).join(" · ")}
+ m=CAT.exec(id);
+ if(m){const p=META.products[m[1]];return [t("text.catalog"),prodName(m[1]),p?ctryName(p.country):null].filter(Boolean).join(" · ")}
+ const k=id.replace(/^(tool|rule):/,"");
+ if(META.tools.includes(k))return t("tools."+k);
+ if(/^rule:/.test(id))return `${t("text.rule")} ${k}`;
+ return k}
+const isRuleSrc=id=>/^rule:/.test(id)||["tool:evaluate_eligibility","tool:get_prescore","evaluate_eligibility","get_prescore"].includes(id);
+
+// Una respuesta: texto con superíndices, fuentes en orden de aparición, producto citado y, si hay, el resultado.
+// El resultado se lee del texto con la lista de contracts/tools.yaml (el nodo verify del agente exige esa frase);
+// tasa y plazo salen del catálogo del producto citado, no del texto.
+function parse(j){
+ const src=[];const at=id=>{let i=src.indexOf(id);if(i<0){src.push(id);i=src.length-1}return i+1};
+ const html=esc(j.reply||"").replace(/\s*\[([^\]]+)\]/g,(all,inner)=>{const ids=inner.split(/\s*[,;]\s*/);
+  if(!ids.every(x=>/^(POL-|catalog:|rule:|tool:)/.test(x)))return all;return ids.map(x=>`<sup class="ref">${at(x)}</sup>`).join("")});
+ for(const c of (j.citations||[]))at(c.type==="tool"?c.id:(c.type==="rule"&&!/^rule:/.test(c.id)?"rule:"+c.id:c.id));
+ const codes=[...new Set(src.map(id=>(CHUNK.exec(id)||CAT.exec(id)||[])[1]).filter(Boolean))];
+ const product=codes.length===1?codes[0]:null;
+ const outs=[...META.outcomes].sort((a,b)=>b.length-a.length);
+ const out=outs.find(o=>new RegExp(`:\\s*${o.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}\\b`).test(j.reply||""));
+ return {html,src,product,out:out||null,usedRules:src.some(isRuleSrc)}}
+
+const num=x=>Number(x).toLocaleString(lang,{maximumFractionDigits:2});
+// Color por posición en el enum de contracts/tools.yaml (favorable, desfavorable, revisión humana).
+const OUTCLS=o=>{const i=META.outcomes.indexOf(o);return ["","no","rev"][i]??""};
+const CHIPCLS=o=>({"":"ok",no:"no",rev:"rev"})[OUTCLS(o)];
+const TAG={answer:["t-ok","doc"],answer_plain:["t-ok","check"],confirm:["t-info","lock"],clarify:["t-info","help"],escalate:["t-warn","user"],blocked:["t-warn","ban"],reject:["t-stop","ban"],error:["t-stop","ban"]};
+const tag=k=>{const [c,i]=TAG[k]||["t-info","info"];return `<span class="tag ${c}">${ic(i)}${esc(k==="error"?t("text.error"):t("tags."+k))}</span>`};
+const now=()=>new Date().toLocaleTimeString(lang,{hour:"2-digit",minute:"2-digit"});
+
+function scroll(){$("log").scrollTop=$("log").scrollHeight}
+function addMe(text){const d=document.createElement("div");d.className="me";d.textContent=text;$("log").appendChild(d);scroll()}
+function addRow(inner,wide){const r=document.createElement("div");r.className="row"+(wide?" wide":"");
+ r.innerHTML=`<div class="av" aria-hidden="true"><img src="favicon.png" alt=""></div>${inner}`;$("log").appendChild(r);scroll();return r.lastElementChild}
+function addTyping(key){const d=document.createElement("div");d.className="typing";d.textContent=t(key);$("log").appendChild(d);scroll();return d}
+const srcList=src=>`<ol class="srcs">${src.map((id,i)=>`<li title="${esc(id)}"><b>${i+1}</b>${ic("doc")}<span>${esc(srcLabel(id))}</span></li>`).join("")}</ol>`;
+
+// Pasos de "¿Cómo llegué a este resultado?": consentimiento de esta conversación, reglas y fuentes de la respuesta.
+function howSteps(j,p){const st=[];const pair=k=>{const [h,b]=t("why."+k);return [h,`<span>${esc(b)}</span>`]};
+ if(S.consent!=null&&p.usedRules)st.push([t("why.consent"),S.consent?`<span class="good">${esc(t("why.consent_yes"))}</span>`:`<span class="bad">${esc(t("why.consent_no"))}</span>`]);
+ if(p.usedRules)st.push(pair("rules"));
+ if(p.src.length)st.push([t("why.sources"),`<ol>${p.src.map((id,i)=>`<li title="${esc(id)}"><b>${i+1}</b>${esc(srcLabel(id))}</li>`).join("")}</ol>`]);
+ st.push(pair("next_person_result"));
+ return `<div class="steps">${st.map(([h,b],i)=>`<div class="step${i===st.length-1?" last":""}"><i>${i+1}</i><div><strong>${esc(h)}</strong>${b}</div></div>`).join("")}</div>`}
+
+function renderBot(j){
+ const p=parse(j);S.last=j;if(p.product)S.product=p.product;
+ if(j.case_id){S.caseId=j.case_id;if(!cases.includes(j.case_id))cases.unshift(j.case_id)}
+ let el;
+ if(p.out&&j.action==="answer"){
+  S.outcome=p.out;go(2);
+  const pr=p.product&&META.products[p.product],cls=OUTCLS(p.out),m=[];
+  if(pr&&pr.rate_min!=null)m.push(`<div><span>${esc(t("text.rate"))}</span><strong>${num(pr.rate_min)} – ${num(pr.rate_max)} %</strong></div>`);
+  if(pr&&pr.term_months_max!=null)m.push(`<div><span>${esc(t("text.term"))}</span><strong>${esc(fill(t("text.term_value"),{n:pr.term_months_max}))}</strong></div>`);
+  el=addRow(`<div class="result ${cls}"><div class="rhead"><div class="ttl"><span class="dot">${ic(cls==="no"?"info":cls==="rev"?"user":"check")}</span>
+   <div><small>${esc(t("text.result"))}</small><strong>${esc(t("outcome_head."+p.out))}</strong></div></div>
+   ${pr?`<span class="prod">${esc(prodName(p.product))} · ${esc(ctryName(pr.country))}</span>`:""}</div>
+   <div class="rbody">${m.length?`<div class="metrics">${m.join("")}</div>`:""}<div class="txt">${p.html}</div>
+   <div class="note">${ic("info")}<span>${esc(t("text.nonbinding"))}</span></div>
+   <details class="how" open><summary>${esc(t("text.how_result"))} · ${esc(t("text.sources"))} (${p.src.length})</summary>${howSteps(j,p)}</details></div></div>`,true);
+ }else{
+  const k=j.action==="answer"&&!p.src.length?"answer_plain":j.action;
+  const cls=j.action==="blocked"||j.action==="escalate"?" warn":j.action==="reject"?" stop":"";
+  let extra="";
+  if(j.action==="confirm")extra=`<div class="cbox">${t("consent_box").map(([b,s])=>`<div><b>${esc(b)}</b> ${esc(s)}</div>`).join("")}</div>`;
+  if(j.case_id)extra+=`<div class="case">${esc(t("text.case_for"))}: <b>${esc(j.case_id)}</b></div>`;
+  if(p.src.length&&j.action!=="confirm")extra+=`<details class="src"><summary>${esc(t("text.sources"))} (${p.src.length})</summary>${srcList(p.src)}</details>`;
+  el=addRow(`<div class="bot${cls}">${tag(k)}<div class="txt">${p.html}</div>${extra}</div>`);
+  if(j.action==="confirm")go(1);
+  if(j.action==="escalate")go(2);
+ }
+ tech(j,p);side();return el}
+
+// Etapas: Consulta → Pre-evaluación → Revisión con analista → Condiciones finales. La última siempre la da una persona.
+function go(i){S.stage=Math.max(S.stage,i);S.seen.add(i);stages()}
+function stages(){const names=t("stages");$("stages").innerHTML=names.map((n,i)=>{const st=i<S.stage?(S.seen.has(i)?"done":""):i===S.stage?"now":"";
+ return `<li class="${st}"${i===S.stage?' aria-current="step"':""}><i>${st==="done"?ic("check"):i+1}</i><span>${esc(n)}</span></li>`}).join("")}
+
+// Panel "Tu solicitud" y "Cómo funciona": solo lo que dijo la API en esta conversación.
+function side(){if(!curU||!S)return;const s=t("summary"),pr=S.product&&META.products[S.product];
+ const dash=`<span class="chip">${esc(s.pending)}</span>`;
+ let next=s.next_start;
+ if(S.caseId)next=`${s.next_case} <b style="font-family:var(--mono);font-weight:400">${esc(S.caseId)}</b>`;
+ else if(S.outcome){next=esc(s.next_result)}
+ else if(pending){next=esc(s.next_consent)}else next=esc(next);
+ $("sumCard").innerHTML=`<h2>${esc(s.title)}</h2><dl class="kv">
+  <dt>${esc(s.product)}</dt><dd>${pr?esc(prodName(S.product)):"—"}</dd>
+  <dt>${esc(s.country)}</dt><dd>${curU.country?esc(ctryName(curU.country)):"—"}</dd>
+  <dt>${esc(s.result)}</dt><dd>${S.outcome?`<span class="chip ${CHIPCLS(S.outcome)}">${esc(t("outcomes."+S.outcome))}</span>`:dash}</dd>
+  <dt>${esc(s.consent)}</dt><dd>${S.consent==null?"—":esc(S.consent?s.yes:s.no)}</dd></dl>
+  <div class="next"><small>${esc(s.next)}</small><div>${next}</div></div>`;
+ const icons=["bank","doc","user"];
+ $("howCard").innerHTML=`<h2>${esc(t("how.title"))}</h2><ul class="howl">${t("how.items").map((x,i)=>`<li>${ic(icons[i]||"info")}<span>${esc(x)}</span></li>`).join("")}</ul>`+
+  `<a class="more" href="como-funciona.html?lang=${lang}">${esc(t("how.more"))} →</a>`}
+function tech(j,p){const x=[j.latency_ms!=null?`${Math.round(j.latency_ms)} ms`:null,j.cost_usd!=null?`${Number(j.cost_usd).toFixed(4)} USD`:null,j.trace_id?`trace ${esc(String(j.trace_id).slice(0,8))}`:null,`action ${esc(j.action)}`].filter(Boolean).join(" · ");
+ $("techD").innerHTML=x+(p.src.length?"<br>"+p.src.map(esc).join("<br>"):"");$("tech").hidden=false}
+
+function i18n(){document.documentElement.lang=lang;document.title=`${t("text.title")} · Bank Company`;
+ document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));document.querySelectorAll("[data-tp]").forEach(e=>e.placeholder=t(e.dataset.tp));
+ document.querySelectorAll("#langs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.l===lang)));
+ $("howLink").href=`como-funciona.html?lang=${lang}`;$("navHome").href=`landing.html?lang=${lang}`;
+ if(healthKey)$("health").querySelector("span").textContent=t(healthKey)}
+// Selector de idioma: un botón por bloque de ui.json, con el nombre en su propio idioma.
+function renderLangs(){const g=$("langs");g.innerHTML="";g.setAttribute("aria-label",t("text.language"));
+ for(const l of Object.keys(UI.lang)){const n=t("lang_names."+l,l),b=document.createElement("button");b.type="button";b.dataset.l=l;b.textContent=n.charAt(0).toUpperCase()+n.slice(1);
+  b.onclick=()=>{chosen=l;lang=l;applyLang()};g.appendChild(b)}}
+// Cambia la interfaz sin perder la conversación; el agente responde en el idioma del mensaje (nodo Understand).
+function applyLang(){i18n();
+ if(!$("picker").hidden){if(META.users.length)renderPicker();return}
+ if(!curU)return;$("curLabel").textContent=personaLabel(curU);
+ if(isAnalyst(curU))return;
+ renderSugg();stages();side();if(S.last)tech(S.last,parse(S.last))}
+
+const isAnalyst=u=>u&&u.scopes.includes("handoff:read");
+// El país de la persona es donde abrió su cuenta, no donde está (docs/test-users.md).
+function persona(u){const p=t("personas."+u.key);return typeof p==="object"?p:{label:u.key,desc:""}}
+function personaLabel(u){const p=persona(u);
+ return isAnalyst(u)||!u.country?p.label:`${fill(t("text.account_in"),{country:ctryName(u.country)})} · ${p.label}`}
+function card(u){const p=persona(u),b=document.createElement("button");b.type="button";b.className="pcard";b.dataset.k=u.key;
+ const head=isAnalyst(u)||!u.country?p.label:fill(t("text.account_in"),{country:ctryName(u.country)});
+ b.innerHTML=`<b>${esc(head)}</b>${!isAnalyst(u)&&u.country?`<span class="tag t-info">${esc(p.label)}</span>`:""}`+
+  (p.desc?`<span class="d">${esc(p.desc)}</span>`:"")+(isAnalyst(u)?"":`<span class="l">${esc(fill(t("text.writes_in"),{lang:t("lang_names."+langOf(u.locale))}))}</span>`);
+ b.onclick=()=>login(u.key);return b}
+function show(view){const chat=view==="chat",an=view==="analyst",pk=view==="picker";
+ $("picker").hidden=!pk;$("bar").hidden=pk;$("stages").hidden=!chat;
+ $("side").style.display=chat?"flex":"none";$("chat").style.display=chat?"flex":"none";$("analyst").style.display=an?"flex":"none"}
+function showPicker(){seq++;curU=null;tok=null;conv=null;pending=null;lang=chosen||langOf(navigator.language);i18n();renderPicker();
+ try{history.replaceState(null,"",location.pathname)}catch(e){}
+ show("picker")}
+function renderPicker(){$("loading").hidden=true;$("pcards").innerHTML="";$("acards").innerHTML="";
+ for(const u of META.users)(isAnalyst(u)?$("acards"):$("pcards")).appendChild(card(u));
+ $("acards").previousElementSibling.hidden=!$("acards").children.length}
+// Mientras abre la sesión: tarjetas bloqueadas, la elegida marcada y el aviso de conexión visible.
+function busy(k){if($("picker").hidden)return;for(const b of document.querySelectorAll(".pcard")){b.disabled=true;if(b.dataset.k===k){b.classList.add("busy");b.setAttribute("aria-busy","true")}}
+ const l=$("loading");l.textContent=t("text.connecting");l.hidden=false}
+// Sugerencias con {name:<product_type>} y {amount:<product_type>}: nombre y un monto dentro del rango del producto del país del cliente.
+function sugg(){const u=curU;if(!u)return [];const byType=ty=>Object.values(META.products).find(p=>p.country===u.country&&p.type===ty);const out=[];
+ for(const tpl of t("suggestions")){let ok=true;
+  const s=tpl.replace(/\{(name|amount):([a-z_]+)\}/g,(_,k,ty)=>{const p=byType(ty);if(!p){ok=false;return""}
+   if(k==="name"){const n=p.name[lang]||p.name[UI.default_lang];return n.charAt(0).toLowerCase()+n.slice(1)}
+   return String(Math.min(p.amount_max,p.amount_min*10))});
+  if(ok)out.push(s)}return out}
+function renderSugg(){$("sugg").innerHTML="";for(const s of sugg()){const c=document.createElement("button");c.type="button";c.className="sg";c.textContent=s;c.onclick=()=>send(s);$("sugg").appendChild(c)}}
+function renderCases(){$("cases").innerHTML="";for(const c of cases){const b=document.createElement("button");b.type="button";b.className="pill";b.textContent=c;b.onclick=()=>{$("case").value=c;openCase(c)};$("cases").appendChild(b)}}
+
+async function login(k){const my=++seq;
+ busy(k);
+ conv=null;pending=null;tok=null;S=fresh();$("log").innerHTML="";$("hand").innerHTML="";$("tech").hidden=true;
+ try{history.replaceState(null,"",`${location.pathname}?user=${encodeURIComponent(k)}`)}catch(e){}
+ const u=META.users.find(x=>x.key===k)||{key:k,scopes:[],locale:""};
+ const [r,j]=await call("/session",{method:"POST",body:JSON.stringify({user:k})});
+ if(my!==seq)return; // otro clic o «Cambiar de cliente» llegó después
+ curU=u;lang=chosen||langOf(j.locale||u.locale);i18n();$("curLabel").textContent=personaLabel(u);
+ if(!r.ok){show("chat");addRow(`<div class="bot stop">${tag("error")}<div class="txt">${esc(t("text.no_session"))} (${r.status}).</div></div>`);return}
+ tok=j.token;const a=(j.scopes||u.scopes).includes("handoff:read");show(a?"analyst":"chat");
+ if(a){renderCases();return}
+ stages();side();renderSugg();
+ const h=document.createElement("div");h.className="hello";h.innerHTML=`<h1 data-t="text.hello">${esc(t("text.hello"))}</h1><p data-t="text.hello_sub">${esc(t("text.hello_sub"))}</p>`;$("log").appendChild(h)}
+
+async function send(text){if(!text||!tok)return;const my=seq;addMe(text);const ty=addTyping("text.thinking");
+ const [r,j]=await call("/chat",{method:"POST",body:JSON.stringify({message:text,conversation_id:conv})});ty.remove();
+ if(my!==seq)return;
+ if(!r.ok){addRow(`<div class="bot stop">${tag("error")}<div class="txt">${esc(j.error||t("text.no_reply"))} (${r.status})</div></div>`);return}
+ conv=j.conversation_id||conv;pending=j.action_id||null;
+ const el=renderBot(j);
+ if(pending){const a=document.createElement("div");a.className="acts";a.innerHTML=`<button type="button" class="btn pri">${esc(t("text.yes"))}</button><button type="button" class="btn sec">${esc(t("text.no"))}</button>`;
+  const [y,n]=a.querySelectorAll("button");y.onclick=()=>decide(a,true);n.onclick=()=>decide(a,false);el.appendChild(a);side()}}
+// La respuesta a la autorización queda escrita en el mismo mensaje, con la hora.
+function decide(box,ok){const d=document.createElement("div");d.className="cdone "+(ok?"yes":"no");
+ d.innerHTML=`${ic(ok?"check":"ban")}<span>${esc(fill(t(ok?"text.consent_given":"text.consent_denied"),{when:`${t("text.today")}, ${now()}`}))}</span>`;
+ box.replaceWith(d);confirmAct(ok)}
+async function confirmAct(ok){const my=seq;const ty=addTyping("text.scoring");
+ const [r,j]=await call("/chat/confirm",{method:"POST",body:JSON.stringify({action_id:pending,confirmed:ok,conversation_id:conv})});ty.remove();
+ if(my!==seq)return;pending=null;S.consent=ok;
+ if(!r.ok){addRow(`<div class="bot stop">${tag("error")}<div class="txt">${esc(j.error||"")} (${r.status})</div></div>`);side();return}
+ renderBot(j)}
+
+// Campos de contracts/handoff.schema.json: verified_facts {fact, source}, actions_taken {tool, result, verified}.
+const item=x=>typeof x==="string"?x:x.fact?`${x.fact}${x.source?" · "+srcLabel(x.source):""}`:x.tool?`${srcLabel(x.tool)}: ${x.result??""}`:x.id?srcLabel(x.id):JSON.stringify(x);
+const li=a=>a&&a.length?`<ul>${a.map(x=>`<li>${esc(item(x))}</li>`).join("")}</ul>`:"—";
+async function openCase(id){const [r,j]=await call("/handoff/"+encodeURIComponent(id));const F=k=>esc(t("analyst.fields."+k));
+ if(!r.ok){$("hand").innerHTML=`<div class="hand"><span class="tag t-stop">${esc(r.status===404?t("analyst.not_found"):t("text.error")+" "+r.status)}</span><div>${esc(j.error||"")}</div></div>`;return}
+ const rc=j.reason_code,rl=rc&&t("reasons."+rc)!=="reasons."+rc?t("reasons."+rc):(rc||t("analyst.escalated"));
+ $("hand").innerHTML=`<div class="hand"><span class="tag t-warn" title="${esc(rc||"")}">${esc(rl)}</span><dl>
+  <dt>${F("case")}</dt><dd style="font-family:var(--mono)">${esc(j.case_id)}</dd><dt>${F("customer")}</dt><dd>${esc(j.customer_id)} · ${esc(j.locale)}</dd>
+  <dt>${F("request")}</dt><dd>${esc(j.request_summary)}</dd><dt>${F("facts")}</dt><dd>${li(j.verified_facts)}</dd><dt>${F("actions")}</dt><dd>${li(j.actions_taken)}</dd>
+  <dt>${F("evidence")}</dt><dd>${li(j.evidence)}</dd><dt>${F("questions")}</dt><dd>${li(j.open_questions)}</dd><dt>${F("risks")}</dt><dd>${li(j.risk_flags)}</dd></dl>
+  <details class="tech"><summary>${esc(t("analyst.raw"))}</summary><pre>${esc(JSON.stringify(j,null,2))}</pre></details></div>`}
+
+$("change").onclick=showPicker;
+$("f").onsubmit=e=>{e.preventDefault();const v=$("m").value.trim();$("m").value="";send(v)};
+$("hf").onsubmit=e=>{e.preventDefault();const id=$("case").value.trim();if(id)openCase(id)};
+// Equipo: un solo lugar en ui.json (team), igual en todos los idiomas.
+function renderTeam(){const tm=UI.team||{};if(tm.name)$("teamName").textContent=tm.name;
+ $("teamMembers").textContent=(tm.members||[]).join(" · ");$("teamEvent").textContent=tm.event||""}
+function setHealth(cls,key){healthKey=key;const h=$("health");h.className=cls;h.querySelector("span").textContent=t(key)}
+// Arranque: textos (estáticos, mismo origen) y luego /meta. En frío la Function tarda: reintenta cada 10 s.
+async function boot(){
+ const ql=new URLSearchParams(location.search).get("lang");
+ try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){UI={default_lang:"es",lang:{es:{}}}}
+ if(ql&&!chosen&&UI.lang[ql])chosen=ql;
+ lang=chosen||langOf(navigator.language);renderLangs();renderTeam();i18n();$("loading").textContent=t("text.connecting");
+ const [r,m]=await call("/meta");
+ if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");$("loading").textContent=t("text.starting");setTimeout(boot,10000);return}
+ META=m;const hr=await fetch(API+"/healthz").catch(()=>null);setHealth(hr&&hr.ok?"up":"slow",hr&&hr.ok?"text.online":"text.degraded");
+ // ?user=<clave> abre ese cliente directo (enlaces para la demo); si no, primero se elige.
+ const q=new URLSearchParams(location.search).get("user");if(META.users.some(u=>u.key===q))login(q);else showPicker()}
+boot();
+</script>
+</body>
+</html>
