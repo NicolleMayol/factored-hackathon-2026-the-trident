@@ -57,12 +57,18 @@ class SQLWarehouse:
     # --- Statement Execution API ---
     def _execute(self, sql: str, parameters: list[dict[str, str]]) -> list[dict[str, Any]]:
         t0 = time.time()
+        # espera corta + sondeo (patrón de la revisión de servicio, PR #42): la llamada vuelve en ≤ 5 s y, si el warehouse está frío,
+        # se sondea hasta el timeout de frío de la tool (25 s); run_tool decide escalar por timeout_tool si se pasa
         body = {"warehouse_id": self.warehouse_id, "statement": sql, "parameters": parameters,
-                "wait_timeout": "30s", "on_wait_timeout": "CANCEL", "format": "JSON_ARRAY", "disposition": "INLINE", "row_limit": 1000}
-        r = requests.post(f"{self.host}/api/2.0/sql/statements", headers={**dbx_auth.auth_headers(), "Content-Type": "application/json"},
-                          json=body, timeout=max(self.s.tool_timeout_cold_s, 30) + 5)
+                "wait_timeout": "5s", "on_wait_timeout": "CONTINUE", "format": "JSON_ARRAY", "disposition": "INLINE", "row_limit": 1000}
+        url = f"{self.host}/api/2.0/sql/statements"
+        r = requests.post(url, headers={**dbx_auth.auth_headers(), "Content-Type": "application/json"}, json=body, timeout=12)
         r.raise_for_status()
         j = r.json()
+        deadline = time.time() + float(self.s.tool_timeout_cold_s)
+        while j.get("status", {}).get("state") in ("PENDING", "RUNNING") and time.time() < deadline:
+            time.sleep(0.5)
+            r = requests.get(f"{url}/{j['statement_id']}", headers=dbx_auth.auth_headers(), timeout=10); r.raise_for_status(); j = r.json()
         state = j.get("status", {}).get("state")
         if state != "SUCCEEDED":
             err = j.get("status", {}).get("error", {}).get("message", state)
