@@ -106,4 +106,10 @@ resource "azurerm_static_web_app" "main" {
   sku_tier            = "Free"
   sku_size            = "Free"
   tags                = local.tags
+
+  # deploy-web sube la UI con Azure/static-web-apps-deploy y Azure anota en el recurso el repo y la
+  # rama de origen. No los maneja Terraform: sin esto cada plan los quiere poner en null (drift).
+  lifecycle {
+    ignore_changes = [repository_url, repository_branch]
+  }
 }
