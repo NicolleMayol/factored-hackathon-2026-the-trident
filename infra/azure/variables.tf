@@ -56,7 +56,7 @@ variable "agent_modes" {
   type        = map(string)
   default = {
     llm      = "real" # FM APIs (llama-3.3-70b / llama-3.1-8b) con sp-agent-ro
-    sql      = "mock" # gold por wh-agent: pasar a real tras probar check_access A2 con sp-agent-ro
+    sql      = "real" # perfil, productos y comportamiento desde gold por wh-agent (sp-agent-ro, probado lun 5)
     store    = "mock" # store_cosmos sin implementar: chunks desde data/mock con coseno + BM25 en memoria
     embed    = "mock" # embed-bge-m3 sin registrar (M9)
     prescore = "mock" # prescore-lgbm sin desplegar
