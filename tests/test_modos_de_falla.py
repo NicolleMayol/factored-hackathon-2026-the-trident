@@ -40,11 +40,20 @@ ERRORES = [RuntimeError("SQL statement FAILED"), PermissionError("403 PERMISSION
 
 
 @pytest.mark.parametrize("exc", ERRORES, ids=lambda e: type(e).__name__)
-@pytest.mark.parametrize("dep", ["store", "embed"])
-def test_busqueda_que_falla_escala(settings, users, dep, exc):
-    r = handle(INFO, users["cliente_co_ok"], rt=rt_con(settings, **{dep: {"exc": exc}}))
+def test_store_que_falla_escala(settings, users, exc):
+    r = handle(INFO, users["cliente_co_ok"], rt=rt_con(settings, store={"exc": exc}))
     # Los handoffs viven en el store: si el que falla es el store, se escala sin case_id pero con respuesta.
-    assert r["action"] == "escalate" and r.get("reply") and (r.get("case_id") or dep == "store")
+    assert r["action"] == "escalate" and r.get("reply") and not r.get("case_id")
+
+
+@pytest.mark.parametrize("exc", ERRORES, ids=lambda e: type(e).__name__)
+def test_embed_que_falla_degrada_a_lexico(settings, users, exc):
+    """ADR-21 §1 (5 oct): el embed caído (frío de scale-to-zero, 403, red) no escala: search_policy sigue solo con léxico +
+    enrutado y lo marca en la traza; el cliente recibe la respuesta con cita."""
+    r = handle(INFO, users["cliente_co_ok"], rt=rt_con(settings, embed={"exc": exc}))
+    assert r["action"] == "answer" and r["citations"]
+    sp = r["_state"]["tool_results"]["search_policy"]
+    assert sp["embed_fallback"] is True and sp["embedding_model_version"] == "lexical-fallback"
 
 
 @pytest.mark.parametrize("exc", ERRORES, ids=lambda e: type(e).__name__)
