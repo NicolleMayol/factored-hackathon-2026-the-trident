@@ -19,3 +19,16 @@ Understand corre con `databricks-meta-llama-3-3-70b-instruct` (menos fallas, p95
 | understand_v2 | 3 | 0,897 | 1,0 | 0,0 | 0,917 |
 
 Fallas restantes de v2 (it. 4): EV-005 / EV-025 ("hasta cuánto" es información del producto, no simulación), EV-035 (reclamación = R7, `product_info`).
+
+## 5 oct · todo real sobre gold (LLM, SQL, trazas, pre-score en proceso)
+
+Mismo harness y casos; usuarios = clientes reales de gold elegidos por condición (`eval/pick_users.py`, ADR-21 §7).
+
+| Corrida | act_accuracy | abstain_accuracy | paired_accuracy | fp_action_rate | ivr | exact_match | fallas |
+|---|---|---|---|---|---|---|---|
+| fixture (`data/mock`, SQL mock) | 0,897 | 1,0 | 0,917 | 0,0 | 0,0 | — | 3 |
+| gold, usuarios TEST-* (sin productos en gold) | — | 0,679 | 0,333 | 0,321 | 0,0 | — | 21 |
+| gold, clientes reales por condición | 0,862 | 0,943 | 0,833 | 0,057 | 0,0 | 0,89 | 7 |
+| gold + fix de `slots` null (P06) | **0,862** | **0,981** | **0,833** | **0,019** | **0,0** | **0,915** | 5 |
+
+Fallas restantes (juicio del LLM, declaradas): EV-005 / EV-025 («hasta cuánto me prestan» como simulación), EV-019 (reclamo como `formal_application`), EV-048 (P09 por confianza), EV-062 («Simula si soy elegible» con producto inferido). Latencia p50 3,3 s · p95 9,7 s · 0,00035 USD/turno (≈ 0,9 s por consulta a gold; dos llamadas al 70B).

@@ -23,7 +23,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | N4 | Identidad mock POST /session + 5 clientes de prueba + analista (deploy/function/function_app.py) | hecho lun 5 | JWT local |
 | N5 | Static Web Apps Free: chat + vista de analista /handoff (web/index.html) | hecho lun 5 | curl |
 | N6 | App Insights + export ops.infra_requests | Jue 1 | logs locales |
-| N9 | App Settings AGENT_* (ADR-21): llm real; sql, store, embed, prescore y trace en mock (hecho lun 5). embed-bge-m3 queda To-Be: M9 sin registrar | lun 5 | AGENT_EMBED=mock (embedding local) |
+| N9 | App Settings AGENT_* (ADR-21): llm, sql y trace real; prescore local; store y embed mock hasta CAN_QUERY (apply dom 5 tarde; verificado: turno de la Function en ops.agent_turns) | dom 5 | AGENT_EMBED=mock (embedding local) |
 | N10 | ci.yml (pytest + run_eval.py + guard de fuentes externas) y deploy.yml (Function + Static Web App, smoke /healthz) | hecho lun 5 | pytest local |
 | N7 | Carga 10/25/50 usuarios; p50/p95; costo por caso | Sáb 3 | — |
 | N8 | Job CI post-deploy: smoke /chat con subconjunto de eval/cases.jsonl; p95 en caliente separado de cold start | Vie 2 | func start local |
@@ -40,7 +40,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | M7 | eval/metrics.md + eval/cases.jsonl | Nicolle | Vie 2 |
 | M8 | contracts/ops.yaml v3 (+ escalate_reason) | Eladio, Nicolle | hecho jue 1 |
 | M5 | docs/labels.md: mapeo de las 42 frases del dataset → intent_label; action_label sale de policy.yaml (acordado en el PR #31) | Eladio | Vie 2 |
-| M9 | modelo hackathon.ml.bge_m3 (bge-m3 int8 ONNX) registrado en UC | Nicolle | Jue 1 noche |
+| M9 | modelo hackathon.ml.bge_m3 registrado en UC (int8 dinámico de torch, fp32 guardado; v5 como models-from-code tras el hallazgo del pickle de 3,4 GB, ADR-21 §1) | Nicolle | hecho dom 5 |
 | M10 | R1–R8 para mortgage, low_amount_consumer y microcredit, o ruteo a escalamiento: hoy search_policy devuelve cero para los tres (ADR-24) | Eladio | Vie 2 |
 | M11 | productos de los TEST-* en gold.customer_products desde el pipeline (`data/medallon/src/gold.py`, PRODUCTOS_PRUEBA; behavior_12m sigue sin TEST-* por ADR-22) para que la UI pueda escalar por riesgo; despliegue manual `databricks bundle deploy` (Actions caído); mientras, el eval usa clientes reales por condición (ADR-21 §7) | Nicolle despliega (código listo; Eladio out) | Dom 5 |
 
