@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cómo funciona · Bank Company</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+:root{color-scheme:light;--bg:#FAF6F4;--card:#FFFFFF;--soft:#F7F2EF;--ink:#22161A;--mute:#6B5A5F;--line:#EADBD5;--brand:#B0243A;--brand-dk:#861B2C;
+--ok:#145C3B;--ok-bg:#E3F3EA;--info:#1D3F8A;--info-bg:#E8EEFA;--stop:#7A1D1D;--stop-bg:#FBEAEA;
+--display:'Bricolage Grotesque',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
+a{color:var(--info)}a:hover{color:var(--ink)}
+button{font:inherit;color:inherit;cursor:pointer}
+svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{width:100%;max-width:960px;margin:0 auto;padding-left:28px;padding-right:28px}
+@media (max-width:640px){.wrap{padding-left:16px;padding-right:16px}}
+header{background:var(--card);border-bottom:1px solid var(--line)}
+header .wrap{max-width:1200px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}
+.brand{display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit}.brand img{height:40px;width:auto;display:block}
+.brand .sep{width:1px;height:30px;background:var(--line)}.brand b{font-weight:700}
+.hright{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.seg{display:flex;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;border-radius:999px;padding:6px 14px;font-size:13px;color:var(--mute);min-height:32px}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(34,22,26,.12)}
+.back{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--ink);background:var(--card);border-radius:999px;padding:7px 16px;font-size:14px;font-weight:600;text-decoration:none;color:var(--ink)}
+.back:hover{background:var(--soft);color:var(--ink)}
+@media (max-width:640px){.brand img{height:32px}.brand .sep,.brand b{display:none}}
+
+main{padding-top:36px;padding-bottom:48px;display:flex;flex-direction:column;gap:28px}
+h1{margin:0;font:700 40px/1.1 var(--display)}
+.lead{margin:12px 0 0;font-size:18px;color:var(--mute);max-width:720px}
+h2{margin:0 0 14px;font:700 24px/1.2 var(--display)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px 26px}
+@media (max-width:640px){h1{font-size:30px}.card{padding:18px}}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.list li{display:flex;gap:10px;align-items:flex-start}
+.list svg.i{margin-top:4px}
+.does svg.i{color:var(--ok)}.never svg.i{color:var(--stop)}
+.does h2{color:var(--ok)}.never h2{color:var(--stop)}
+.steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.steps li{display:flex;gap:16px;position:relative;padding-bottom:22px}
+.steps li:last-child{padding-bottom:0}
+.steps li:not(:last-child)::before{content:"";position:absolute;left:17px;top:38px;bottom:4px;width:2px;background:var(--line)}
+.steps .n{flex:none;width:36px;height:36px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:700}
+.steps li:last-child .n{background:var(--brand)}
+.steps b{display:block;font-size:17px;margin-top:5px}.steps p{margin:4px 0 0;color:var(--mute)}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;list-style:none}
+.chips li{background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:5px 12px;font-size:14px}
+.chips b{font-family:var(--mono);font-weight:400;color:var(--brand);margin-right:6px}
+.note{margin:14px 0 0;font-size:14px;color:var(--mute)}
+.ctry{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:14px}
+.ctry section{background:var(--soft);border-radius:14px;padding:14px 16px}
+.ctry h3{margin:0 0 8px;font-size:16px}
+.ctry table{width:100%;border-collapse:collapse;font-size:14px}
+.ctry td{padding:4px 0;border-top:1px solid var(--line);vertical-align:top}
+.ctry td+td{text-align:right;padding-left:10px;white-space:nowrap}
+.ctry td small{display:block;color:var(--mute);font-size:12px}
+details.tech summary{cursor:pointer;font:700 24px/1.2 var(--display);list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.tech summary::-webkit-details-marker{display:none}
+details.tech summary::after{content:"+";font-size:26px}details.tech[open] summary::after{content:"–"}
+details.tech dl{margin:16px 0 0;display:grid;grid-template-columns:max-content 1fr;gap:10px 18px;font-size:15px}
+details.tech dt{font-weight:700}details.tech dd{margin:0;color:var(--mute)}
+@media (max-width:640px){details.tech dl{grid-template-columns:1fr}details.tech dd{margin-bottom:6px}}
+.cta{display:flex;justify-content:center}
+.cta a{background:var(--brand);color:#fff;text-decoration:none;border-radius:999px;padding:12px 26px;font-weight:700}
+.cta a:hover{background:var(--brand-dk);color:#fff}
+.pfoot{display:flex;justify-content:space-between;align-items:center;gap:8px 16px;flex-wrap:wrap;padding-top:14px;padding-bottom:22px;border-top:1px solid var(--line);font-size:13px;color:var(--mute);max-width:1200px}
+.pfoot b{color:var(--ink);font-family:var(--display);font-size:15px}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M19 12H5M11 6l-6 6 6 6"/></symbol>
+</svg>
+<header>
+  <div class="wrap">
+    <a class="brand" id="home" href="index.html"><img src="logo-bank.png" alt="Bank Company"><span class="sep"></span><b data-t="text.title">Asistente de crédito</b></a>
+    <div class="hright">
+      <div class="seg" id="langs" role="group"></div>
+      <a class="back" id="back" href="index.html"><svg class="i"><use href="#i-arrow"/></svg><span data-t="how_page.back">Volver al chat</span></a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section>
+    <h1 data-t="how_page.title">Cómo funciona el asistente</h1>
+    <p class="lead" data-t="how_page.lead"></p>
+  </section>
+
+  <div class="two">
+    <section class="card does"><h2 data-t="how_page.does_title"></h2><ul class="list" id="does"></ul></section>
+    <section class="card never"><h2 data-t="how_page.never_title"></h2><ul class="list" id="never"></ul></section>
+  </div>
+
+  <section class="card"><h2 data-t="how_page.steps_title"></h2><ol class="steps" id="steps"></ol></section>
+
+  <section class="card"><h2 data-t="how_page.data_title"></h2><ul class="list" id="data"></ul></section>
+
+  <section class="card">
+    <h2 data-t="how_page.sources_title"></h2>
+    <p data-t="how_page.sources_lead" style="margin:0 0 12px"></p>
+    <ul class="chips" id="sections"></ul>
+    <p class="note" data-t="how_page.sources_note"></p>
+  </section>
+
+  <section class="card" id="coverage" hidden>
+    <h2 data-t="how_page.coverage_title"></h2>
+    <p data-t="how_page.coverage_lead" style="margin:0 0 12px"></p>
+    <div class="ctry" id="ctry"></div>
+  </section>
+
+  <section class="card"><details class="tech"><summary data-t="how_page.tech_title"></summary><dl id="tech"></dl></details></section>
+
+  <div class="cta"><a id="back2" href="index.html" data-t="how_page.back">Volver al chat</a></div>
+</main>
+
+<footer class="wrap pfoot"><span><span data-t="text.made_by">Hecho por</span> <b id="teamName">The Trident</b> · <span id="teamMembers"></span></span><span id="teamEvent"></span></footer>
+
+<script>
+// Textos: ui.json (how_page). Países y productos: GET /api/meta, los mismos datos que usa el agente (ADR-25).
+const API=(window.API_BASE||"").replace(/\/$/,"")+"/api";
+let UI=null,META=null,lang="es";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ic=n=>`<svg class="i"><use href="#i-${n}"/></svg>`;
+function t(path,l=lang){const get=x=>path.split(".").reduce((o,k)=>o==null?o:o[k],UI&&UI.lang[x]);const v=get(l);return v!=null?v:(get(UI.default_lang)??path)}
+const langOf=c=>{const l=String(c||"").slice(0,2);return UI.lang[l]?l:UI.default_lang};
+const num=x=>Number(x).toLocaleString(lang,{maximumFractionDigits:2});
+
+function render(){
+ document.documentElement.lang=lang;document.title=`${t("how_page.title")} · Bank Company`;
+ document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));
+ document.querySelectorAll("#langs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.l===lang)));
+ // Volver al chat conserva el idioma elegido.
+ for(const id of ["home","back","back2"])$(id).href=`index.html?lang=${lang}`;
+ const li=(arr,icon)=>arr.map(x=>`<li>${ic(icon)}<span>${esc(x)}</span></li>`).join("");
+ $("does").innerHTML=li(t("how_page.does"),"check");
+ $("never").innerHTML=li(t("how_page.never"),"x");
+ $("data").innerHTML=li(t("how_page.data"),"lock");
+ $("steps").innerHTML=t("how_page.steps").map(([h,p],i)=>`<li><span class="n">${i+1}</span><div><b>${esc(h)}</b><p>${esc(p)}</p></div></li>`).join("");
+ const sec=t("sections");$("sections").innerHTML=Object.entries(sec).map(([k,v])=>`<li><b>${esc(k)}</b>${esc(v)}</li>`).join("");
+ $("tech").innerHTML=t("how_page.tech").map(([k,v])=>`<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("");
+ const tm=UI.team||{};$("teamName").textContent=tm.name||"";$("teamMembers").textContent=(tm.members||[]).join(" · ");$("teamEvent").textContent=tm.event||"";
+ coverage()}
+
+function coverage(){if(!META){$("coverage").hidden=true;return}
+ const by={};for(const [code,p] of Object.entries(META.products))(by[p.country]=by[p.country]||[]).push(p);
+ $("ctry").innerHTML=Object.entries(by).map(([c,ps])=>`<section><h3>${esc(META.countries[c]||c)}</h3><table>${ps.map(p=>
+  `<tr><td>${esc(p.name[lang]||p.name[UI.default_lang])}</td><td>${p.rate_min!=null?`${num(p.rate_min)}–${num(p.rate_max)} %`:""}${p.term_months_max?`<small>${esc(t("how_page.term"))} ${p.term_months_max} ${esc(t("how_page.months"))}</small>`:""}</td></tr>`).join("")}</table></section>`).join("");
+ $("coverage").hidden=false}
+
+async function boot(){
+ try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){return}
+ lang=langOf(new URLSearchParams(location.search).get("lang")||navigator.language);
+ const g=$("langs");for(const l of Object.keys(UI.lang)){const n=t("lang_names."+l,l),b=document.createElement("button");b.type="button";b.dataset.l=l;b.textContent=n.charAt(0).toUpperCase()+n.slice(1);
+  b.onclick=()=>{lang=l;try{history.replaceState(null,"",`?lang=${l}`)}catch(e){}render()};g.appendChild(b)}
+ render();
+ // La cobertura depende de la API; si está en frío, la página se ve igual sin esa sección.
+ try{const r=await fetch(API+"/meta");if(r.ok){META=await r.json();coverage()}}catch(e){}}
+boot();
+</script>
+</body>
+</html>
