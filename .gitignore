@@ -23,3 +23,5 @@ ml/artifacts/
 
 data/ref/customer_text_phrases.csv
 docs/labels.csv
+# clientes reales de gold elegidos por eval/pick_users.py (ids del dataset: no se versionan, ADR-12)
+eval/users_gold.json

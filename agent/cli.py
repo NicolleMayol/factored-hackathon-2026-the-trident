@@ -13,6 +13,22 @@ USERS = {
     "cliente_solo_lectura": {"customer_id": "TEST-MX-005", "scopes": ["customer:read"], "locale": "es-MX"},
 }
 
+
+def _gold_users(path=None, env=None) -> None:
+    """Con AGENT_SQL=real, los alias apuntan a clientes reales de gold elegidos por eval/pick_users.py (misma condición que el
+    fixture). Sin el json, o en mock, se usan los TEST-* de data/mock. Se puede desactivar con EVAL_USERS=fixture."""
+    import os
+    from pathlib import Path
+    env = os.environ if env is None else env
+    p = Path(path) if path else Path(__file__).resolve().parents[1] / "eval" / "users_gold.json"
+    if env.get("AGENT_SQL") == "real" and env.get("EVAL_USERS", "gold") == "gold" and p.exists():
+        for alias, v in json.loads(p.read_text(encoding="utf-8")).items():
+            if alias in USERS:
+                USERS[alias] = {**USERS[alias], "customer_id": v["customer_id"]}
+
+
+_gold_users()
+
 if __name__ == "__main__":
     user, msg = sys.argv[1], " ".join(sys.argv[2:])
     r = handle(msg, USERS[user])

@@ -93,7 +93,7 @@ class Nodes:
         ctx = {
             "intent": st.get("intent"), "intent_confidence": st.get("intent_confidence"), "mixed_language": st.get("_mixed_language"),
             "scopes": st.get("scopes", []), "jwt_valid": True,
-            "missing_required_slots": any(k not in st.get("slots", {}) for k in REQUIRED_SLOTS.get(st.get("intent", ""), [])),
+            "missing_required_slots": any(not (st.get("slots") or {}).get(k) for k in REQUIRED_SLOTS.get(st.get("intent", ""), [])),  # el LLM devuelve la clave con null: cuenta como faltante (P06)
             "clarifications": sum(1 for h in st.get("history", []) if h.get("action") == "clarify"),
             "days_past_due": max([int(p.get("days_past_due") or 0) for p in prods], default=0),
             "customer_status": prof.get("customer_status"), "fraud_flag": False,
@@ -143,7 +143,7 @@ class Nodes:
                     elif tool == "evaluate_eligibility":
                         results[tool] = T.run_tool(tool, lambda: T.evaluate_eligibility_tool(self.d, self.s, cid, country, slots.get("product_type", "personal_loan"), slots.get("amount"), results.get("get_prescore")), self.d, self.s, cold_used=cold_used)
                     called.append(tool)
-        except T.ToolTimeout:
+        except Exception:  # noqa: BLE001  — ADR-28 F08: timeout, 403, SQL fallido o red: la dependencia falló, se escala (nunca 500)
             return {**st, "tool_results": results, "tools_called": called, "action": "escalate", "_policy_action": "escalate",
                     "reason_code": "missing_data", "escalate_reason": "timeout_tool", "node_path": st["node_path"] + ["act"], "_cold_used": list(cold_used)}
         return {**st, "tool_results": results, "tools_called": called, "iterations": st.get("iterations", 0) + 1,

@@ -32,19 +32,23 @@ El dataset trae clientes, productos y transacciones, pero no lo que la regulaci�
 ## Evidencia (números del 5 de octubre)
 | Qué | Cómo se midió | Resultado |
 | --- | --- | --- |
-| Matriz de confusión de acción, LLM real (Llama 3.3 70B, `understand_v2`) | 82 casos es/pt en pares actuar/abstener, 15 adversariales MITRE ATLAS (`eval/run_eval.py`) | act accuracy 0,90 · abstain accuracy 1,0 · FP de acción 0 · IVR 0 · 3 fallas de borde |
+| Matriz de confusión de acción, todo real (Llama 3.3 70B, `understand_v2`, gold por SQL, trazas, pre-score) | 82 casos es/pt en pares actuar/abstener, 15 adversariales MITRE ATLAS, usuarios = clientes reales de gold (`eval/pick_users.py`, `eval/run_eval.py`) | act accuracy 0,86 · abstain accuracy 0,98 · paired 0,83 · FP de acción 0,019 · IVR 0 · groundedness 1,0 · exact match 0,915 · 5 fallas de borde de intención · umbrales ok |
+| Misma matriz con el fixture (`data/mock`, SQL en mock) | mismos 82 casos | act 0,90 · abstain 1,0 · FP 0 · 3 fallas; la diferencia con la fila anterior es intención del LLM sobre mensajes de borde, no datos |
+| Bug destapado por el LLM real | `¿Califico?` → el 70B devuelve `slots.product_type = null` y el agente lo tomaba como lleno (confirmar en vez de aclarar); el mock nunca devuelve claves nulas | corregido en Decide (P06); abstain 0,94 → 0,98, FP de acción 0,057 → 0,019 |
+| Hallazgo del eval con SQL real | primera corrida sobre gold: abstain 0,68, FP de acción 0,32 | los `TEST-*` de gold no tenían productos ni comportamiento → P07 nunca disparaba; corregido con clientes reales por condición en el eval y los productos `TEST-*` inyectados en `gold.customer_products` desde el pipeline (`gold.py`) para los usuarios de la UI |
 | Guardrail determinista | mismos 15 adversariales, con y sin la capa regex antes del LLM | IVR 0,267 → 0 en los 4 endpoints probados |
 | Comparación de modelos en Understand | mismo harness, 4 endpoints pay-per-token (`eval/models.md`) | llama-3.3-70b: menos fallas y p95 la mitad que gpt-oss; se eligió con el número |
 | Prompt v1 → v2 | 11 fallas → 3, FP de acción 0,13 → 0 | la mejora vino del prompt, no del modelo |
 | Retrieval híbrido (vector + BM25 + RRF, enrutado por sección) | 24 preguntas con chunk esperado (`eval/retrieval_eval.py`) | Recall@5 con bge-m3 fp32: ES 1,0 · PT 0,917 |
 | Clasificador de intención (baseline) | TF-IDF char 2–5 + LogReg, 109 frases sintéticas → 60 mensajes únicos del held-out | macro-F1 0,92 (es 0,94 · pt 0,89); sus errores son los que el guardrail resuelve |
 | Pre-score | 134.037 clientes reales de gold; target proxy declarado (sin mora > 30 d); 4 experimentos en MLflow | logística v1 0,66 → **v2 con cartera 0,78**; LightGBM 0,66 → 0,78: las features valen 0,12 de AUC, el modelo 0 |
-| Costo y latencia por turno | trazas de `ops.agent_turns` | ≈ 0,0013 USD y ≈ 5 s con dos llamadas al 70B en caliente; primer turno ≈ 15 s si el warehouse está frío |
+| Costo y latencia por turno | 82 turnos reales del eval, trazas en `ops.agent_turns` | 0,00035 USD/turno · p50 3,3 s · p95 9,7 s (dos llamadas al 70B; ≈ 0,9 s por consulta a gold); primer turno ≈ 15 s si el warehouse está frío |
+| Pre-score en runtime | mismo cliente por endpoint (`prescore-lgbm`) y en proceso (`policy/prescore_logreg.json`) | paridad exacta (p = 0,969, mismo SHAP); endpoint frío > 25 s (timeout controlado), caliente 5,5 s con las 3 consultas a gold; por eso producción corre `prescore=local` |
 
 ## Qué falta y por qué (what's missing)
 | Pieza | Estado | Motivo | Qué haría falta |
 | --- | --- | --- | --- |
-| Model Serving (`prescore-lgbm`, `embed-bge-m3`) | modelos registrados en UC; endpoints no creados | el SKU trial no permite Model Serving (`FEATURE_DISABLED`) | pasar el workspace a Premium; los adaptadores y `ml/serving.py` ya están. Mientras, el pre-score corre en proceso con el mismo modelo exportado |
+| Model Serving (`prescore-lgbm`, `embed-bge-m3`) | workspace en Premium; `prescore-lgbm` READY y verificado; `embed-bge-m3` recreado en `Medium` (en `Small` no pasó la prueba de salud: bge-m3 fp32 + int8 al cargar no cabe en 4 GB) | CAN_QUERY de `sp-agent-ro` pendiente (`ml/serving.py --grant`) | flip `embed`/`store` a real en `agent_modes` cuando el endpoint esté READY con el grant |
 | Embeddings reales en runtime | medidos en local (bge-m3) y usados para cargar Cosmos; el agente desplegado usa BM25 + enrutado por sección + vector hash | sin endpoint no hay vector de consulta; meter bge-m3 (2 GB) en la Function rompe el arranque ≤ 30 s | el mismo endpoint |
 | Held-out sobre el dataset | no entrenable: 42 frases plantilla bajo las 6 categorías (`docs/labels.md`) | el dataset no distingue los cinco intents del workflow 4 | etiquetas reales de transcripciones |
 | Topes de CO y MX | valor provisional, no citado | la SFC publica PDF mensual y Banxico consulta interactiva | pegar dos números por fila (E6) |

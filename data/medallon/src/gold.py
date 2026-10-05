@@ -32,6 +32,20 @@ CLIENTES_PRUEBA = [
     ("TEST-MX-005", "Mexico", "MX", "Basic", 700, 15_000.00, "Active", "2021-03-01", "mexican"),
 ]
 
+# Sus productos (data/mock/customer_products.csv, con el vocabulario de product_type de silver). Son el contrato con
+# ia-ml y servicio: TEST-AR-003 lleva una tarjeta con 45 días de mora para que P07 (escalación por riesgo) sea
+# demostrable en la UI. Solo entran a customer_products; behavior_12m sigue sin TEST-* (ADR-22).
+PRODUCTOS_PRUEBA = [
+    ("TEST-P01", "TEST-CO-001", "Tarjeta Crédito", "COP", 44_302.91, 94_549.16, 0, "Active"),
+    ("TEST-P02", "TEST-CO-001", "Tarjeta Crédito", "COP", 32_162.48, 63_290.29, 0, "Active"),
+    ("TEST-P03", "TEST-MX-002", "Tarjeta Crédito", "MXN", 14_313.41, 79_432.76, 0, "Active"),
+    ("TEST-P04", "TEST-AR-003", "Tarjeta Crédito", "ARS", 24_395.41, 85_906.79, 45, "Active"),
+    ("TEST-P05", "TEST-AR-003", "Préstamo Personal", "ARS", 47_698.32, 16_614.07, 0, "Active"),
+    ("TEST-P06", "TEST-AR-003", "Tarjeta Crédito", "ARS", 19_946.68, 73_549.23, 0, "Active"),
+    ("TEST-P07", "TEST-CO-004", "Préstamo Personal", "COP", 23_865.25, 32_244.76, 0, "Active"),
+    ("TEST-P08", "TEST-MX-005", "Tarjeta Crédito", "MXN", 17_050.31, 16_452.15, 0, "Active"),
+]
+
 
 @dp.table(
     name=f"{CATALOG}.gold.customer_360",
@@ -69,10 +83,10 @@ def gold_customer_360():
     return reales.unionByName(prueba)
 
 
-@dp.table(name=f"{CATALOG}.gold.customer_products", comment="1 fila por product_id (contracts/gold.yaml).")
+@dp.table(name=f"{CATALOG}.gold.customer_products", comment="1 fila por product_id (contracts/gold.yaml). Incluye los productos de los 5 TEST-*.")
 @dp.expect_or_fail("product_id_no_nulo", "product_id IS NOT NULL")
 def gold_customer_products():
-    return spark.read.table(f"{CATALOG}.silver.products").select(
+    reales = spark.read.table(f"{CATALOG}.silver.products").select(
         F.col("product_id").cast("string"),
         F.col("customer_id").cast("string"),
         F.col("product_type").cast("string"),
@@ -83,6 +97,13 @@ def gold_customer_products():
         F.col("product_status").cast("string"),
         F.col("_ingested_at").cast("timestamp"),
     )
+    prueba = spark.createDataFrame(  # noqa: F821 — mismo patrón que customer_360: tipos simples y luego el cast de `reales`
+        PRODUCTOS_PRUEBA,
+        "product_id string, customer_id string, product_type string, currency string, current_balance double, "
+        "credit_limit double, days_past_due int, product_status string",
+    ).withColumn("_ingested_at", F.current_timestamp())
+    prueba = prueba.select([F.col(c).cast(reales.schema[c].dataType) for c in reales.columns])
+    return reales.unionByName(prueba)
 
 
 @dp.table(
