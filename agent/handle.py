@@ -37,8 +37,11 @@ def handle(message: str, session: dict[str, Any], *, rt=None, history: list[dict
     init = {"trace_id": trace_id, "conversation_id": conv, "customer_id": session["customer_id"], "scopes": list(session.get("scopes", [])),
             "locale": locale, "language": "pt" if locale.startswith("pt") else "es", "message": message, "history": history or [],
             "node_path": [], "iterations": 0, "tool_results": {}, "tools_called": []}
-    with d.trace.span("turn", trace_id=trace_id):
-        st = graph.invoke(init)
+    try:
+        with d.trace.span("turn", trace_id=trace_id):
+            st = graph.invoke(init)
+    except Exception:  # noqa: BLE001  — ADR-28 F08: una falla fuera de Act (LLM de Understand, store al crear el handoff) no llega al cliente como 500
+        st = _fallo_seguro(d, init)
     action_id = None
     if st.get("action") == "confirm":
         action_id = uuid.uuid4().hex[:12]
@@ -54,6 +57,30 @@ def handle(message: str, session: dict[str, Any], *, rt=None, history: list[dict
             "trace_id": trace_id, "conversation_id": conv, "cost_usd": row["cost_usd"], "latency_ms": latency,
             **({"action_id": action_id} if action_id else {}), **({"case_id": st["case_id"]} if st.get("case_id") else {}),
             "_state": st}
+
+
+def _fallo_seguro(d: Deps, st: dict[str, Any]) -> dict[str, Any]:
+    """Escala cuando el grafo no pudo terminar. Intenta dejar el handoff; si el store también falla, responde sin case_id."""
+    import logging
+    logging.exception("turno %s: el grafo falló; se escala", st.get("trace_id"))
+    case_id = None
+    try:
+        from agent.handoff import build_handoff
+        from agent import tools as T
+        doc = build_handoff(st, "missing_data")
+        T.create_handoff(d, doc)
+        case_id = doc["case_id"]
+    except Exception:  # noqa: BLE001
+        logging.exception("turno %s: tampoco se pudo guardar el handoff", st.get("trace_id"))
+    lang = st.get("language", "es")
+    if case_id:
+        reply = {"es": f"No pude completar tu consulta. La revisa un asesor: te dejo el caso {case_id} con el contexto.",
+                 "pt": f"Não consegui concluir sua consulta. Um assessor vai revisá-la: deixei o caso {case_id} com o contexto."}[lang]
+    else:
+        reply = {"es": "No pude completar tu consulta en este momento. Inténtalo de nuevo en unos minutos.",
+                 "pt": "Não consegui concluir sua consulta agora. Tente de novo em alguns minutos."}[lang]
+    return {**st, "action": "escalate", "reason_code": "missing_data", "escalate_reason": "timeout_tool", "reply": reply,
+            "node_path": st.get("node_path", []) + ["fallo_seguro"], **({"case_id": case_id} if case_id else {})}
 
 
 def confirm(action_id: str, confirmed: bool, session: dict[str, Any], *, rt=None) -> dict[str, Any] | None:
