@@ -94,10 +94,11 @@ def silver_call_center_interactions():
 def silver_call_transcripts():
     df = _ultima_por_llave(spark.read.table(f"{CATALOG}.bronze.call_transcripts"), ["transcript_id"], "process_date")
     return (
-        # duration_seconds llega STRING porque hay valores no numéricos (ADR-23): el cast deja NULL
-        # y la columna auxiliar permite contar cuántos se perdieron, sin descartar la fila.
+        # El origen escribe los enteros como decimal ("369.0"): se castea pasando por double, porque
+        # try_cast("int") sobre un decimal en texto devuelve NULL. La columna auxiliar cuenta lo que
+        # se pierda de verdad, sin descartar la fila.
         df.withColumn("duration_seconds_raw", F.col("duration_seconds"))
-        .withColumn("duration_seconds", F.col("duration_seconds").try_cast("int"))
+        .withColumn("duration_seconds", F.col("duration_seconds").try_cast("double").cast("int"))
         .withColumn(
             "_duration_no_numerico",
             F.col("duration_seconds").isNull() & F.col("duration_seconds_raw").isNotNull(),

@@ -57,9 +57,13 @@ def test_hints_cubren_las_columnas_tipadas_del_contrato():
     """La inferencia da DOUBLE donde contracts/gold.yaml dice int o decimal (ADR-23)."""
     assert "credit_score INT" in schemas.HINTS["customers"]
     assert "days_past_due INT" in schemas.HINTS["products"]
-    # duration_seconds entra como texto a propósito: hay valores no numéricos y silver los castea
-    # contando el descarte, en vez de perder la fila entera en _rescued_data.
-    assert "duration_seconds STRING" in schemas.HINTS["call_transcripts"]
+    # Los enteros del origen vienen escritos como decimal ("209.0"). Pedir INT en el hint hace que
+    # Auto Loader mande la fila entera a _rescued_data: pasó en el 86 % de dos tablas en la primera
+    # corrida real. Entran como DOUBLE y silver aplica el tipo del contrato.
+    for tabla, columna in (("call_center_interactions", "duration_seconds"),
+                           ("call_transcripts", "duration_seconds"),
+                           ("satisfaction_surveys", "main_score")):
+        assert f"{columna} DOUBLE" in schemas.HINTS[tabla], f"{tabla}.{columna} no puede pedirse INT"
 
 
 # --------------------------------------------------------------------------- contrato con ia-ml

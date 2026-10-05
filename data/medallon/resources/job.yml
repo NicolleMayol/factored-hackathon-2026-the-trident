@@ -21,7 +21,9 @@ resources:
           environment_key: serverless
           spark_python_task:
             python_file: ../jobs/dq_checks.py
-            parameters: ["--catalog", "${var.catalog}"]
+            # __file__ no existe cuando el job ejecuta el .py con exec(): la ruta de src la
+            # conoce el bundle y se pasa como parámetro, que además se adapta al target.
+            parameters: ["--catalog", "${var.catalog}", "--src", "${workspace.file_path}/src"]
 
       environments:
         - environment_key: serverless
