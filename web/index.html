@@ -26,6 +26,8 @@ header{background:var(--card);border-bottom:1px solid var(--line)}
 header .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding-top:14px;padding-bottom:14px}
 .brand{display:flex;align-items:center;gap:16px}.brand img{height:44px;width:auto;display:block}
 .brand .sep{width:1px;height:26px;background:var(--line)}.brand b{font-weight:700}
+.hright{display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+#langSel{font:inherit;font-size:13px;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 12px;min-height:36px;cursor:pointer}
 #health{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--mute)}
 #health i{width:8px;height:8px;border-radius:50%;background:#C9B8B2}
 #health.up i{background:#1F7A55}#health.slow i{background:#D08A00}#health.down i{background:var(--brand)}
@@ -106,8 +108,11 @@ aside h2{margin:0;font:600 20px/1.2 var(--display)}
 .step ol{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:4px;font-size:13px}
 .step ol b{color:var(--brand);margin-right:6px}
 .empty{font-size:14px;color:var(--mute)}
-.never{background:var(--ink);color:#fff;border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:6px}
-.never span{font-size:13px;color:#F3E3E6}
+details.never{background:var(--ink);color:#fff;border-radius:20px;padding:14px 18px}
+details.never summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:24px}
+details.never summary::-webkit-details-marker{display:none}
+details.never summary::after{content:"+";font-size:18px;line-height:1}details.never[open] summary::after{content:"–"}
+details.never p{margin:8px 0 0;font-size:13px;color:#F3E3E6}
 details.tech{font-size:12px;color:var(--mute);padding:0 4px}
 details.tech summary{cursor:pointer}
 details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;line-height:1.5}
@@ -130,7 +135,11 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
 <header>
   <div class="wrap">
     <div class="brand"><img src="logo-bank.png" alt="Bank Company"><span class="sep"></span><b data-t="text.title">Asistente de crédito</b></div>
-    <div id="health" role="status"><i></i><span>…</span></div>
+    <div class="hright">
+      <div id="health" role="status"><i></i><span>…</span></div>
+      <label for="langSel" class="sr" data-t="text.language">Idioma</label>
+      <select id="langSel"></select>
+    </div>
   </div>
 </header>
 
@@ -171,7 +180,7 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
   <aside id="side" style="display:none">
     <h2 id="whyTitle" data-t="text.why_title"></h2>
     <div id="steps" class="card"></div>
-    <div class="never"><strong data-t="text.never_title"></strong><span data-t="text.never_body"></span></div>
+    <details class="never"><summary data-t="text.never_title"></summary><p data-t="text.never_body"></p></details>
     <details class="tech" id="tech" hidden><summary data-t="text.tech"></summary><div id="techD"></div></details>
   </aside>
 </div>
@@ -182,7 +191,8 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
 //  - textos por idioma → ui.json.
 const API=(window.API_BASE||"").replace(/\/$/,"")+"/api";
 let UI=null,META={users:[],countries:{},products:{},tools:[],outcomes:[],reason_codes:[]};
-let tok=null,conv=null,cur=null,pending=null,lang="es",consent=null,selEl=null;
+// chosen: idioma que eligió la persona en el desplegable; si es null, manda el locale del cliente.
+let tok=null,conv=null,cur=null,curU=null,pending=null,lang="es",chosen=null,consent=null,selEl=null,lastWhy=null,healthKey=null;
 const cases=[];
 const $=id=>document.getElementById(id);
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -250,7 +260,7 @@ function renderBot(j){
  why(j,ctx,d);return d}
 
 // Panel "Por qué te respondí esto": solo datos de la respuesta (acción, citas, caso) y del consentimiento de esta conversación.
-function why(j,ctx,el){
+function why(j,ctx,el){lastWhy=[j,ctx,el];
  if(selEl)selEl.classList.remove("sel");selEl=el||null;if(selEl)selEl.classList.add("sel");
  const p=parse(j);const st=[];const pair=k=>{const [h,b]=t("why."+k);return [h,`<span>${esc(b)}</span>`]};
  if(j.action==="confirm")st.push(pair("ask_consent"));
@@ -264,9 +274,20 @@ function why(j,ctx,el){
  const tech=[j.latency_ms!=null?`${Math.round(j.latency_ms)} ms`:null,j.cost_usd!=null?`${Number(j.cost_usd).toFixed(4)} USD`:null,j.trace_id?`trace ${esc(String(j.trace_id).slice(0,8))}`:null,`action ${esc(j.action)}`].filter(Boolean).join(" · ");
  $("techD").innerHTML=tech+(p.src.length?"<br>"+p.src.map(esc).join("<br>"):"");$("tech").hidden=false}
 function steps(st){$("steps").innerHTML=st.length?st.map(([h,b],i)=>`<div class="step${i===st.length-1?" last":""}"><i>${i+1}</i><div><strong>${esc(h)}</strong>${b}</div></div>`).join(""):`<div class="empty">${esc(t("text.why_empty"))}</div>`}
-function resetPanel(){if(selEl)selEl.classList.remove("sel");selEl=null;steps([]);$("tech").hidden=true}
+function resetPanel(){lastWhy=null;if(selEl)selEl.classList.remove("sel");selEl=null;steps([]);$("tech").hidden=true}
 function i18n(){document.documentElement.lang=lang;document.title=`${t("text.title")} · Bank Company`;
- document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));document.querySelectorAll("[data-tp]").forEach(e=>e.placeholder=t(e.dataset.tp))}
+ document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));document.querySelectorAll("[data-tp]").forEach(e=>e.placeholder=t(e.dataset.tp));$("langSel").value=lang;
+ if(healthKey)$("health").querySelector("span").textContent=t(healthKey)}
+// Desplegable de idioma: una opción por bloque de ui.json, con el nombre en su propio idioma.
+function renderLangs(){const sel=$("langSel");sel.innerHTML="";
+ for(const l of Object.keys(UI.lang)){const n=t("lang_names."+l,l),o=document.createElement("option");o.value=l;o.textContent=n.charAt(0).toUpperCase()+n.slice(1);sel.appendChild(o)}
+ sel.value=lang;sel.onchange=()=>{chosen=sel.value;lang=chosen;applyLang()}}
+// Cambia la interfaz sin perder la conversación; las sugerencias salen en el idioma nuevo y el agente responde en el idioma del mensaje.
+function applyLang(){i18n();
+ if(!$("picker").hidden){if(META.users.length)renderPicker();return}
+ if(!curU)return;$("curLabel").textContent=personaLabel(curU);
+ if(isAnalyst(curU)){renderAnalystPanel();return}
+ renderSugg(curU);if(lastWhy)why(...lastWhy);else steps([])}
 
 const isAnalyst=u=>u&&u.scopes.includes("handoff:read");
 // El país de la persona es donde abrió su cuenta, no donde está (docs/test-users.md).
@@ -282,12 +303,13 @@ function card(u){const p=persona(u),b=document.createElement("button");b.type="b
 function show(view){const chat=view==="chat",an=view==="analyst",pk=view==="picker";
  $("picker").hidden=!pk;$("current").hidden=pk;$("side").style.display=pk?"none":"flex";
  $("chat").style.display=chat?"flex":"none";$("analyst").style.display=an?"flex":"none"}
-function showPicker(){cur=null;tok=null;conv=null;pending=null;lang=langOf(navigator.language);i18n();
- $("loading").hidden=true;$("pcards").innerHTML="";$("acards").innerHTML="";
- for(const u of META.users)(isAnalyst(u)?$("acards"):$("pcards")).appendChild(card(u));
- $("acards").previousElementSibling.hidden=!$("acards").children.length;
+function showPicker(){cur=null;curU=null;tok=null;conv=null;pending=null;lang=chosen||langOf(navigator.language);i18n();renderPicker();
  try{history.replaceState(null,"",location.pathname)}catch(e){}
  show("picker")}
+function renderPicker(){$("loading").hidden=true;$("pcards").innerHTML="";$("acards").innerHTML="";
+ for(const u of META.users)(isAnalyst(u)?$("acards"):$("pcards")).appendChild(card(u));
+ $("acards").previousElementSibling.hidden=!$("acards").children.length}
+function renderAnalystPanel(){$("whyTitle").textContent=t("analyst.panel_title");steps(t("analyst.panel").map(([h,b])=>[h,`<span>${esc(b)}</span>`]))}
 // Sugerencias con {name:<product_type>} y {amount:<product_type>}: nombre y un monto dentro del rango del producto del país del cliente.
 function renderSugg(u){$("sugg").innerHTML="";const byType=ty=>Object.values(META.products).find(p=>p.country===u.country&&p.type===ty);
  for(const tpl of t("suggestions")){let ok=true;
@@ -301,11 +323,11 @@ async function login(k){cur=k;conv=null;pending=null;consent=null;tok=null;$("lo
  try{history.replaceState(null,"",`${location.pathname}?user=${encodeURIComponent(k)}`)}catch(e){}
  const u=META.users.find(x=>x.key===k)||{key:k,scopes:[],locale:""};
  const [r,j]=await call("/session",{method:"POST",body:JSON.stringify({user:k})});
- lang=langOf(j.locale||u.locale);i18n();$("curLabel").textContent=personaLabel(u);resetPanel();
+ curU=u;lang=chosen||langOf(j.locale||u.locale);i18n();$("curLabel").textContent=personaLabel(u);resetPanel();
  if(!r.ok){show("chat");add("bot stop",`${tag("error")}<div class="txt">${esc(t("text.no_session"))} (${r.status}).</div>`);return}
  tok=j.token;const a=(j.scopes||u.scopes).includes("handoff:read");show(a?"analyst":"chat");
- if(a){renderCases();$("whyTitle").textContent=t("analyst.panel_title");steps(t("analyst.panel").map(([h,b])=>[h,`<span>${esc(b)}</span>`]));return}
- renderSugg(u);add("hello",`<h1>${esc(t("text.hello"))}</h1><p>${esc(t("text.hello_sub"))}</p>`)}
+ if(a){renderCases();renderAnalystPanel();return}
+ renderSugg(u);add("hello",`<h1 data-t="text.hello">${esc(t("text.hello"))}</h1><p data-t="text.hello_sub">${esc(t("text.hello_sub"))}</p>`)}
 
 async function send(text){if(!text||!tok)return;add("me",esc(text));const ty=add("typing",esc(t("text.thinking")));
  const [r,j]=await call("/chat",{method:"POST",body:JSON.stringify({message:text,conversation_id:conv})});ty.remove();
@@ -335,11 +357,11 @@ async function openCase(id){const [r,j]=await call("/handoff/"+encodeURIComponen
 $("change").onclick=showPicker;
 $("f").onsubmit=e=>{e.preventDefault();const v=$("m").value.trim();$("m").value="";send(v)};
 $("hf").onsubmit=e=>{e.preventDefault();const id=$("case").value.trim();if(id)openCase(id)};
-function setHealth(cls,key){const h=$("health");h.className=cls;h.querySelector("span").textContent=t(key)}
+function setHealth(cls,key){healthKey=key;const h=$("health");h.className=cls;h.querySelector("span").textContent=t(key)}
 // Arranque: textos (estáticos, mismo origen) y luego /meta. En frío la Function tarda: reintenta cada 10 s.
 async function boot(){
  try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){UI={default_lang:"es",lang:{es:{}}}}
- lang=langOf(navigator.language);i18n();resetPanel();$("loading").textContent=t("text.connecting");
+ lang=chosen||langOf(navigator.language);renderLangs();i18n();resetPanel();$("loading").textContent=t("text.connecting");
  const [r,m]=await call("/meta");
  if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");$("loading").textContent=t("text.starting");setTimeout(boot,10000);return}
  META=m;const hr=await fetch(API+"/healthz").catch(()=>null);setHealth(hr&&hr.ok?"up":"slow",hr&&hr.ok?"text.online":"text.degraded");

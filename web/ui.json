@@ -37,7 +37,8 @@
         "change": "Cambiar de cliente",
         "account_in": "Cuenta en {country}",
         "writes_in": "Escribe en {lang}",
-        "connecting": "Conectando con el asistente…"
+        "connecting": "Conectando con el asistente…",
+        "language": "Idioma"
       },
       "tags": {
         "answer": "Respondido con fuentes",
@@ -224,7 +225,8 @@
         "change": "Trocar de cliente",
         "account_in": "Conta em {country}",
         "writes_in": "Escreve em {lang}",
-        "connecting": "Conectando ao assistente…"
+        "connecting": "Conectando ao assistente…",
+        "language": "Idioma"
       },
       "tags": {
         "answer": "Respondido com fontes",
