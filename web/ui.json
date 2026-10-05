@@ -8,27 +8,21 @@
         "try_as": "Probando como",
         "hello": "Tu crédito, claro desde el primer mensaje.",
         "hello_sub": "Te informo y hago una pre-evaluación sin compromiso. Cada cifra trae su fuente.",
-        "placeholder": "Escribe en español o portugués",
+        "placeholder": "Escribe tu pregunta sobre créditos…",
         "send": "Enviar",
         "thinking": "Pensando…",
         "scoring": "Pre-evaluando…",
         "yes": "Sí, autorizo",
         "no": "Ahora no",
-        "see_why": "Ver por qué",
-        "why_title": "Por qué te respondí esto",
-        "why_empty": "Cuando te responda, aquí verás de dónde salió cada dato.",
-        "never_title": "Lo que nunca hago",
-        "never_body": "Aprobar, negar ni cambiar condiciones de un crédito. Si no puedo responder con certeza, paso tu caso a un asesor con todo el contexto.",
         "tech": "Detalles técnicos",
         "case_for": "Caso para el asesor",
-        "fine_print": "No es una oferta vinculante: la aprobación la hace un analista.",
         "result": "Resultado preliminar",
         "rate": "Tasa anual",
         "term": "Plazo máximo",
         "months": "meses",
         "catalog": "Catálogo",
         "rule": "Regla de elegibilidad",
-        "online": "En línea · español y português",
+        "online": "En línea",
         "degraded": "Servicio degradado",
         "starting": "Arrancando… reintento en 10 s",
         "no_session": "No se pudo abrir la sesión",
@@ -38,15 +32,28 @@
         "account_in": "Cuenta en {country}",
         "writes_in": "Escribe en {lang}",
         "connecting": "Conectando con el asistente…",
-        "language": "Idioma"
+        "language": "Idioma",
+        "talk_advisor": "Hablar con un asesor",
+        "how_link": "Cómo funciona",
+        "footer": "Informo y pre-evalúo con las reglas del banco. No apruebo ni niego créditos.",
+        "sources": "Fuentes",
+        "how_result": "¿Cómo llegué a este resultado?",
+        "today": "hoy",
+        "consent_given": "Autorizaste el uso de tus datos · {when}",
+        "consent_denied": "No autorizaste el uso de tus datos · {when}",
+        "nonbinding": "No es una oferta vinculante. Un analista confirma la aprobación y las condiciones finales.",
+        "continue_analyst": "Continuar con un analista",
+        "can_do": "Lo que sí puedo hacer:",
+        "term_value": "Hasta {n} meses",
+        "formal_msg": "Quiero hacer la solicitud formal de {product}"
       },
       "tags": {
-        "answer": "Respondido con fuentes",
+        "answer": "Con fuente",
         "answer_plain": "Respondido",
-        "confirm": "Necesita tu autorización",
+        "confirm": "Autorización de datos",
         "clarify": "Necesito un dato más",
         "escalate": "Pasé tu caso a un asesor",
-        "blocked": "Bloqueado",
+        "blocked": "Fuera de mi alcance",
         "reject": "Sesión no válida"
       },
       "why": {
@@ -188,6 +195,54 @@
         "title": "¿Con qué cliente quieres probar?",
         "sub": "Son clientes de prueba con datos sintéticos. El país es donde abrió su cuenta, no donde está. Cada uno muestra un camino distinto del asistente.",
         "staff": "Personal del banco"
+      },
+      "stages": [
+        "Consulta",
+        "Pre-evaluación",
+        "Revisión con analista",
+        "Condiciones finales"
+      ],
+      "consent_box": [
+        [
+          "Qué reviso:",
+          "puntaje de crédito, historial de pagos e ingresos registrados."
+        ],
+        [
+          "Para qué:",
+          "solo para esta pre-evaluación."
+        ],
+        [
+          "Si no autorizas:",
+          "no consulto tus datos y sigo informándote."
+        ]
+      ],
+      "summary": {
+        "title": "Tu solicitud",
+        "product": "Producto",
+        "country": "País de la cuenta",
+        "result": "Pre-evaluación",
+        "consent": "Datos autorizados",
+        "yes": "Sí",
+        "no": "No",
+        "pending": "Pendiente",
+        "next": "Siguiente paso",
+        "next_start": "Pregúntame por un producto o pide una pre-evaluación.",
+        "next_consent": "Autoriza el uso de tus datos para darte un resultado preliminar.",
+        "next_result": "Un analista revisa tu caso y confirma la aprobación y las condiciones finales.",
+        "next_case": "Un asesor tiene tu caso con todo el contexto."
+      },
+      "how": {
+        "title": "Cómo funciona este asistente",
+        "items": [
+          "Evalúa con las reglas del banco, no con suposiciones.",
+          "Cada cifra muestra su fuente debajo de la respuesta.",
+          "Una persona del banco toma la decisión final."
+        ]
+      },
+      "outcome_head": {
+        "Elegible": "Eres elegible",
+        "No elegible": "Por ahora no calificas",
+        "Revisión humana": "Tu caso necesita revisión humana"
       }
     },
     "pt": {
@@ -196,27 +251,21 @@
         "try_as": "Testando como",
         "hello": "Seu crédito, claro desde a primeira mensagem.",
         "hello_sub": "Eu informo e faço uma pré-avaliação sem compromisso. Cada número traz sua fonte.",
-        "placeholder": "Escreva em português ou espanhol",
+        "placeholder": "Escreva sua pergunta sobre crédito…",
         "send": "Enviar",
         "thinking": "Pensando…",
         "scoring": "Pré-avaliando…",
         "yes": "Sim, autorizo",
         "no": "Agora não",
-        "see_why": "Ver por quê",
-        "why_title": "Por que respondi isso",
-        "why_empty": "Quando eu responder, aqui você verá de onde veio cada dado.",
-        "never_title": "O que eu nunca faço",
-        "never_body": "Aprovar, negar ou mudar condições de um crédito. Se não posso responder com certeza, passo seu caso a um assessor com todo o contexto.",
         "tech": "Detalhes técnicos",
         "case_for": "Caso para o assessor",
-        "fine_print": "Não é uma oferta vinculante: a aprovação é feita por um analista.",
         "result": "Resultado preliminar",
         "rate": "Taxa anual",
         "term": "Prazo máximo",
         "months": "meses",
         "catalog": "Catálogo",
         "rule": "Regra de elegibilidade",
-        "online": "Online · português e español",
+        "online": "Online",
         "degraded": "Serviço degradado",
         "starting": "Iniciando… tento de novo em 10 s",
         "no_session": "Não foi possível abrir a sessão",
@@ -226,15 +275,28 @@
         "account_in": "Conta em {country}",
         "writes_in": "Escreve em {lang}",
         "connecting": "Conectando ao assistente…",
-        "language": "Idioma"
+        "language": "Idioma",
+        "talk_advisor": "Falar com um assessor",
+        "how_link": "Como funciona",
+        "footer": "Informo e pré-avalio com as regras do banco. Não aprovo nem nego créditos.",
+        "sources": "Fontes",
+        "how_result": "Como cheguei a este resultado?",
+        "today": "hoje",
+        "consent_given": "Você autorizou o uso dos seus dados · {when}",
+        "consent_denied": "Você não autorizou o uso dos seus dados · {when}",
+        "nonbinding": "Não é uma oferta vinculante. Um analista confirma a aprovação e as condições finais.",
+        "continue_analyst": "Continuar com um analista",
+        "can_do": "O que eu posso fazer:",
+        "term_value": "Até {n} meses",
+        "formal_msg": "Quero solicitar formalmente: {product}"
       },
       "tags": {
-        "answer": "Respondido com fontes",
+        "answer": "Com fonte",
         "answer_plain": "Respondido",
-        "confirm": "Precisa da sua autorização",
+        "confirm": "Autorização de dados",
         "clarify": "Preciso de mais um dado",
         "escalate": "Passei seu caso a um assessor",
-        "blocked": "Bloqueado",
+        "blocked": "Fora do meu alcance",
         "reject": "Sessão inválida"
       },
       "why": {
@@ -375,6 +437,54 @@
         "title": "Com qual cliente você quer testar?",
         "sub": "São clientes de teste com dados sintéticos. O país é onde abriu a conta, não onde está. Cada um mostra um caminho diferente do assistente.",
         "staff": "Equipe do banco"
+      },
+      "stages": [
+        "Consulta",
+        "Pré-avaliação",
+        "Revisão com analista",
+        "Condições finais"
+      ],
+      "consent_box": [
+        [
+          "O que eu verifico:",
+          "pontuação de crédito, histórico de pagamentos e renda registrada."
+        ],
+        [
+          "Para quê:",
+          "só para esta pré-avaliação."
+        ],
+        [
+          "Se não autorizar:",
+          "não consulto seus dados e continuo informando."
+        ]
+      ],
+      "summary": {
+        "title": "Sua solicitação",
+        "product": "Produto",
+        "country": "País da conta",
+        "result": "Pré-avaliação",
+        "consent": "Dados autorizados",
+        "yes": "Sim",
+        "no": "Não",
+        "pending": "Pendente",
+        "next": "Próximo passo",
+        "next_start": "Pergunte sobre um produto ou peça uma pré-avaliação.",
+        "next_consent": "Autorize o uso dos seus dados para receber um resultado preliminar.",
+        "next_result": "Um analista revisa seu caso e confirma a aprovação e as condições finais.",
+        "next_case": "Um assessor tem seu caso com todo o contexto."
+      },
+      "how": {
+        "title": "Como funciona este assistente",
+        "items": [
+          "Avalia com as regras do banco, não com suposições.",
+          "Cada número mostra sua fonte abaixo da resposta.",
+          "Uma pessoa do banco toma a decisão final."
+        ]
+      },
+      "outcome_head": {
+        "Elegible": "Você é elegível",
+        "No elegible": "Por enquanto você não se qualifica",
+        "Revisión humana": "Seu caso precisa de revisão humana"
       }
     }
   }
