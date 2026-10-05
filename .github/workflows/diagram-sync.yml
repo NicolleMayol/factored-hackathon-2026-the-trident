@@ -1,8 +1,7 @@
 # Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
 # Diagrama de arquitectura. Lo llama pr.yml cuando cambian diagrams/ o el impact-map.
-# Valida y exporta los PNG como artifact del run; quien abre el PR los baja y los sube a diagrams/out/.
-# Sin commits del bot: main está protegida (todo entra por PR) y un commit del bot en la rama del PR
-# volvería a disparar todos los workflows.
+# Valida y exporta los PNG como artifact del run, para revisar el dibujo antes del merge. No sube nada:
+# al mergear, main.yml (diagram-export.yml) exporta y sube los PNG a main con la GitHub App del equipo.
 name: diagram-sync
 on:
   # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
@@ -41,4 +40,4 @@ jobs:
           retention-days: 7
       - name: Aviso
         run: |
-          echo "PNG exportados en el artifact «diagramas-png» de este run. Bájalos y súbelos a diagrams/out/ en este PR si cambió el dibujo." | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Vista previa en el artifact «diagramas-png». Al mergear, main sube los PNG solo." | tee -a "$GITHUB_STEP_SUMMARY"

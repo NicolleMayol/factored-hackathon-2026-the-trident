@@ -7,7 +7,7 @@ Fuente de verdad visual: `diagrams/arquitectura.drawio` (XML **sin comprimir**: 
 2. `scripts/drawio_tool.py sync` compara esos atributos con el impact-map y falla si un componente dibujado no existe en los contratos (o avisa si un contrato no está dibujado). Corre en CI (`diagram-sync`).
 3. Los iconos y estilos se reutilizan desde `diagrams/styles.yaml` (catálogo extraído del archivo de Eladio). Regla: nunca un icono nuevo si ya existe uno para ese servicio.
 4. El skill `adr-hackathon`, modo `diagramar`, edita el XML: añade o cambia celdas con estilos del catálogo, escribe los atributos y ejecuta `sync` antes de proponer el PR.
-5. En cada PR que toca `diagrams/`, CI (`diagram-sync`) exporta `diagrams/out/*.png` con `rlespinasse/drawio-export-action` y los deja como artifact `diagramas-png` del run; quien abre el PR los sube a `diagrams/out/`. El ADR y las páginas los referencian por ruta fija. Main está protegida: el bot no hace commits.
+5. En cada PR que toca `diagrams/`, CI (`diagram-sync`) valida y deja los PNG como artifact `diagramas-png` para revisar. Al mergear un cambio en un `.drawio`, `main.yml` (`diagram-export`) exporta `diagrams/out/*.png` con `rlespinasse/drawio-export-action` y los sube a main con la GitHub App del equipo, que está en el bypass del ruleset de main. Nadie sube PNG a mano. El ADR y las páginas los referencian por ruta fija.
 
 ## Herramientas para cada persona
 | Herramienta | Uso |

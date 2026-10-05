@@ -2,7 +2,7 @@
 #   changes → ci → infra (plan + apply con aprobación) → bundles ∥ function → web → smoke → resumen
 # Si ci falla no se despliega nada. Si infra espera aprobación, function y bundles esperan con ella.
 # Las piezas son workflows reutilizables (ci, infra, bundles, deploy, deploy-web).
-# Los diagramas no se exportan en main: main está protegida; los PNG salen como artifact del PR (diagram-sync).
+# Diagramas: si cambia un .drawio, diagram-export.yml sube los PNG a main con la GitHub App del equipo (bypass del ruleset).
 name: main
 on:
   push:
@@ -21,6 +21,7 @@ jobs:
       function: ${{ steps.c.outputs.function }}
       web: ${{ steps.c.outputs.web }}
       bundles: ${{ steps.c.outputs.bundles }}
+      drawio: ${{ steps.c.outputs.drawio }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -66,6 +67,12 @@ jobs:
     needs: [changes, ci, function]
     if: ${{ !cancelled() && !contains(needs.*.result, 'failure') && needs.changes.outputs.web == 'true' }}
     uses: ./.github/workflows/deploy-web.yml
+
+  diagrams:
+    needs: changes
+    if: needs.changes.outputs.drawio == 'true'
+    uses: ./.github/workflows/diagram-export.yml
+    secrets: inherit
 
   # De punta a punta contra lo desplegado: API (salud, /meta, sesión, un turno de chat real) y UI.
   smoke:
@@ -117,7 +124,7 @@ jobs:
           echo "### Chat en $WEB" >> "$GITHUB_STEP_SUMMARY"
 
   resumen:
-    needs: [changes, ci, infra, bundles, function, web, smoke]
+    needs: [changes, ci, infra, bundles, function, web, diagrams, smoke]
     if: always()
     runs-on: ubuntu-latest
     steps:
