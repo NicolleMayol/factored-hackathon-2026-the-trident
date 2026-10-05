@@ -33,7 +33,16 @@ def load(int8: bool):
     from sentence_transformers import SentenceTransformer
     m = SentenceTransformer(MODEL_ID, device="cpu")
     if int8:
-        m[0].auto_model = torch.quantization.quantize_dynamic(m[0].auto_model, {torch.nn.Linear}, dtype=torch.qint8)
+        import warnings
+        warnings.filterwarnings("ignore")
+        for engine in ([torch.backends.quantized.engine] if torch.backends.quantized.engine != "none" else []) + [e for e in ("qnnpack", "fbgemm", "x86") if e in torch.backends.quantized.supported_engines]:
+            try:
+                torch.backends.quantized.engine = engine
+                m[0].auto_model = torch.quantization.quantize_dynamic(m[0].auto_model, {torch.nn.Linear}, dtype=torch.qint8)
+                return m
+            except Exception:  # noqa: BLE001 — probar el siguiente motor
+                continue
+        raise RuntimeError(f"int8 no disponible en este hardware (motores: {torch.backends.quantized.supported_engines})")
     return m
 
 
@@ -69,13 +78,18 @@ def main():
     if a.go_no_go or (a.register and not a.force_fp32 and not result_path.exists()):
         res = {}
         for variant in ("fp32", "int8"):
-            m = load(int8=variant == "int8")
+            try:
+                m = load(int8=variant == "int8")
+            except RuntimeError as e:
+                res[variant] = {"error": str(e)}; print(variant, res[variant], flush=True); continue
             r_pt, ms_pt = recall_at_5(m, "pt"); r_es, ms_es = recall_at_5(m, "es")
             res[variant] = {"recall5_pt": r_pt, "recall5_es": r_es, "ms_query_pt": ms_pt, "ms_query_es": ms_es}
             print(variant, res[variant], flush=True)
-        ok = res["int8"]["recall5_pt"] >= res["fp32"]["recall5_pt"] - 0.02
+        measurable = "recall5_pt" in res.get("int8", {})
+        ok = measurable and res["int8"]["recall5_pt"] >= res["fp32"]["recall5_pt"] - 0.02
         choice = "int8" if ok else "fp32"
-        res["decision"] = {"int8_go": ok, "registered_variant": choice, "rule": "Recall@5 PT int8 >= fp32 - 0.02 (ADR-21)"}
+        res["decision"] = {"int8_go": ok, "registered_variant": choice, "rule": "Recall@5 PT int8 >= fp32 - 0.02 (ADR-21)",
+                           "nota": None if measurable else "int8 no medible en el hardware local (sin motor de cuantización); se registra fp32 y el go/no-go int8 queda To-Be en CPU x86"}
         result_path.parent.mkdir(parents=True, exist_ok=True); result_path.write_text(json.dumps(res, indent=1), encoding="utf-8")
         print(json.dumps(res["decision"]))
     elif result_path.exists():
