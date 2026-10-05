@@ -1,6 +1,6 @@
 # 09-servicio
 
-Owner: Nicolle · v3.4 · 2026-10-05 (ADR-25: UI sin datos quemados, `GET /meta`, nombres de recursos en variables del repo). v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
+Owner: Nicolle · v3.5 · 2026-10-05 (ADR-26: versiones con tags y GitHub Release). v3.4 · 2026-10-05 (ADR-25: UI sin datos quemados, `GET /meta`, nombres de recursos en variables del repo). v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
 
 ## ADR-19 · Plan de infraestructura en Terraform  ·  rol: servicio  ·  2026-09-29  ·  estado: cerrada
 
@@ -287,3 +287,33 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | Variables del repo puestas a mano | Terraform escribe las variables con el provider de GitHub |
 
 **Dependencias.** Sin filas nuevas ni fechas que cambien en `dependencies.md`. Propuesta abierta a ia-ml: campo `result` en `/chat/confirm`.
+
+## ADR-26 · Versiones con tags y GitHub Release  ·  rol: servicio  ·  2026-10-05  ·  estado: cerrada
+
+**Decisión.** Cada versión es un tag anotado `vX.Y.Z` (SemVer) sobre un commit de main; el workflow `release` crea el GitHub Release con las notas de los PRs mergeados. `v0.x` sale como pre-release; `v1.0.0` es lo que se entrega a Factored. Solo Nicolle crea tags. Los deploys siguen saliendo de main.
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Sin tags; el jurado mira main | Seguimos haciendo commits después de la entrega; el tag fija lo evaluado |
+| Desplegar desde el tag | Cambia el camino de despliegue el día de la entrega; hoy hay un solo ambiente |
+| Versión en un archivo (`VERSION`) | Un commit extra por versión; el tag ya es la fuente |
+| Notas a mano | Los PRs ya traen título con rol (`adr(<rol>):`); `--generate-notes` los lista |
+
+**Impacto.** Ningún elemento del mapa cambia; ningún consumer distinto de servicio.
+
+| Elemento | Estado | Owner | Consumers afectados | Qué deben hacer | Fecha límite |
+| --- | --- | --- | --- | --- | --- |
+| `.github/workflows/release.yml` | nuevo | servicio | — | nada | — |
+
+**Cómo se prueba.** Push de `v0.1.0` sobre main: el job crea el pre-release con las notas. Un tag sobre un commit fuera de main falla en el paso "El tag apunta a main".
+
+**Hackathon vs To-Be.**
+
+| Hackathon | To-Be |
+| --- | --- |
+| Tag manual de Nicolle; deploy desde main | main → dev; tag → staging y prod con aprobación |
+| Notas generadas de los PRs | changelog por rol con etiquetas de PR |
+| Sin firma de tags | tags firmados y protección de tags `v*` |
+
+**Dependencias.** Sin cambios en `dependencies.md`.
+
