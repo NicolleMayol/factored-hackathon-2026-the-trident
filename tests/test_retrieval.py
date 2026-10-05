@@ -20,7 +20,7 @@ def test_chunks_cumplen_contrato(settings):
 def test_corpus_cubre_3_paises_3_productos_2_idiomas_8_secciones(settings):
     ch = _chunks(settings)
     docs = {c["doc_id"] for c in ch}
-    assert len(docs) == 18 and len(ch) == 144
+    assert len(docs) == 36 and len(ch) == 288  # 6 tipos × 3 países × 2 idiomas (M10, ADR-24)
     assert all(sum(1 for c in ch if c["doc_id"] == d) == 8 for d in docs)
 
 
@@ -37,3 +37,21 @@ def test_recall_at_5_hybrid_y_baseline_por_idioma():
     # el embedding mock (hash) solo se reporta; el umbral aplica al real (ADR-21 go/no-go int8 en PT)
     if not r["embedding_model"].startswith("mock"):
         assert r["embed"]["es"] >= 0.8 and r["embed"]["pt"] >= 0.8, r
+
+
+def test_el_corpus_no_cita_un_tope_provisional():
+    """ADR-24 v1.1: una fila PENDIENTE de ref.regulator_rates guarda el motor (E11) pero su cifra no entra al texto R3."""
+    import csv
+    from pathlib import Path
+    root = Path(__file__).resolve().parents[1]
+    rows = list(csv.DictReader(open(root / "data" / "mock" / "regulator_rates.csv", encoding="utf-8")))
+    pend = {(r["country"], r["product_type"]) for r in rows if r["source"].upper().startswith("PENDIENTE")}
+    for line in open(root / "data" / "mock" / "policy_chunks.jsonl", encoding="utf-8"):
+        c = json.loads(line)
+        if c["rule_id"] == "R3" and (c["country"], _ptype(root, c["product_code"])) in pend:
+            assert "tope vigente" not in c["text"] and "teto vigente" not in c["text"] and "referencia de mercado" not in c["text"], c["chunk_id"]
+
+
+def _ptype(root, code):
+    import yaml
+    return next(p["product_type"] for p in yaml.safe_load(open(root / "policy" / "catalog.yaml", encoding="utf-8"))["products"] if p["product_code"] == code)

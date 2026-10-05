@@ -10,7 +10,7 @@ Requisitos de Crédito consignado: ser maior de idade; renda mensal comprovável
 <!-- source: catálogo sintético -->
 
 ## R3
-Taxa de juros de Crédito consignado: entre 10.15 % e 19.88 % ao ano conforme o perfil. Antes de contratar informa-se o CAT (Custo Anual Total) para fins informativos e de comparação, conforme a CONDUSEF; a referência de mercado para esta modalidade é — % de CAT. A taxa definitiva é fixada na aprovação e não no chat.
+Taxa de juros de Crédito consignado: entre 10.15 % e 19.88 % ao ano conforme o perfil. Antes de contratar informa-se o CAT (Custo Anual Total) para fins informativos e de comparação, conforme a CONDUSEF. A taxa definitiva é fixada na aprovação e não no chat.
 <!-- source: CAT · CONDUSEF / Banxico SIE CF303 -->
 
 ## R4
