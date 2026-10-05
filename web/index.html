@@ -32,10 +32,22 @@ header .wrap{display:flex;align-items:center;justify-content:space-between;gap:1
 @media (max-width:640px){.brand img{height:36px}.brand .sep,.brand b{display:none}}
 
 /* Personas */
-#personas{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:20px}
-#personas>span{font-size:13px;color:var(--mute);margin-right:4px}
+/* Cliente activo */
+#current{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding-top:20px}
+#current[hidden]{display:none}
+#current>span{font-size:13px;color:var(--mute)}#current b{font-weight:700}
+.pill.sm{padding:6px 14px;min-height:36px;font-size:13px}
+/* Elegir cliente */
+#picker[hidden]{display:none}
+#picker{flex:1 1 100%;padding:28px;display:flex;flex-direction:column;gap:18px}
+#picker h1{margin:0;font:600 28px/1.15 var(--display)}#picker>p{margin:0;color:var(--mute);max-width:680px}
+#picker h3{margin:6px 0 0;font-size:13px;font-weight:600;color:var(--mute)}
+.pcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+.pcard{text-align:left;border:1px solid var(--line);background:var(--bg);border-radius:16px;padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-height:44px}
+.pcard:hover,.pcard:focus-visible{border-color:var(--ink);outline:none}
+.pcard b{font-size:16px}.pcard .d{font-size:14px;color:var(--mute)}.pcard .l{font-size:12px;color:var(--mute)}
+@media (max-width:640px){#picker{padding:20px}}
 .pill{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:10px 16px;min-height:44px}
-.pill[aria-pressed=true]{border-color:var(--ink);background:var(--ink);color:#fff;font-weight:600}
 
 /* Área principal */
 .stage{flex:1;display:flex;flex-wrap:wrap;gap:24px;padding-top:20px;padding-bottom:32px;align-items:flex-start}
@@ -74,7 +86,7 @@ sup.ref{color:var(--brand);font-weight:700;font-size:11px;margin-left:1px}
 @media (max-width:640px){.msg,.result{max-width:92%}.metrics strong{font-size:20px}}
 /* Sugerencias y entrada */
 #sugg{display:flex;gap:6px;flex-wrap:wrap;padding:0 16px 10px}
-@media (max-width:640px){#sugg,#personas{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#sugg>*,#personas>*{flex:none}}
+@media (max-width:640px){#sugg{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}#sugg>*{flex:none}}
 .sg{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;min-height:36px}
 .sg:hover{border-color:var(--ink)}
 form.bar{display:flex;gap:8px;padding:14px 16px;border-top:1px solid var(--line)}
@@ -122,9 +134,17 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
   </div>
 </header>
 
-<nav id="personas" class="wrap"><span data-t="text.try_as">Probar como</span></nav>
+<nav id="current" class="wrap" hidden><span data-t="text.try_as"></span><b id="curLabel"></b><button type="button" class="pill sm" id="change" data-t="text.change"></button></nav>
 
 <div class="stage wrap">
+  <section id="picker" class="card" hidden>
+    <h1 data-t="picker.title"></h1>
+    <p data-t="picker.sub"></p>
+    <div class="pcards" id="pcards"></div>
+    <h3 data-t="picker.staff"></h3>
+    <div class="pcards" id="acards"></div>
+  </section>
+
   <main id="chat" class="card">
     <div id="log" aria-live="polite"></div>
     <div id="sugg"></div>
@@ -147,7 +167,7 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
     <div id="hand"></div>
   </main>
 
-  <aside>
+  <aside id="side">
     <h2 id="whyTitle" data-t="text.why_title"></h2>
     <div id="steps" class="card"></div>
     <div class="never"><strong data-t="text.never_title"></strong><span data-t="text.never_body"></span></div>
@@ -248,10 +268,25 @@ function i18n(){document.documentElement.lang=lang;document.title=`${t("text.tit
  document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));document.querySelectorAll("[data-tp]").forEach(e=>e.placeholder=t(e.dataset.tp))}
 
 const isAnalyst=u=>u&&u.scopes.includes("handoff:read");
-function personaLabel(u){const l=t("personas."+u.key,langOf(u.locale)),named=l!=="personas."+u.key;
- if(isAnalyst(u))return named?l:u.key;return [u.country?ctryName(u.country):null,named?l:u.key].filter(Boolean).join(" · ")}
-function renderUsers(){const n=$("personas");n.querySelectorAll(".pill").forEach(b=>b.remove());
- for(const u of META.users){const b=document.createElement("button");b.type="button";b.className="pill";b.textContent=personaLabel(u);b.setAttribute("aria-pressed",String(cur===u.key));b.onclick=()=>login(u.key);n.appendChild(b)}}
+// El país de la persona es donde abrió su cuenta, no donde está (docs/test-users.md).
+const fill=(str,o)=>str.replace(/\{(\w+)\}/g,(_,k)=>o[k]??"");
+function persona(u){const p=t("personas."+u.key);return typeof p==="object"?p:{label:u.key,desc:""}}
+function personaLabel(u){const p=persona(u);
+ return isAnalyst(u)||!u.country?p.label:`${fill(t("text.account_in"),{country:ctryName(u.country)})} · ${p.label}`}
+function card(u){const p=persona(u),b=document.createElement("button");b.type="button";b.className="pcard";
+ const head=isAnalyst(u)||!u.country?p.label:fill(t("text.account_in"),{country:ctryName(u.country)});
+ b.innerHTML=`<b>${esc(head)}</b>${!isAnalyst(u)&&u.country?`<span class="tag t-info">${esc(p.label)}</span>`:""}`+
+  (p.desc?`<span class="d">${esc(p.desc)}</span>`:"")+(isAnalyst(u)?"":`<span class="l">${esc(fill(t("text.writes_in"),{lang:t("lang_names."+langOf(u.locale))}))}</span>`);
+ b.onclick=()=>login(u.key);return b}
+function show(view){const chat=view==="chat",an=view==="analyst",pk=view==="picker";
+ $("picker").hidden=!pk;$("current").hidden=pk;$("side").style.display=pk?"none":"flex";
+ $("chat").style.display=chat?"flex":"none";$("analyst").style.display=an?"flex":"none"}
+function showPicker(){cur=null;tok=null;conv=null;pending=null;lang=langOf(navigator.language);i18n();
+ $("pcards").innerHTML="";$("acards").innerHTML="";
+ for(const u of META.users)(isAnalyst(u)?$("acards"):$("pcards")).appendChild(card(u));
+ $("acards").previousElementSibling.hidden=!$("acards").children.length;
+ try{history.replaceState(null,"",location.pathname)}catch(e){}
+ show("picker")}
 // Sugerencias con {name:<product_type>} y {amount:<product_type>}: nombre y un monto dentro del rango del producto del país del cliente.
 function renderSugg(u){$("sugg").innerHTML="";const byType=ty=>Object.values(META.products).find(p=>p.country===u.country&&p.type===ty);
  for(const tpl of t("suggestions")){let ok=true;
@@ -262,11 +297,12 @@ function renderSugg(u){$("sugg").innerHTML="";const byType=ty=>Object.values(MET
 function renderCases(){$("cases").innerHTML="";for(const c of cases){const b=document.createElement("button");b.type="button";b.className="pill";b.textContent=c;b.onclick=()=>{$("case").value=c;openCase(c)};$("cases").appendChild(b)}}
 
 async function login(k){cur=k;conv=null;pending=null;consent=null;tok=null;$("log").innerHTML="";$("hand").innerHTML="";
+ try{history.replaceState(null,"",`${location.pathname}?user=${encodeURIComponent(k)}`)}catch(e){}
  const u=META.users.find(x=>x.key===k)||{key:k,scopes:[],locale:""};
  const [r,j]=await call("/session",{method:"POST",body:JSON.stringify({user:k})});
- lang=langOf(j.locale||u.locale);i18n();renderUsers();resetPanel();
- if(!r.ok){add("bot stop",`${tag("error")}<div class="txt">${esc(t("text.no_session"))} (${r.status}).</div>`);return}
- tok=j.token;const a=(j.scopes||u.scopes).includes("handoff:read");$("chat").style.display=a?"none":"flex";$("analyst").style.display=a?"flex":"none";
+ lang=langOf(j.locale||u.locale);i18n();$("curLabel").textContent=personaLabel(u);resetPanel();
+ if(!r.ok){show("chat");add("bot stop",`${tag("error")}<div class="txt">${esc(t("text.no_session"))} (${r.status}).</div>`);return}
+ tok=j.token;const a=(j.scopes||u.scopes).includes("handoff:read");show(a?"analyst":"chat");
  if(a){renderCases();$("whyTitle").textContent=t("analyst.panel_title");steps(t("analyst.panel").map(([h,b])=>[h,`<span>${esc(b)}</span>`]));return}
  renderSugg(u);add("hello",`<h1>${esc(t("text.hello"))}</h1><p>${esc(t("text.hello_sub"))}</p>`)}
 
@@ -295,6 +331,7 @@ async function openCase(id){const [r,j]=await call("/handoff/"+encodeURIComponen
   <dt>${F("evidence")}</dt><dd>${li(j.evidence)}</dd><dt>${F("questions")}</dt><dd>${li(j.open_questions)}</dd><dt>${F("risks")}</dt><dd>${li(j.risk_flags)}</dd></dl>
   <details class="tech"><summary>${esc(t("analyst.raw"))}</summary><pre>${esc(JSON.stringify(j,null,2))}</pre></details></div>`}
 
+$("change").onclick=showPicker;
 $("f").onsubmit=e=>{e.preventDefault();const v=$("m").value.trim();$("m").value="";send(v)};
 $("hf").onsubmit=e=>{e.preventDefault();const id=$("case").value.trim();if(id)openCase(id)};
 function setHealth(cls,key){const h=$("health");h.className=cls;h.querySelector("span").textContent=t(key)}
@@ -305,7 +342,8 @@ async function boot(){
  const [r,m]=await call("/meta");
  if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");setTimeout(boot,10000);return}
  META=m;const hr=await fetch(API+"/healthz").catch(()=>null);setHealth(hr&&hr.ok?"up":"slow",hr&&hr.ok?"text.online":"text.degraded");
- const first=META.users.find(u=>!isAnalyst(u));if(first)login(first.key);else renderUsers()}
+ // ?user=<clave> abre ese cliente directo (enlaces para la demo); si no, primero se elige.
+ const q=new URLSearchParams(location.search).get("user");if(META.users.some(u=>u.key===q))login(q);else showPicker()}
 boot();
 </script>
 </body>
