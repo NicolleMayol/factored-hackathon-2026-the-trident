@@ -157,6 +157,7 @@ aside h2{margin:0 0 12px;font:700 16px/1.3 'Plus Jakarta Sans',sans-serif}
 .next small{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:600}
 .next .btn{width:100%}
 .howl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px;font-size:14px}
+.more{display:inline-block;margin-top:14px;font-size:14px;font-weight:600;color:var(--brand);text-decoration:none}.more:hover{color:var(--brand-dk)}
 .howl li{display:flex;gap:10px;align-items:flex-start}.howl svg.i{color:var(--info);margin-top:2px}
 details.tech{font-size:12px;color:var(--mute);padding:0 4px}
 details.tech summary{cursor:pointer}
@@ -227,7 +228,7 @@ details.tech div{font-family:var(--mono);margin-top:6px;overflow-wrap:anywhere;l
         <input id="m" autocomplete="off" data-tp="text.placeholder">
         <button type="submit"><svg class="i"><use href="#i-arrow"/></svg><span class="sr" data-t="text.send">Enviar</span></button>
       </form>
-      <div class="foot"><svg class="i"><use href="#i-shield"/></svg><span><span data-t="text.footer"></span> <a href="#howCard" data-t="text.how_link"></a></span></div>
+      <div class="foot"><svg class="i"><use href="#i-shield"/></svg><span><span data-t="text.footer"></span> <a id="howLink" href="como-funciona.html" data-t="text.how_link"></a></span></div>
     </div>
   </main>
 
@@ -374,13 +375,15 @@ function side(){if(!curU||!S)return;const s=t("summary"),pr=S.product&&META.prod
   <dt>${esc(s.consent)}</dt><dd>${S.consent==null?"—":esc(S.consent?s.yes:s.no)}</dd></dl>
   <div class="next"><small>${esc(s.next)}</small><div>${next}</div></div>`;
  const icons=["bank","doc","user"];
- $("howCard").innerHTML=`<h2>${esc(t("how.title"))}</h2><ul class="howl">${t("how.items").map((x,i)=>`<li>${ic(icons[i]||"info")}<span>${esc(x)}</span></li>`).join("")}</ul>`}
+ $("howCard").innerHTML=`<h2>${esc(t("how.title"))}</h2><ul class="howl">${t("how.items").map((x,i)=>`<li>${ic(icons[i]||"info")}<span>${esc(x)}</span></li>`).join("")}</ul>`+
+  `<a class="more" href="como-funciona.html?lang=${lang}">${esc(t("how.more"))} →</a>`}
 function tech(j,p){const x=[j.latency_ms!=null?`${Math.round(j.latency_ms)} ms`:null,j.cost_usd!=null?`${Number(j.cost_usd).toFixed(4)} USD`:null,j.trace_id?`trace ${esc(String(j.trace_id).slice(0,8))}`:null,`action ${esc(j.action)}`].filter(Boolean).join(" · ");
  $("techD").innerHTML=x+(p.src.length?"<br>"+p.src.map(esc).join("<br>"):"");$("tech").hidden=false}
 
 function i18n(){document.documentElement.lang=lang;document.title=`${t("text.title")} · Bank Company`;
  document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));document.querySelectorAll("[data-tp]").forEach(e=>e.placeholder=t(e.dataset.tp));
  document.querySelectorAll("#langs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.l===lang)));
+ $("howLink").href=`como-funciona.html?lang=${lang}`;
  if(healthKey)$("health").querySelector("span").textContent=t(healthKey)}
 // Selector de idioma: un botón por bloque de ui.json, con el nombre en su propio idioma.
 function renderLangs(){const g=$("langs");g.innerHTML="";g.setAttribute("aria-label",t("text.language"));
@@ -470,7 +473,9 @@ function renderTeam(){const tm=UI.team||{};if(tm.name)$("teamName").textContent=
 function setHealth(cls,key){healthKey=key;const h=$("health");h.className=cls;h.querySelector("span").textContent=t(key)}
 // Arranque: textos (estáticos, mismo origen) y luego /meta. En frío la Function tarda: reintenta cada 10 s.
 async function boot(){
+ const ql=new URLSearchParams(location.search).get("lang");
  try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){UI={default_lang:"es",lang:{es:{}}}}
+ if(ql&&!chosen&&UI.lang[ql])chosen=ql;
  lang=chosen||langOf(navigator.language);renderLangs();renderTeam();i18n();$("loading").textContent=t("text.connecting");
  const [r,m]=await call("/meta");
  if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");$("loading").textContent=t("text.starting");setTimeout(boot,10000);return}

@@ -242,12 +242,101 @@
           "Evalúa con las reglas del banco, no con suposiciones.",
           "Cada cifra muestra su fuente debajo de la respuesta.",
           "Una persona del banco toma la decisión final."
-        ]
+        ],
+        "more": "Ver cómo funciona"
       },
       "outcome_head": {
         "Elegible": "Eres elegible",
         "No elegible": "Por ahora no calificas",
         "Revisión humana": "Tu caso necesita revisión humana"
+      },
+      "how_page": {
+        "title": "Cómo funciona el asistente",
+        "lead": "Te informa sobre créditos y hace una pre-evaluación sin compromiso. Cada respuesta sale de las reglas del banco y de documentos que puedes revisar. La decisión final siempre la toma una persona.",
+        "back": "Volver al chat",
+        "does_title": "Lo que hace",
+        "does": [
+          "Responde sobre requisitos, tasas, montos y plazos de cada producto.",
+          "Hace una pre-evaluación con tus datos de cliente, si la autorizas.",
+          "Cita la fuente de cada cifra.",
+          "Pasa tu caso a un asesor, con todo el contexto, cuando no puede resolver solo."
+        ],
+        "never_title": "Lo que nunca hace",
+        "never": [
+          "Aprobar, negar ni cambiar las condiciones de un crédito.",
+          "Consultar tus datos sin tu autorización.",
+          "Responder sobre otra persona.",
+          "Saltarse las reglas porque se lo pidan."
+        ],
+        "steps_title": "Qué pasa cuando escribes",
+        "steps": [
+          [
+            "Entiende tu mensaje",
+            "Detecta el idioma (español o portugués) y qué necesitas: información, una pre-evaluación o hablar con alguien. Antes de eso, un filtro sin IA bloquea intentos de manipulación."
+          ],
+          [
+            "Decide con las reglas del banco",
+            "Una tabla de reglas fija qué puede hacer: responder, pedirte autorización, pedirte un dato o pasar el caso a una persona. El modelo de lenguaje no toma esa decisión."
+          ],
+          [
+            "Consulta solo lo necesario",
+            "Busca en las políticas del producto. Si autorizaste la pre-evaluación, lee tu perfil y aplica las reglas de elegibilidad y un puntaje de riesgo."
+          ],
+          [
+            "Revisa antes de responder",
+            "Cada cifra tiene que venir de una fuente. Si falta la fuente, o el puntaje queda en el límite, no adivina: escala."
+          ],
+          [
+            "Responde o pasa a una persona",
+            "Te responde con las fuentes citadas. Si escala, el asesor recibe un resumen con lo que pediste, lo que se verificó y por qué no se resolvió solo."
+          ]
+        ],
+        "data_title": "Tus datos",
+        "data": [
+          "Tu identidad sale de tu sesión, no de lo que escribes: nadie puede pedir datos de otro cliente desde el chat.",
+          "La autorización vale solo para esa conversación y para esa pre-evaluación.",
+          "Los datos no salen de la nube del banco. Cada respuesta deja un registro para auditoría."
+        ],
+        "sources_title": "De dónde salen las respuestas",
+        "sources_lead": "Un documento de política por país, producto e idioma, con estas secciones:",
+        "sources_note": "Los documentos y el catálogo de esta demo son sintéticos. Las secciones de tasas, datos personales y reclamos citan la norma de cada país.",
+        "coverage_title": "Qué cubre",
+        "coverage_lead": "Países y productos del catálogo actual:",
+        "rate": "Tasa anual",
+        "term": "Plazo hasta",
+        "months": "meses",
+        "tech_title": "Para equipos técnicos",
+        "tech": [
+          [
+            "Chat",
+            "Página estática en Azure Static Web Apps."
+          ],
+          [
+            "Agente",
+            "Azure Functions (Python) con un grafo de LangGraph: entender → decidir → actuar → verificar → escalar o responder."
+          ],
+          [
+            "Modelos",
+            "Llama 3.3 70B y 3.1 8B por Databricks Foundation Model APIs; embeddings y pre-score en Databricks Model Serving."
+          ],
+          [
+            "Datos",
+            "Databricks con Unity Catalog (bronze, silver, gold). El agente lee gold por un SQL warehouse con una identidad de solo lectura."
+          ],
+          [
+            "Políticas y casos",
+            "Azure Cosmos DB: búsqueda por vectores y por texto en español y portugués; los casos escalados se guardan ahí."
+          ],
+          [
+            "Trazas",
+            "Cada turno queda en ops.agent_turns: nodos, reglas aplicadas, latencia y costo."
+          ],
+          [
+            "Infra",
+            "Todo en Terraform, desplegado por GitHub Actions con aprobación."
+          ]
+        ],
+        "loading": "Cargando…"
       }
     },
     "pt": {
@@ -480,12 +569,101 @@
           "Avalia com as regras do banco, não com suposições.",
           "Cada número mostra sua fonte abaixo da resposta.",
           "Uma pessoa do banco toma a decisão final."
-        ]
+        ],
+        "more": "Ver como funciona"
       },
       "outcome_head": {
         "Elegible": "Você é elegível",
         "No elegible": "Por enquanto você não se qualifica",
         "Revisión humana": "Seu caso precisa de revisão humana"
+      },
+      "how_page": {
+        "title": "Como o assistente funciona",
+        "lead": "Ele informa sobre crédito e faz uma pré-avaliação sem compromisso. Cada resposta vem das regras do banco e de documentos que você pode conferir. A decisão final é sempre de uma pessoa.",
+        "back": "Voltar ao chat",
+        "does_title": "O que ele faz",
+        "does": [
+          "Responde sobre requisitos, taxas, valores e prazos de cada produto.",
+          "Faz uma pré-avaliação com seus dados de cliente, se você autorizar.",
+          "Cita a fonte de cada número.",
+          "Passa seu caso a um assessor, com todo o contexto, quando não consegue resolver sozinho."
+        ],
+        "never_title": "O que ele nunca faz",
+        "never": [
+          "Aprovar, negar ou mudar as condições de um crédito.",
+          "Consultar seus dados sem sua autorização.",
+          "Responder sobre outra pessoa.",
+          "Pular as regras porque alguém pediu."
+        ],
+        "steps_title": "O que acontece quando você escreve",
+        "steps": [
+          [
+            "Entende sua mensagem",
+            "Detecta o idioma (português ou espanhol) e o que você precisa: informação, uma pré-avaliação ou falar com alguém. Antes disso, um filtro sem IA bloqueia tentativas de manipulação."
+          ],
+          [
+            "Decide com as regras do banco",
+            "Uma tabela de regras define o que ele pode fazer: responder, pedir autorização, pedir um dado ou passar o caso a uma pessoa. O modelo de linguagem não toma essa decisão."
+          ],
+          [
+            "Consulta só o necessário",
+            "Busca nas políticas do produto. Se você autorizou a pré-avaliação, lê seu perfil e aplica as regras de elegibilidade e uma pontuação de risco."
+          ],
+          [
+            "Confere antes de responder",
+            "Cada número tem que vir de uma fonte. Se a fonte falta, ou a pontuação fica no limite, ele não adivinha: escala."
+          ],
+          [
+            "Responde ou passa a uma pessoa",
+            "Responde com as fontes citadas. Se escala, o assessor recebe um resumo com o que você pediu, o que foi verificado e por que não foi resolvido sozinho."
+          ]
+        ],
+        "data_title": "Seus dados",
+        "data": [
+          "Sua identidade vem da sua sessão, não do que você escreve: ninguém pode pedir dados de outro cliente pelo chat.",
+          "A autorização vale só para essa conversa e essa pré-avaliação.",
+          "Os dados não saem da nuvem do banco. Cada resposta deixa um registro para auditoria."
+        ],
+        "sources_title": "De onde vêm as respostas",
+        "sources_lead": "Um documento de política por país, produto e idioma, com estas seções:",
+        "sources_note": "Os documentos e o catálogo desta demo são sintéticos. As seções de taxas, dados pessoais e reclamações citam a norma de cada país.",
+        "coverage_title": "O que cobre",
+        "coverage_lead": "Países e produtos do catálogo atual:",
+        "rate": "Taxa anual",
+        "term": "Prazo até",
+        "months": "meses",
+        "tech_title": "Para equipes técnicas",
+        "tech": [
+          [
+            "Chat",
+            "Página estática no Azure Static Web Apps."
+          ],
+          [
+            "Agente",
+            "Azure Functions (Python) com um grafo do LangGraph: entender → decidir → agir → verificar → escalar ou responder."
+          ],
+          [
+            "Modelos",
+            "Llama 3.3 70B e 3.1 8B pelas Databricks Foundation Model APIs; embeddings e pré-score no Databricks Model Serving."
+          ],
+          [
+            "Dados",
+            "Databricks com Unity Catalog (bronze, silver, gold). O agente lê gold por um SQL warehouse com uma identidade só de leitura."
+          ],
+          [
+            "Políticas e casos",
+            "Azure Cosmos DB: busca por vetores e por texto em português e espanhol; os casos escalados ficam lá."
+          ],
+          [
+            "Rastros",
+            "Cada turno fica em ops.agent_turns: nós, regras aplicadas, latência e custo."
+          ],
+          [
+            "Infra",
+            "Tudo em Terraform, implantado pelo GitHub Actions com aprovação."
+          ]
+        ],
+        "loading": "Carregando…"
       }
     }
   }
