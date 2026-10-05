@@ -36,14 +36,14 @@ CLIENTES_PRUEBA = [
 # ia-ml y servicio: TEST-AR-003 lleva una tarjeta con 45 días de mora para que P07 (escalación por riesgo) sea
 # demostrable en la UI. Solo entran a customer_products; behavior_12m sigue sin TEST-* (ADR-22).
 PRODUCTOS_PRUEBA = [
-    ("P00001", "TEST-CO-001", "Tarjeta Crédito", "COP", 44_302.91, 94_549.16, 0, "Active"),
-    ("P00002", "TEST-CO-001", "Tarjeta Crédito", "COP", 32_162.48, 63_290.29, 0, "Active"),
-    ("P00003", "TEST-MX-002", "Tarjeta Crédito", "MXN", 14_313.41, 79_432.76, 0, "Active"),
-    ("P00004", "TEST-AR-003", "Tarjeta Crédito", "ARS", 24_395.41, 85_906.79, 45, "Active"),
-    ("P00005", "TEST-AR-003", "Préstamo Personal", "ARS", 47_698.32, 16_614.07, 0, "Active"),
-    ("P00006", "TEST-AR-003", "Tarjeta Crédito", "ARS", 19_946.68, 73_549.23, 0, "Active"),
-    ("P00007", "TEST-CO-004", "Préstamo Personal", "COP", 23_865.25, 32_244.76, 0, "Active"),
-    ("P00008", "TEST-MX-005", "Tarjeta Crédito", "MXN", 17_050.31, 16_452.15, 0, "Active"),
+    ("TEST-P01", "TEST-CO-001", "Tarjeta Crédito", "COP", 44_302.91, 94_549.16, 0, "Active"),
+    ("TEST-P02", "TEST-CO-001", "Tarjeta Crédito", "COP", 32_162.48, 63_290.29, 0, "Active"),
+    ("TEST-P03", "TEST-MX-002", "Tarjeta Crédito", "MXN", 14_313.41, 79_432.76, 0, "Active"),
+    ("TEST-P04", "TEST-AR-003", "Tarjeta Crédito", "ARS", 24_395.41, 85_906.79, 45, "Active"),
+    ("TEST-P05", "TEST-AR-003", "Préstamo Personal", "ARS", 47_698.32, 16_614.07, 0, "Active"),
+    ("TEST-P06", "TEST-AR-003", "Tarjeta Crédito", "ARS", 19_946.68, 73_549.23, 0, "Active"),
+    ("TEST-P07", "TEST-CO-004", "Préstamo Personal", "COP", 23_865.25, 32_244.76, 0, "Active"),
+    ("TEST-P08", "TEST-MX-005", "Tarjeta Crédito", "MXN", 17_050.31, 16_452.15, 0, "Active"),
 ]
 
 
