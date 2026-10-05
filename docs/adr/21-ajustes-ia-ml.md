@@ -85,7 +85,7 @@ El parser con esquema JSON en Understand y la validación de `handoff.schema.jso
 
 ### 7 · Evaluación sobre gold (5 oct): el dev set corre con clientes reales
 
-**Decisión.** Con `AGENT_SQL=real` el dev set usa clientes reales de gold elegidos por condición (`eval/pick_users.py`), no los `TEST-*` del fixture; los ids no se versionan (ADR-12). Los `TEST-*` que usa la UI se completan en gold con `scripts/seed_test_customers.py` (MERGE solo de esas filas) para que puedan mostrar una escalación por riesgo.
+**Decisión.** Con `AGENT_SQL=real` el dev set usa clientes reales de gold elegidos por condición (`eval/pick_users.py`), no los `TEST-*` del fixture; los ids no se versionan (ADR-12). Los productos de los `TEST-*` que usa la UI se inyectan en `gold.customer_products` desde el pipeline (`data/medallon/src/gold.py`, mismo patrón que `customer_360`), para que la escalación por riesgo (P07) sea demostrable; `customer_behavior_12m` sigue sin `TEST-*` (ADR-22).
 
 | Punto | Valor |
 | --- | --- |
@@ -99,9 +99,10 @@ El parser con esquema JSON en Understand y la validación de `handoff.schema.jso
 | --- | --- |
 | Dejar el eval con el fixture y SQL en mock | mide el agente contra datos que gold no tiene; el 1,0 de abstención era del fixture |
 | Fallback del adaptador SQL al CSV para ids `TEST-*` | mezcla dos fuentes en producción y esconde el hueco de datos |
+| MERGE de las filas `TEST-*` en gold con un script (primera versión de este PR) | las tablas gold son vistas materializadas del pipeline: el MERGE falla o se borra en la siguiente corrida (cada 6 h); además `behavior_12m` sin `TEST-*` es decisión de ADR-22 (revisión de servicio, PR #64) |
 | Versionar `eval/users_gold.json` | ids del dataset en un repo público (ADR-12, guard F13) |
 
-**Hackathon vs To-Be.** Hackathon: usuarios por condición + seed de `TEST-*`. To-Be: fixture de prueba cargado por el pipeline de datos (E-x) con `es_sintetico = true`, y casos de borde de intención con `clarify` reforzado en el prompt o umbral de confianza por intención.
+**Hackathon vs To-Be.** Hackathon: usuarios por condición en el eval + productos `TEST-*` literales en `gold.py` (despliegue manual con `databricks bundle deploy`, Actions caído). To-Be: fixture de prueba versionado como dato (`es_sintetico = true`) y cargado por el pipeline; casos de borde de intención con `clarify` reforzado en el prompt o umbral de confianza por intención.
 
 **Dependencias.** M11 (abajo).
 

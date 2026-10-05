@@ -42,7 +42,7 @@ Regla: cada entregable tiene dueño, receptor, formato y fecha; hasta que llega,
 | M5 | docs/labels.md: mapeo de las 42 frases del dataset → intent_label; action_label sale de policy.yaml (acordado en el PR #31) | Eladio | Vie 2 |
 | M9 | modelo hackathon.ml.bge_m3 (bge-m3 int8 ONNX) registrado en UC | Nicolle | Jue 1 noche |
 | M10 | R1–R8 para mortgage, low_amount_consumer y microcredit, o ruteo a escalamiento: hoy search_policy devuelve cero para los tres (ADR-24) | Eladio | Vie 2 |
-| M11 | filas TEST-* en gold.customer_products y customer_behavior_12m (`scripts/seed_test_customers.py --apply`, necesita MODIFY) para que la UI pueda escalar por riesgo; mientras, el eval usa clientes reales por condición (ADR-21 §7) | Nicolle (Eladio out) | Dom 5 |
+| M11 | productos de los TEST-* en gold.customer_products desde el pipeline (`data/medallon/src/gold.py`, PRODUCTOS_PRUEBA; behavior_12m sigue sin TEST-* por ADR-22) para que la UI pueda escalar por riesgo; despliegue manual `databricks bundle deploy` (Actions caído); mientras, el eval usa clientes reales por condición (ADR-21 §7) | Nicolle despliega (código listo; Eladio out) | Dom 5 |
 
 ## Eladio ↔ Nicolle
 | # | Entregable | De → para | Fecha |
