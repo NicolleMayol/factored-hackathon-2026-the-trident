@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agente Crédito LATAM · The Trident</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<!--
+  Presentación del proyecto para el jurado (no es parte de la UI del banco).
+  Las cifras vienen del README, sección «Evidencia (números del 5 de octubre)»: si cambian allí, cámbialas aquí.
+  Sin datos de negocio (países, productos, personas): eso vive en GET /api/meta (ADR-25).
+-->
+<style>
+:root{color-scheme:light;--bg:#FAF6F4;--card:#FFFFFF;--soft:#F7F2EF;--ink:#22161A;--mute:#6B5A5F;--line:#EADBD5;--brand:#B0243A;--brand-dk:#861B2C;--me:#F6E1E1;
+--ok:#145C3B;--ok-bg:#E3F3EA;--info:#1D3F8A;--info-bg:#E8EEFA;--warn:#7A4B00;--warn-bg:#FDF1DE;
+--on-dark:#E6D8D4;--on-dark-mute:#CDBFBB;
+--display:'Bricolage Grotesque',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
+a{color:var(--info)}a:hover{color:var(--ink)}
+svg.i{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding-left:28px;padding-right:28px}
+@media (max-width:640px){.wrap{padding-left:16px;padding-right:16px}}
+h1,h2{font-family:var(--display);font-weight:700;margin:0}
+h2{font-size:44px;line-height:1.1}
+h3{margin:0}
+.head{display:flex;flex-direction:column;gap:12px;max-width:720px}
+.lead{margin:0;color:var(--mute);font-size:17px}
+.band{padding-top:88px;padding-bottom:88px}
+.white{background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.mono{font-family:var(--mono);font-size:13px}
+@media (max-width:640px){h2{font-size:30px}.band{padding-top:56px;padding-bottom:56px}}
+
+/* Oscuro: cabecera, hero y cierre */
+.dark{background:var(--ink);color:#fff}
+.top{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;padding-top:20px}
+.team{display:flex;align-items:center;gap:12px}
+.team b{font-family:var(--display);font-size:20px}.team .sep{width:1px;height:20px;background:#4A3A3F}
+.team span{font-size:14px;color:var(--on-dark-mute)}
+nav{display:flex;gap:4px;flex-wrap:wrap}
+nav a{color:var(--on-dark-mute);text-decoration:none;font-size:14px;font-weight:500;padding:12px}
+nav a:hover{color:#fff}
+.hero{padding-top:96px;padding-bottom:104px;display:flex;flex-direction:column;gap:28px}
+.pill{align-self:flex-start;color:var(--me);border:1px solid #5A2A33;padding:6px 14px;border-radius:999px}
+.hero h1{font-size:76px;line-height:1;letter-spacing:-.025em;max-width:960px}
+.hero p{margin:0;font-size:21px;line-height:1.5;color:var(--on-dark);max-width:760px}
+.ctas{display:flex;gap:12px;flex-wrap:wrap;padding-top:8px}
+.btn{display:inline-flex;align-items:center;gap:10px;border-radius:999px;font-weight:600;font-size:16px;text-decoration:none;min-height:48px;padding:14px 26px}
+.btn.pri{background:var(--brand);color:#fff}.btn.pri:hover{background:var(--brand-dk);color:#fff}
+.btn.ghost{color:#fff;border:1px solid #5A4A4F}.btn.ghost:hover{background:#33252A;color:#fff}
+@media (max-width:640px){.hero{padding-top:56px;padding-bottom:64px}.hero h1{font-size:46px}.hero p{font-size:18px}}
+
+/* Tarjetas */
+.cards{display:grid;gap:16px}
+.c3{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
+.c2{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.c2x{grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr))}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:10px}
+.card .k{color:var(--brand)}
+.card .big{font-family:var(--display);font-weight:700;font-size:48px;line-height:1}
+.card .s{font-size:14px;color:var(--mute)}
+.card .mono{color:var(--mute);font-size:12px;padding-top:6px}
+.principles{padding-top:88px;padding-bottom:24px}
+.principles .card p{margin:0;font-size:18px;font-weight:600}
+@media (max-width:640px){.card .big{font-size:38px}}
+
+/* Pasos del grafo */
+.steps{list-style:none;margin:32px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.steps li{border:1px solid var(--line);background:var(--bg);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:10px}
+.steps h3{font-size:18px}.steps p{margin:0;font-size:14px;color:var(--mute)}
+.steps li.human{background:var(--ink);border-color:var(--ink);color:#fff}.steps li.human p{color:var(--on-dark)}
+.chip{align-self:flex-start;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+.chip.ai{background:var(--info-bg);color:var(--info)}.chip.no{background:var(--ok-bg);color:var(--ok)}
+.chip.in{background:var(--warn-bg);color:var(--warn)}.chip.hu{background:var(--me);color:var(--brand-dk)}
+.stack{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));margin:32px 0 0;border-top:1px solid var(--line)}
+.stack div{padding:18px 20px 18px 0;border-bottom:1px solid var(--line)}
+.stack dt{font-size:13px;color:var(--mute)}.stack dd{margin:0;font-weight:600}
+
+/* Trade-offs */
+.tbl{overflow-x:auto;background:var(--card);border:1px solid var(--line);border-radius:20px;margin-top:28px}
+table{width:100%;min-width:720px;border-collapse:collapse;font-size:15px}
+th,td{text-align:left;padding:16px 24px;border-bottom:1px solid var(--line);vertical-align:top}
+thead th{color:var(--mute);font-size:13px;font-weight:600}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+td.cost{color:var(--mute)}
+
+/* Qué falta */
+.miss{border:1px dashed #D9C4BD;border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:8px}
+.miss h3{font-size:18px}.miss p{margin:0;font-size:15px;color:var(--mute)}
+
+/* Equipo */
+.person{border:1px solid var(--line);background:var(--bg);border-radius:20px;padding:24px;display:flex;gap:16px;align-items:center}
+.av{flex:none;width:52px;height:52px;border-radius:50%;background:var(--me);color:var(--brand-dk);display:inline-flex;align-items:center;justify-content:center;font-weight:700}
+.person small{display:block;font-size:14px;color:var(--mute)}
+
+.close{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:32px;padding-top:80px;padding-bottom:80px}
+.close div{flex:1 1 460px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.close p{margin:0;font-size:17px;color:var(--on-dark)}
+.foot{border-top:1px solid #3A2A2F}.foot .wrap{padding-top:24px;padding-bottom:24px;font-size:13px;color:var(--on-dark-mute)}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+</svg>
+
+<div class="dark">
+  <header class="wrap top">
+    <div class="team"><b>The Trident</b><span class="sep"></span><span>Factored AI &amp; Data Hackathon 2026</span></div>
+    <nav aria-label="Secciones">
+      <a href="#evidencia">Evidencia</a><a href="#arquitectura">Arquitectura</a><a href="#pendiente">Qué falta</a><a href="#equipo">Equipo</a>
+    </nav>
+  </header>
+  <section class="wrap hero">
+    <span class="pill mono">Workflow 4 · información de crédito y elegibilidad</span>
+    <h1>Agente Crédito LATAM</h1>
+    <p>Un agente de servicio al cliente para un banco de México, Colombia y Argentina. Informa sobre créditos y pre-evalúa en español y portugués. Nunca decide un crédito, y sabe cuándo no actuar.</p>
+    <div class="ctas">
+      <a class="btn pri" href="landing.html">Ver la experiencia del cliente <svg class="i"><use href="#i-arrow"/></svg></a>
+      <a class="btn ghost" href="https://github.com/NicolleMayol/factored-hackathon-2026-the-trident">Repositorio en GitHub</a>
+    </div>
+  </section>
+</div>
+
+<main>
+  <section class="wrap cards c3 principles" aria-label="Principios">
+    <div class="card"><span class="mono k">Autonomía</span><p>Informa y pre-evalúa. Nunca aprueba ni niega crédito.</p></div>
+    <div class="card"><span class="mono k">Exactitud</span><p>Toda cifra cita un chunk o una regla. Sin cita no se afirma.</p></div>
+    <div class="card"><span class="mono k">Supervisión</span><p>Escala a una persona con todo el contexto. Abstenerse cuenta como acierto.</p></div>
+  </section>
+
+  <section id="evidencia" class="wrap band">
+    <div class="head"><h2>Lo demostramos con números</h2><p class="lead">Medido el 5 de octubre. Cada cifra sale de un script del repo.</p></div>
+    <div class="cards c2" style="margin-top:32px">
+      <div class="card"><div class="big">1,0</div><b>Abstain accuracy · 0 falsos positivos de acción</b><span class="s">Act accuracy 0,90 en 82 casos es/pt con Llama 3.3 70B, incluidos 15 adversariales MITRE ATLAS.</span><span class="mono">eval/run_eval.py</span></div>
+      <div class="card"><div class="big">0,267 → 0</div><b>Tasa de inyecciones exitosas</b><span class="s">Un guardrail sin IA antes del modelo. Mismo resultado en los 4 endpoints probados.</span><span class="mono">15 casos adversariales</span></div>
+      <div class="card"><div class="big">1,0 · 0,917</div><b>Recall@5 del retrieval, español · portugués</b><span class="s">Híbrido vector + BM25 + RRF, enrutado por sección, con bge-m3.</span><span class="mono">eval/retrieval_eval.py · 24 preguntas</span></div>
+      <div class="card"><div class="big">0,78</div><b>AUC del pre-score sobre 134.037 clientes</b><span class="s">Las features de cartera aportan 0,12 de AUC; el modelo, 0. Ganó la regresión logística por simple.</span><span class="mono">4 experimentos en MLflow</span></div>
+      <div class="card"><div class="big">11 → 3</div><b>Fallas al pasar del prompt v1 al v2</b><span class="s">La mejora vino del prompt, no del modelo. Elegimos Llama 3.3 70B entre 4 endpoints con el mismo harness.</span><span class="mono">eval/models.md</span></div>
+      <div class="card"><div class="big">≈ 0,0013 USD</div><b>Costo por turno, ≈ 5 s en caliente</b><span class="s">Dos llamadas al 70B. El primer turno toma ≈ 15 s si el warehouse está frío.</span><span class="mono">ops.agent_turns</span></div>
+    </div>
+  </section>
+
+  <section id="arquitectura" class="white">
+    <div class="wrap band">
+      <div class="head"><h2>Dónde hay IA y dónde no</h2><p class="lead">Un grafo de LangGraph en Azure Functions. La decisión es determinista: el modelo de lenguaje conversa, no decide.</p></div>
+      <ol class="steps">
+        <li><span class="chip ai">IA + guardrail</span><h3>1 · Entender</h3><p>Regex es/pt/en antes del modelo; luego Llama 3.3 70B con salida JSON tipada.</p></li>
+        <li><span class="chip no">Sin IA</span><h3>2 · Decidir</h3><p>Reglas YAML versionadas × scopes del token × banda regulatoria por país.</p></li>
+        <li><span class="chip in">Modelo como insumo</span><h3>3 · Ejecutar</h3><p>Solo tools tipadas y autorizadas. El pre-score informa; nunca aprueba.</p></li>
+        <li><span class="chip no">Sin IA</span><h3>4 · Verificar</h3><p>Toda cifra debe existir en una cita. Si el check falla, responde con plantilla.</p></li>
+        <li class="human"><span class="chip hu">Humano</span><h3>5 · Escalar</h3><p>Handoff con contexto y motivo a la vista del analista.</p></li>
+      </ol>
+      <dl class="stack">
+        <div><dt>Chat</dt><dd>Azure Static Web Apps</dd></div>
+        <div><dt>Agente</dt><dd>Azure Functions (Python) + LangGraph</dd></div>
+        <div><dt>Modelos</dt><dd>Llama 3.3 70B y 3.1 8B · Databricks</dd></div>
+        <div><dt>Datos</dt><dd>Databricks + Unity Catalog, medallón</dd></div>
+        <div><dt>Políticas y casos</dt><dd>Azure Cosmos DB, vector + texto es/pt</dd></div>
+        <div><dt>Infra</dt><dd>Terraform + GitHub Actions con aprobación</dd></div>
+      </dl>
+    </div>
+  </section>
+
+  <section class="wrap" style="padding-top:88px;padding-bottom:48px">
+    <h2>Lo que elegimos sacrificar</h2>
+    <div class="tbl">
+      <table>
+        <thead><tr><th scope="col">Eje</th><th scope="col">Decisión</th><th scope="col">Qué se sacrifica</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Autonomía</th><td>Informa y pre-evalúa; nunca aprueba ni niega</td><td class="cost">Menos «wow» de automatización</td></tr>
+          <tr><th scope="row">Exactitud</th><td>Toda cifra cita su fuente; tasa ≤ usura verificada</td><td class="cost">Respuestas más cortas y más escalamientos</td></tr>
+          <tr><th scope="row">Latencia</th><td>p95 ≤ 8 s en caliente; scale-to-zero</td><td class="cost">Primer turno lento tras inactividad</td></tr>
+          <tr><th scope="row">Costo</th><td>Free tiers y serverless, ≈ 35–125 USD por 7 días</td><td class="cost">Sin always-on; límites de RU/s</td></tr>
+          <tr><th scope="row">Supervisión</th><td>Handoff con contexto completo y motivo</td><td class="cost">Parte de los casos no se resuelve en el chat</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="pendiente" class="wrap" style="padding-top:48px;padding-bottom:88px">
+    <div class="head"><h2>Qué falta y por qué</h2><p class="lead">Lo dejamos escrito en vez de esconderlo.</p></div>
+    <div class="cards c2x" style="margin-top:28px">
+      <div class="miss"><h3>Model Serving</h3><p>El SKU de prueba no lo permite. Los modelos están registrados en Unity Catalog; el pre-score corre en proceso con el mismo modelo exportado.</p></div>
+      <div class="miss"><h3>Embeddings en runtime</h3><p>Sin endpoint no hay vector de consulta. El agente desplegado usa BM25 + enrutado por sección.</p></div>
+      <div class="miss"><h3>Held-out real</h3><p>El dataset no distingue los cinco intents del workflow. Haría falta etiquetar transcripciones reales.</p></div>
+      <div class="miss"><h3>Portugués en el dataset</h3><p>El dataset es 100 % español. El portugués se mide con corpus y casos sintéticos, y así lo declaramos.</p></div>
+    </div>
+  </section>
+
+  <section id="equipo" class="white">
+    <div class="wrap band">
+      <div class="head"><h2>The Trident</h2><p class="lead">Documentación como código: cada decisión entra por PR con su análisis de impacto.</p></div>
+      <div class="cards c3" style="margin-top:28px">
+        <div class="person"><span class="av" aria-hidden="true">EY</span><div><b>Eladio Yovera</b><small>Datos</small></div></div>
+        <div class="person"><span class="av" aria-hidden="true">ML</span><div><b>Manuela Larrea</b><small>IA / ML</small></div></div>
+        <div class="person"><span class="av" aria-hidden="true">NM</span><div><b>Nicolle Mayol</b><small>Servicio</small></div></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="dark">
+  <div class="wrap close">
+    <div><h2>Ahora, como lo ve el cliente.</h2><p>Clientes de prueba con datos sintéticos: apto, condicionado, no califica, en portugués y solo consulta.</p></div>
+    <a class="btn pri" href="landing.html" style="font-size:17px;font-weight:700;padding:16px 30px;min-height:52px">Ir a la landing del cliente <svg class="i"><use href="#i-arrow"/></svg></a>
+  </div>
+  <div class="foot"><div class="wrap">Factored AI &amp; Data Hackathon 2026 · Datos y catálogo sintéticos, etiquetados como tales.</div></div>
+</footer>
+</body>
+</html>

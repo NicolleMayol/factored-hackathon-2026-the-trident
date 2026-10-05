@@ -337,6 +337,28 @@
           ]
         ],
         "loading": "Cargando…"
+      },
+      "landing": {
+        "nav_how": "Cómo funciona",
+        "nav_products": "Productos",
+        "nav_data": "Tus datos",
+        "nav_chat": "Hablar con el asistente",
+        "cta": "Empezar en el chat",
+        "hint": "En español o portugués, sin compromiso.",
+        "sample_q": "¿Cuál es la tasa del {product}?",
+        "sample_a": "En {country}, el {product} tiene una tasa anual de {min} a {max}, con plazo de hasta {term} meses.",
+        "how_title": "Cómo funciona",
+        "stage_desc": [
+          "Preguntas por requisitos, tasas, montos o plazos. Te responde con la fuente de cada cifra.",
+          "Si la autorizas, revisa tu perfil con las reglas de elegibilidad y te dice si calificas.",
+          "Un asesor recibe tu caso con lo que pediste, lo que se verificó y por qué.",
+          "Las confirma una persona del banco. El asistente no aprueba ni niega créditos."
+        ],
+        "products_title": "Productos por país",
+        "products_lead": "Elige el país donde abriste tu cuenta. Las tasas y plazos salen del catálogo del banco.",
+        "data_lead": "Nada se consulta sin tu permiso, y todo queda registrado.",
+        "final_title": "Pregunta lo que necesites.",
+        "final_cta": "Abrir el chat"
       }
     },
     "pt": {
@@ -664,6 +686,28 @@
           ]
         ],
         "loading": "Carregando…"
+      },
+      "landing": {
+        "nav_how": "Como funciona",
+        "nav_products": "Produtos",
+        "nav_data": "Seus dados",
+        "nav_chat": "Falar com o assistente",
+        "cta": "Começar no chat",
+        "hint": "Em espanhol ou português, sem compromisso.",
+        "sample_q": "Qual é a taxa do {product}?",
+        "sample_a": "{country}: o {product} tem taxa anual de {min} a {max}, com prazo de até {term} meses.",
+        "how_title": "Como funciona",
+        "stage_desc": [
+          "Você pergunta sobre requisitos, taxas, valores ou prazos. A resposta traz a fonte de cada número.",
+          "Se você autorizar, ele avalia seu perfil com as regras de elegibilidade e diz se você se qualifica.",
+          "Um assessor recebe seu caso com o que você pediu, o que foi verificado e por quê.",
+          "Uma pessoa do banco confirma as condições. O assistente não aprova nem nega crédito."
+        ],
+        "products_title": "Produtos por país",
+        "products_lead": "Escolha o país onde você abriu sua conta. As taxas e prazos vêm do catálogo do banco.",
+        "data_lead": "Nada é consultado sem sua permissão, e tudo fica registrado.",
+        "final_title": "Pergunte o que precisar.",
+        "final_cta": "Abrir o chat"
       }
     }
   }

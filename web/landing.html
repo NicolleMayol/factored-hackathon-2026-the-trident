@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asistente de crédito · Bank Company</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400&display=swap" rel="stylesheet">
+<script src="config.js"></script>
+<style>
+:root{color-scheme:light;--bg:#FAF6F4;--card:#FFFFFF;--soft:#F7F2EF;--ink:#22161A;--mute:#6B5A5F;--line:#EADBD5;--brand:#B0243A;--brand-dk:#861B2C;--me:#F6E1E1;
+--ok:#145C3B;--ok-bg:#E3F3EA;--info:#1D3F8A;--stop:#7A1D1D;--stop-bg:#FBEAEA;
+--display:'Bricolage Grotesque',system-ui,sans-serif;--mono:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',sans-serif}
+a{color:var(--info)}a:hover{color:var(--ink)}
+button{font:inherit;color:inherit;cursor:pointer}
+svg.i{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.wrap{width:100%;max-width:1200px;margin:0 auto;padding-left:28px;padding-right:28px}
+@media (max-width:640px){.wrap{padding-left:16px;padding-right:16px}}
+[hidden]{display:none!important}
+
+/* Cabecera */
+header{background:var(--card);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding-top:12px;padding-bottom:12px}
+.brand{display:flex;align-items:center;gap:16px;text-decoration:none;color:inherit}.brand img{height:40px;width:auto;display:block}
+.brand .sep{width:1px;height:30px;background:var(--line)}.brand b{font-weight:700}
+nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+nav a{color:var(--mute);text-decoration:none;font-size:14px;font-weight:500;padding:12px}
+nav a:hover{color:var(--ink)}
+.seg{display:flex;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;border-radius:999px;padding:6px 14px;font-size:13px;color:var(--mute);min-height:32px}
+.seg button[aria-pressed=true]{background:var(--card);color:var(--ink);font-weight:600;box-shadow:0 1px 2px rgba(34,22,26,.12)}
+.btn{display:inline-flex;align-items:center;gap:10px;border-radius:999px;font-weight:600;text-decoration:none;min-height:44px;padding:12px 22px}
+.btn.pri{background:var(--brand);color:#fff}.btn.pri:hover{background:var(--brand-dk);color:#fff}
+.btn.sec{background:var(--card);color:var(--ink);border:1px solid var(--line)}.btn.sec:hover{background:var(--soft)}
+.btn.lg{font-size:16px;padding:14px 26px;min-height:48px}
+@media (max-width:860px){nav .sec-link{display:none}}
+@media (max-width:640px){.brand img{height:32px}.brand .sep,.brand b{display:none}}
+
+h1,h2{font-family:var(--display);font-weight:700;margin:0}
+h2{font-size:40px;line-height:1.1}
+.lead{margin:0;color:var(--mute);font-size:17px;max-width:680px}
+.head{display:flex;flex-direction:column;gap:12px}
+.band{padding-top:96px;padding-bottom:96px}
+.white{background:var(--card);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+@media (max-width:640px){h2{font-size:30px}.band{padding-top:64px;padding-bottom:64px}}
+
+/* Hero */
+.hero{display:flex;flex-wrap:wrap;gap:56px;align-items:center;padding-top:88px;padding-bottom:72px}
+.hero .txt{flex:1 1 460px;min-width:0;display:flex;flex-direction:column;gap:24px}
+.hero h1{font-size:64px;line-height:1.04;letter-spacing:-.02em}
+.hero .sub{margin:0;font-size:19px;color:var(--mute);max-width:520px}
+.badge{align-self:flex-start;background:var(--me);color:var(--brand-dk);font-size:13px;font-weight:600;padding:6px 14px;border-radius:999px}
+.ctas{display:flex;gap:12px;flex-wrap:wrap;padding-top:8px}
+.hint{margin:0;font-size:13px;color:var(--mute)}
+@media (max-width:640px){.hero{padding-top:48px;gap:36px}.hero h1{font-size:42px}}
+
+/* Muestra del chat: se arma con /api/meta */
+.sample{flex:1 1 420px;min-width:0;background:var(--card);border:1px solid var(--line);border-radius:24px;padding:24px;display:flex;flex-direction:column;gap:16px;box-shadow:0 24px 48px -24px rgba(34,22,26,.18)}
+.sample .top{display:flex;justify-content:space-between;align-items:center;gap:12px;font-weight:700;font-size:15px}
+.dot{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:400;color:var(--mute)}.dot i{width:7px;height:7px;border-radius:50%;background:#1F7A55}
+.me{align-self:flex-end;background:var(--me);padding:12px 18px;border-radius:18px 18px 4px 18px;font-size:15px;max-width:85%}
+.bot{background:var(--soft);border:1px solid var(--line);border-radius:4px 18px 18px 18px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;max-width:92%}
+.tag{align-self:flex-start;background:var(--ok-bg);color:var(--ok);font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+.kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.kv div{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kv small{display:block;font-size:12px;color:var(--mute)}.kv b{font-weight:700}
+.src{font-family:var(--mono);font-size:12px;color:var(--mute);border-top:1px dashed var(--line);padding-top:10px}
+.fake{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:6px 6px 6px 18px;font-size:14px;color:var(--mute)}
+.fake span{flex:1}.fake i{width:36px;height:36px;border-radius:50%;background:var(--brand);color:#fff;display:inline-flex;align-items:center;justify-content:center}
+.typing{color:var(--mute);font-size:14px}
+
+/* Promesas */
+.promises{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:32px;padding-top:40px;padding-bottom:40px;margin:0 auto;list-style:none}
+.promises li{display:flex;gap:14px;align-items:flex-start;font-weight:600}
+.ico{flex:none;width:40px;height:40px;border-radius:12px;background:var(--me);color:var(--brand-dk);display:inline-flex;align-items:center;justify-content:center}
+
+/* Etapas */
+.stages{list-style:none;margin:40px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.stages li{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:10px}
+.stages .n{font-family:var(--mono);font-size:13px;color:var(--brand)}
+.stages h3{margin:0;font-size:18px}.stages p{margin:0;color:var(--mute);font-size:15px}
+.stages li:last-child{background:var(--ink);border-color:var(--ink);color:#fff}
+.stages li:last-child .n{color:var(--me)}.stages li:last-child p{color:#E6D8D4}
+
+/* Hace / nunca hace */
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px;padding-bottom:96px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:16px}
+.box h3{margin:0;font-size:20px}
+.box.never{background:var(--stop-bg);border-color:#EFCFCF}.box.never h3{color:var(--stop)}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.list li{display:flex;gap:12px;align-items:flex-start}.list svg.i{margin-top:2px}
+.does svg.i{color:var(--ok)}.never svg.i{color:var(--stop)}
+
+/* Productos */
+.phead{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:24px}
+.seg.big{padding:4px}.seg.big button{font-size:14px;padding:10px 18px;min-height:44px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-top:32px}
+.prod{border:1px solid var(--line);background:var(--bg);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:18px}
+.prod h3{margin:0;font-size:19px}
+.prod dl{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.prod dt{font-size:12px;color:var(--mute)}.prod dd{margin:0;font-weight:700;font-size:17px}
+.prod .code{font-family:var(--mono);font-size:12px;color:var(--mute)}
+.note{margin:24px 0 0;font-size:13px;color:var(--mute)}
+
+/* Tus datos */
+.data{display:flex;flex-wrap:wrap;gap:48px}
+.data .head{flex:1 1 320px;min-width:0}
+.data ol{flex:2 1 520px;min-width:0;list-style:none;margin:0;padding:0}
+.data li{padding:20px 0;border-top:1px solid var(--line);display:flex;gap:20px;align-items:baseline;font-size:17px}
+.data li:last-child{border-bottom:1px solid var(--line)}
+.data li b{font-family:var(--mono);font-weight:400;font-size:13px;color:var(--brand);flex:none}
+
+/* Llamado final */
+.final{background:var(--brand);color:#fff;border-radius:28px;padding:56px 48px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:32px}
+.final div{flex:1 1 420px;min-width:0;display:flex;flex-direction:column;gap:10px}
+.final p{margin:0;font-size:17px;color:#FBE9EB}
+.final a{background:#fff;color:var(--brand-dk);text-decoration:none;font-weight:700;font-size:17px;padding:16px 30px;border-radius:999px;min-height:52px;display:inline-flex;align-items:center;gap:10px}
+.final a:hover{background:var(--soft);color:var(--brand-dk)}
+@media (max-width:640px){.final{padding:36px 24px}}
+
+footer{background:var(--card);border-top:1px solid var(--line)}
+footer .wrap{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;padding-top:24px;padding-bottom:24px;font-size:13px;color:var(--mute)}
+footer b{color:var(--ink);font-family:var(--display);font-size:15px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+  <symbol id="i-ban" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6l-8-3Z"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8l-5-5Z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-7 8-7s8 3 8 7"/></symbol>
+</svg>
+
+<header>
+  <div class="wrap">
+    <a class="brand" href="#inicio"><img src="logo-bank.png" alt="Bank Company"><span class="sep"></span><b data-t="text.title">Asistente de crédito</b></a>
+    <nav aria-label="Secciones">
+      <a class="sec-link" href="#como-funciona" data-t="landing.nav_how"></a>
+      <a class="sec-link" href="#productos" data-t="landing.nav_products" id="navProducts" hidden></a>
+      <a class="sec-link" href="#tus-datos" data-t="landing.nav_data"></a>
+      <div class="seg" id="langs" role="group"></div>
+      <a class="btn pri chat" href="index.html" data-t="landing.nav_chat"></a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section id="inicio" class="wrap hero">
+    <div class="txt">
+      <span class="badge" id="badge" hidden></span>
+      <h1 data-t="text.hello">Tu crédito, claro desde el primer mensaje.</h1>
+      <p class="sub" data-t="text.hello_sub"></p>
+      <div class="ctas">
+        <a class="btn pri lg chat" href="index.html"><span data-t="landing.cta"></span><svg class="i"><use href="#i-arrow"/></svg></a>
+        <a class="btn sec lg" id="howLink" href="como-funciona.html" data-t="how.more"></a>
+      </div>
+      <p class="hint" data-t="landing.hint"></p>
+    </div>
+
+    <div class="sample" aria-hidden="true">
+      <div class="top"><span data-t="text.title"></span><span class="dot"><i></i><span data-t="text.online"></span></span></div>
+      <div class="me" id="sq"></div>
+      <div class="bot" id="sa" hidden>
+        <span class="tag" data-t="tags.answer"></span>
+        <div id="saText"></div>
+        <div class="kv"><div><small data-t="text.rate"></small><b id="saRate"></b></div><div><small data-t="text.term"></small><b id="saTerm"></b></div></div>
+        <div class="src" id="saSrc"></div>
+      </div>
+      <div class="typing" id="sWait" data-t="text.thinking"></div>
+      <div class="fake"><span data-t="text.placeholder"></span><i><svg class="i" style="width:16px;height:16px"><use href="#i-arrow"/></svg></i></div>
+    </div>
+  </section>
+
+  <div class="white">
+    <ul class="wrap promises" id="promises"></ul>
+  </div>
+
+  <section id="como-funciona" class="wrap band" style="padding-bottom:48px">
+    <div class="head"><h2 data-t="landing.how_title"></h2><p class="lead" data-t="how_page.lead"></p></div>
+    <ol class="stages" id="stages"></ol>
+  </section>
+
+  <div class="wrap two">
+    <section class="box does"><h3 data-t="how_page.does_title"></h3><ul class="list" id="does"></ul></section>
+    <section class="box never"><h3 data-t="how_page.never_title"></h3><ul class="list" id="never"></ul></section>
+  </div>
+
+  <!-- Productos: salen de GET /api/meta; si la API está en frío, la sección no aparece. -->
+  <section id="productos" class="white" hidden>
+    <div class="wrap band">
+      <div class="phead">
+        <div class="head"><h2 data-t="landing.products_title"></h2><p class="lead" data-t="landing.products_lead"></p></div>
+        <div class="seg big" id="ctry" role="group"></div>
+      </div>
+      <div class="grid" id="prods"></div>
+      <p class="note" data-t="how_page.sources_note"></p>
+    </div>
+  </section>
+
+  <section id="tus-datos" class="wrap band data">
+    <div class="head"><h2 data-t="how_page.data_title"></h2><p class="lead" data-t="landing.data_lead"></p></div>
+    <ol id="data"></ol>
+  </section>
+
+  <section class="wrap" style="padding-bottom:96px">
+    <div class="final">
+      <div><h2 data-t="landing.final_title"></h2><p data-t="text.nonbinding"></p></div>
+      <a class="chat" href="index.html"><span data-t="landing.final_cta"></span><svg class="i"><use href="#i-arrow"/></svg></a>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap"><span data-t="text.footer"></span><span><span data-t="text.made_by">Hecho por</span> <b id="teamName">The Trident</b> · <span id="teamEvent"></span></span></div></footer>
+
+<script>
+// Textos: ui.json (landing, text, how, how_page, stages). Países y productos: GET /api/meta (ADR-25).
+const API=(window.API_BASE||"").replace(/\/$/,"")+"/api";
+let UI=null,META=null,lang="es",country=null;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const ic=n=>`<svg class="i"><use href="#i-${n}"/></svg>`;
+function t(path,l=lang){const get=x=>path.split(".").reduce((o,k)=>o==null?o:o[k],UI&&UI.lang[x]);const v=get(l);return v!=null?v:(get(UI.default_lang)??path)}
+const fill=(s,v)=>String(s).replace(/\{(\w+)\}/g,(_,k)=>v[k]??"");
+const langOf=c=>{const l=String(c||"").slice(0,2);return UI.lang[l]?l:UI.default_lang};
+const pct=x=>`${Number(x).toLocaleString(lang,{maximumFractionDigits:2})} %`;
+const pname=p=>p.name[lang]||p.name[UI.default_lang];
+const lower=s=>s.charAt(0).toLowerCase()+s.slice(1);
+
+function render(){
+ document.documentElement.lang=lang;document.title=`${t("text.title")} · Bank Company`;
+ document.querySelectorAll("[data-t]").forEach(e=>e.textContent=t(e.dataset.t));
+ document.querySelectorAll("#langs button").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.l===lang)));
+ // El chat y «Cómo funciona» abren en el idioma elegido aquí.
+ document.querySelectorAll("a.chat").forEach(a=>a.href=`index.html?lang=${lang}`);$("howLink").href=`como-funciona.html?lang=${lang}`;
+ const icons=["shield","file","user"];
+ $("promises").innerHTML=t("how.items").map((x,i)=>`<li><span class="ico">${ic(icons[i]||"check")}</span><span>${esc(x)}</span></li>`).join("");
+ const desc=t("landing.stage_desc");
+ $("stages").innerHTML=t("stages").map((s,i)=>`<li><span class="n">0${i+1}</span><h3>${esc(s)}</h3><p>${esc(desc[i]||"")}</p></li>`).join("");
+ const li=(arr,icon)=>arr.map(x=>`<li>${ic(icon)}<span>${esc(x)}</span></li>`).join("");
+ $("does").innerHTML=li(t("how_page.does"),"check");$("never").innerHTML=li(t("how_page.never"),"ban");
+ $("data").innerHTML=t("how_page.data").map((x,i)=>`<li><b>${String.fromCharCode(65+i)}</b><span>${esc(x)}</span></li>`).join("");
+ const tm=UI.team||{};$("teamName").textContent=tm.name||"";$("teamEvent").textContent=tm.event||"";
+ fromMeta()}
+
+// Todo lo que depende del catálogo: países, ejemplo del chat y productos.
+function fromMeta(){
+ const ok=!!(META&&Object.keys(META.products||{}).length);
+ $("productos").hidden=!ok;$("navProducts").hidden=!ok;$("badge").hidden=!ok;$("sa").hidden=!ok;$("sWait").hidden=ok;
+ const first=ok?Object.values(META.products).find(p=>p.type==="personal_loan")||Object.values(META.products)[0]:null;
+ $("sq").textContent=fill(t("landing.sample_q"),{product:first?lower(pname(first)):"…"});
+ if(!ok)return;
+ const codes=Object.keys(META.countries);if(!country)country=first.country;
+ $("badge").textContent=codes.map(c=>META.countries[c]).join(" · ");
+ const fcode=Object.keys(META.products).find(k=>META.products[k]===first);
+ $("saText").textContent=fill(t("landing.sample_a"),{country:META.countries[first.country],product:lower(pname(first)),min:pct(first.rate_min),max:pct(first.rate_max),term:first.term_months_max});
+ $("saRate").textContent=`${pct(first.rate_min)} – ${pct(first.rate_max)}`;
+ $("saTerm").textContent=fill(t("text.term_value"),{n:first.term_months_max});
+ $("saSrc").textContent=`${t("text.sources")} · ${t("text.catalog")} ${fcode}`;
+ const g=$("ctry");g.setAttribute("aria-label",t("landing.nav_products"));g.innerHTML="";
+ for(const c of codes){const b=document.createElement("button");b.type="button";b.textContent=META.countries[c];b.setAttribute("aria-pressed",String(c===country));b.onclick=()=>{country=c;fromMeta()};g.appendChild(b)}
+ $("prods").innerHTML=Object.entries(META.products).filter(([,p])=>p.country===country).map(([code,p])=>
+  `<article class="prod"><h3>${esc(pname(p))}</h3><dl>`+
+  (p.rate_min!=null?`<div><dt>${esc(t("text.rate"))}</dt><dd>${pct(p.rate_min)} – ${pct(p.rate_max)}</dd></div>`:"")+
+  (p.term_months_max?`<div><dt>${esc(t("text.term"))}</dt><dd>${esc(fill(t("text.term_value"),{n:p.term_months_max}))}</dd></div>`:"")+
+  `</dl><span class="code">${esc(t("text.catalog"))} ${esc(code)}</span></article>`).join("")}
+
+async function boot(){
+ try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){return}
+ lang=langOf(new URLSearchParams(location.search).get("lang")||navigator.language);
+ const g=$("langs");g.setAttribute("aria-label",t("text.language"));
+ for(const l of Object.keys(UI.lang)){const n=t("lang_names."+l,l),b=document.createElement("button");b.type="button";b.dataset.l=l;b.textContent=n.charAt(0).toUpperCase()+n.slice(1);
+  b.onclick=()=>{lang=l;try{history.replaceState(null,"",`?lang=${l}`)}catch(e){}render()};g.appendChild(b)}
+ render();
+ // Si la API está en frío, la página se ve igual sin el catálogo.
+ try{const r=await fetch(API+"/meta");if(r.ok){META=await r.json();fromMeta()}}catch(e){}}
+boot();
+</script>
+</body>
+</html>
