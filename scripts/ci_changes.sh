@@ -29,3 +29,7 @@ emit function  '^(agent/|policy/|contracts/|deploy/|data/mock/|requirements\.txt
 emit web       '^(web/|\.github/workflows/deploy-web\.yml$)'
 emit bundles   '^(data/|policy/catalog\.yaml$|\.github/workflows/bundles\.yml$)'
 emit diagrams  '^(diagrams/|contracts/impact-map\.yaml$|\.github/workflows/diagram-sync\.yml$)' '^diagrams/out/'
+# drawio: solo si cambia el dibujo; main exporta y sube los PNG con la App (diagram-export.yml).
+# Ni el impact-map ni un cambio del pipeline re-exportan: el render cambia bytes aunque el dibujo sea igual.
+if only '^diagrams/.*\.drawio$'; then v=true; else v=false; fi
+echo "drawio=$v" >> "$out"; [ "$out" = /dev/stdout ] || echo "drawio=$v"

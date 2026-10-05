@@ -1,18 +1,31 @@
-# Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml.
-# Diagrama de arquitectura · main: exporta los PNG una vez, al mergear, y los sube con [skip ci].
+# Pieza reutilizable del pipeline (ADR-27): la llama main.yml cuando cambia un .drawio.
+# Exporta los PNG y los sube a main con la GitHub App del equipo (diagram bot), que está en la lista de
+# bypass del ruleset de main. GITHUB_TOKEN no puede saltarse la protección; la App sí, con permiso
+# contents: write en este repo y un token que dura 1 hora. El commit lleva [skip ci]: no dispara nada.
 name: diagram-export
 on:
-  # Lo llama main.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
   workflow_call:
   workflow_dispatch:
+
+permissions: { contents: read }
 
 jobs:
   export:
     runs-on: ubuntu-latest
-    permissions: { contents: write }
+    # El environment guarda la llave de la App y solo acepta la rama main.
+    environment: diagrams
     concurrency: { group: diagram-export, cancel-in-progress: true }
     steps:
+      - name: Token de la App
+        id: app
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.DIAGRAM_BOT_APP_ID }}
+          private-key: ${{ secrets.DIAGRAM_BOT_PRIVATE_KEY }}
       - uses: actions/checkout@v4
+        with:
+          token: ${{ steps.app.outputs.token }}
+          ref: main
       - name: Exportar PNG
         uses: rlespinasse/drawio-export-action@v2
         with:
@@ -23,7 +36,16 @@ jobs:
           scale: 2
           action-mode: all
       - name: Subir exportes a main
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          SLUG: ${{ steps.app.outputs.app-slug }}
         run: |
-          git config user.name "diagram-bot"; git config user.email "bot@users.noreply.github.com"
+          set -euo pipefail
+          id=$(gh api "/users/${SLUG}%5Bbot%5D" --jq .id)
+          git config user.name "${SLUG}[bot]"
+          git config user.email "${id}+${SLUG}[bot]@users.noreply.github.com"
           git add diagrams/out
-          if git diff --cached --quiet; then echo "sin cambios"; else git commit -m "chore(diagrams): export [skip ci]" && git push; fi
+          if git diff --cached --quiet; then echo "sin cambios"; exit 0; fi
+          git commit -m "chore(diagrams): export [skip ci]"
+          git pull --rebase -q origin main   # por si entró otro merge mientras exportaba
+          git push origin HEAD:main

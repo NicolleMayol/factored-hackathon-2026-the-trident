@@ -325,7 +325,7 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 changes → ci → infra (plan + apply con aprobación) → bundles ∥ function → web → smoke e2e → resumen
 ```
 
-Si `ci` falla no se despliega nada. Si el apply espera aprobación, function y bundles esperan con él. Infra solo corre si cambian los `.tf` o `infra/scripts/`: un cambio del pipeline o de `infra.yml` no planea ni pide aprobación (para forzarlo, `workflow_dispatch` de `infra.yml`). `adr-impact`, `data-landing` y `release` quedan aparte; `release` exige `main.yml` en verde para el commit del tag.
+Si `ci` falla no se despliega nada. Si el apply espera aprobación, function y bundles esperan con él. Infra solo corre si cambian los `.tf` o `infra/scripts/`: un cambio del pipeline o de `infra.yml` no planea ni pide aprobación (para forzarlo, `workflow_dispatch` de `infra.yml`). Los PNG del diagrama: `diagram-sync` los deja como vista previa en el PR; al mergear un cambio en un `.drawio`, `diagram-export` los sube a main con una GitHub App propia (solo `contents: write` en este repo, token de 1 hora, llave en el environment `diagrams` restringido a main), que es el único actor en el bypass del ruleset de main; `GITHUB_TOKEN` no puede saltarse la protección. `adr-impact`, `data-landing` y `release` quedan aparte; `release` exige `main.yml` en verde para el commit del tag.
 
 | Antes (9 workflows sueltos) | Ahora |
 | --- | --- |

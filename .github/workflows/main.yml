@@ -1,7 +1,8 @@
 # ADR-27 · Pipeline de main. Un merge = un run con orden fijo; cada capa corre solo si cambió:
 #   changes → ci → infra (plan + apply con aprobación) → bundles ∥ function → web → smoke → resumen
 # Si ci falla no se despliega nada. Si infra espera aprobación, function y bundles esperan con ella.
-# Las piezas son workflows reutilizables (ci, infra, bundles, deploy, deploy-web, diagram-export).
+# Las piezas son workflows reutilizables (ci, infra, bundles, deploy, deploy-web).
+# Diagramas: si cambia un .drawio, diagram-export.yml sube los PNG a main con la GitHub App del equipo (bypass del ruleset).
 name: main
 on:
   push:
@@ -20,7 +21,7 @@ jobs:
       function: ${{ steps.c.outputs.function }}
       web: ${{ steps.c.outputs.web }}
       bundles: ${{ steps.c.outputs.bundles }}
-      diagrams: ${{ steps.c.outputs.diagrams }}
+      drawio: ${{ steps.c.outputs.drawio }}
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
@@ -69,8 +70,9 @@ jobs:
 
   diagrams:
     needs: changes
-    if: needs.changes.outputs.diagrams == 'true'
+    if: needs.changes.outputs.drawio == 'true'
     uses: ./.github/workflows/diagram-export.yml
+    secrets: inherit
 
   # De punta a punta contra lo desplegado: API (salud, /meta, sesión, un turno de chat real) y UI.
   smoke:
