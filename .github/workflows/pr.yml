@@ -47,8 +47,27 @@ jobs:
     if: needs.changes.outputs.diagrams == 'true'
     uses: ./.github/workflows/diagram-sync.yml
 
+  # ADR-28 F12: ningún secreto en los commits del PR (reglas por defecto de gitleaks; falsos positivos en .gitleaksignore).
+  # A mano (workflow_dispatch) revisa toda la historia. Binario fijo y verificado contra el checksum del release.
+  secretos:
+    runs-on: ubuntu-latest
+    env: { V: "8.30.1" }
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - name: gitleaks
+        run: |
+          set -euo pipefail
+          u="https://github.com/gitleaks/gitleaks/releases/download/v$V"
+          curl -sSfLO "$u/gitleaks_${V}_linux_x64.tar.gz" -O "$u/gitleaks_${V}_checksums.txt"
+          sha256sum -c --ignore-missing "gitleaks_${V}_checksums.txt"
+          tar xzf "gitleaks_${V}_linux_x64.tar.gz" gitleaks
+          base="${{ github.event.pull_request.base.sha }}"; head="${{ github.event.pull_request.head.sha || github.sha }}"
+          if [ -n "$base" ]; then rango="$base..$head"; else rango="--all"; fi
+          ./gitleaks git . --log-opts="$rango" --redact --no-banner -v
+
   pr-gate:
-    needs: [changes, ci, infra, bundles, diagrams]
+    needs: [changes, ci, infra, bundles, diagrams, secretos]
     if: always()
     runs-on: ubuntu-latest
     steps:

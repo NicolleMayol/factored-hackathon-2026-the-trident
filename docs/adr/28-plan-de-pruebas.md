@@ -100,7 +100,9 @@ Los valores límite de F05 se aplican dentro de las filas 7 y 8.
 | 5 | F15 | k6 con 10 usuarios contra la Function, antes de grabar el video | servicio | 30 min |
 | 6 | F05 | Valores límite en `test_policy_engine` | ia-ml | 30 min |
 
-**Después (To-Be):** F03, F02 (mutaciones), F13, F16, F20, F14, F19, F18 y ampliar el eval a 300 casos.
+**Estado (lun 5).** Las seis tienen PR. F08 y F05 en `tests/` (F08 encontró un bug: solo los timeouts escalaban; un 403, un SQL fallido o la red caída salían como 500). F13 adelantada: `tests/test_datos_fuera_del_repo.py` en `pr-gate`. F09 corre `check_access.py --segun-modos`: solo lo que la Function usa en real, más A8 (escritura en `ops.agent_turns`). F15 es `carga.yml`, a mano.
+
+**Después (To-Be):** F03, F02 (mutaciones), F16, F20, F14, F19, F18 y ampliar el eval a 300 casos.
 
 **Impacto.**
 
