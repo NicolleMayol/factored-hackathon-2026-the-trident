@@ -1,6 +1,6 @@
 # 09-servicio
 
-Owner: Nicolle · v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
+Owner: Nicolle · v3.4 · 2026-10-05 (ADR-25: UI sin datos quemados, `GET /meta`, nombres de recursos en variables del repo). v3.3 · 2026-10-01 (full-text es/pt en `policy_chunks` y copia de insumos a volúmenes de ref, PR #18). v3.2 · 2026-09-30 (stack `infra/databricks` desplegado, ADR-20).
 
 ## ADR-19 · Plan de infraestructura en Terraform  ·  rol: servicio  ·  2026-09-29  ·  estado: cerrada
 
@@ -240,3 +240,50 @@ Créditos disponibles: sin confirmar. `budget_usd` se fija en la fase 0. El work
 | N5 (cambia) | Static Web Apps Free: chat + vista `/handoff` | Nicolle → Manuela | Azure | recurso creado; UI mié 30 | curl |
 
 **Base regulatoria.** No aplica en el hackathon: el dataset es de Factored y todo queda en East US 2 dentro del tenant. Residencia y retención por país quedan en To-Be, a validar con legal.
+
+
+## ADR-25 · UI sin datos quemados: `GET /meta` y textos en `web/ui.json`  ·  rol: servicio  ·  2026-10-05  ·  estado: cerrada
+
+**Decisión.** La UI lee los datos de negocio de `GET /api/meta` (servicio), que los arma con los mismos archivos que lee el agente; los textos por idioma viven en `web/ui.json`; los workflows de despliegue toman los nombres de recursos de variables del repo.
+
+| Qué estaba quemado | De dónde sale ahora |
+| --- | --- |
+| Personas de prueba | `SESSION_USERS` de `/session` (+ `country` de las filas `TEST-*`, ADR-22) |
+| Países y productos (nombres es/pt, tasa, plazo, montos) | `policy/catalog.yaml` |
+| Tasa y plazo de la tarjeta de resultado (antes regex sobre el texto) | catálogo del producto citado (`product_code` del `chunk_id`) |
+| Resultados posibles | `contracts/tools.yaml` · `evaluate_eligibility.outcome` |
+| Motivos de escalamiento (la UI usaba códigos que no estaban en el enum) | `contracts/handoff.schema.json` · `reason_code` |
+| Monto de las sugerencias (5.000.000 fijo: en MX, catálogo en USD, la pre-evaluación salía "No elegible" por monto) | `amount_min × 10` del producto del país del cliente, con tope `amount_max` |
+| Textos es/pt dentro del JS | `web/ui.json` (otro idioma = un bloque nuevo) |
+| `RG`, `FUNC`, `SWA` en `deploy.yml` y `deploy-web.yml` | variables del repo `AZURE_RESOURCE_GROUP`, `FUNCTION_APP_NAME`, `STATIC_WEB_APP_NAME`; el job falla si falta una |
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Copiar `catalog.yaml` a `web/` en el deploy | La UI y el agente podrían leer versiones distintas; `deploy-web` no corre cuando cambia el catálogo |
+| Textos en `/meta` | Si la Function está en frío, la UI no tendría ni los textos; `ui.json` es estático y del mismo origen |
+| Leer el país del cliente con `get_customer_profile` | Pide JWT y despierta el warehouse; `/meta` es público y no toca datos de clientes |
+| Variables de environment `hackathon` | Los jobs de deploy no usan environment (sin aprobación); las variables del repo bastan |
+
+**Impacto.**
+
+| Elemento | Estado | Owner | Consumers afectados | Qué deben hacer | Fecha límite |
+| --- | --- | --- | --- | --- | --- |
+| `api.GET_/meta` | nuevo | servicio | — | nada | — |
+| `contracts/api.yaml` | cambia (v1.3.0) | ia-ml / servicio | ia-ml | revisar que `/meta` no choca con rutas del agente | lun 5 |
+| `gold.credit_product_catalog` (`policy/catalog.yaml`) | existe; nuevo lector | datos | servicio | no renombrar los campos que lee `/meta` sin avisar | — |
+| `handoff.schema` · `reason_code` | existe; nuevo lector | ia-ml | servicio | un código nuevo necesita texto en `web/ui.json` (el test falla si falta) | — |
+| `tools.*` · `evaluate_eligibility.outcome` | existe; nuevo lector | ia-ml | servicio | igual: un resultado nuevo necesita texto en `web/ui.json` | — |
+| `infra.ci_cd` | cambia | servicio | — | Nicolle crea las 3 variables del repo antes del merge | lun 5 |
+
+**Cómo se prueba.** `tests/test_meta.py` en CI: `/meta` devuelve exactamente los productos, países, usuarios, resultados y motivos de las fuentes; no expone `customer_id`; `web/ui.json` tiene texto para cada código y las mismas claves en cada idioma. Flujos de la UI en Playwright contra el agente con mocks (CO, MX, AR, pt, solo lectura, analista).
+
+**Hackathon vs To-Be.**
+
+| Hackathon | To-Be |
+| --- | --- |
+| `/meta` lee archivos del paquete; cache 5 min | `/meta` desde `gold.credit_product_catalog` con versión y ETag |
+| País de la persona desde las filas `TEST-*` del mock | personas reales con Entra External ID; país del perfil |
+| El resultado se sigue leyendo del texto (frase que exige el nodo verify) | `/chat/confirm` devuelve `result` estructurado (propuesta a ia-ml) |
+| Variables del repo puestas a mano | Terraform escribe las variables con el provider de GitHub |
+
+**Dependencias.** Sin filas nuevas ni fechas que cambien en `dependencies.md`. Propuesta abierta a ia-ml: campo `result` en `/chat/confirm`.

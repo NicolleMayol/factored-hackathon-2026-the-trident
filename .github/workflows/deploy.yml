@@ -18,10 +18,11 @@ on:
 permissions: { contents: read, id-token: write }
 concurrency: { group: deploy, cancel-in-progress: false }
 
+# Nombres de recursos en variables del repo (Settings → Variables), no en el workflow: otro ambiente
+# solo cambia las variables. Valores = outputs de infra/azure (resource_group, function_app_name, chat_url).
 env:
-  RG: rg-ai-agents-dev
-  FUNC: func-agent-bank-dev
-  SWA: swa-agent-bank-dev
+  RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+  FUNC: ${{ vars.FUNCTION_APP_NAME }}
 
 jobs:
   function:
@@ -30,6 +31,15 @@ jobs:
       host: ${{ steps.host.outputs.host }}
     steps:
       - uses: actions/checkout@v4
+      - name: Variables de recursos
+        run: |
+          for v in AZURE_RESOURCE_GROUP FUNCTION_APP_NAME; do
+            [ -n "${!v:-}" ] || { echo "::error::falta la variable de repo $v"; miss=1; }
+          done
+          [ -z "${miss:-}" ]
+        env:
+          AZURE_RESOURCE_GROUP: ${{ vars.AZURE_RESOURCE_GROUP }}
+          FUNCTION_APP_NAME: ${{ vars.FUNCTION_APP_NAME }}
       - name: Azure login (OIDC)
         uses: azure/login@v2
         with:
