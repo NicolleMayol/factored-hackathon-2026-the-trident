@@ -103,7 +103,6 @@ h2{font-size:40px;line-height:1.1}
 .prod h3{margin:0;font-size:19px}
 .prod dl{margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .prod dt{font-size:12px;color:var(--mute)}.prod dd{margin:0;font-weight:700;font-size:17px}
-.prod .code{font-family:var(--mono);font-size:12px;color:var(--mute)}
 .note{margin:24px 0 0;font-size:13px;color:var(--mute)}
 
 /* Tus datos */
@@ -259,18 +258,17 @@ function fromMeta(){
  if(!ok)return;
  const codes=Object.keys(META.countries);if(!country)country=first.country;
  $("badge").textContent=codes.map(c=>META.countries[c]).join(" · ");
- const fcode=Object.keys(META.products).find(k=>META.products[k]===first);
  $("saText").textContent=fill(t("landing.sample_a"),{country:META.countries[first.country],product:lower(pname(first)),min:pct(first.rate_min),max:pct(first.rate_max),term:first.term_months_max});
  $("saRate").textContent=`${pct(first.rate_min)} – ${pct(first.rate_max)}`;
  $("saTerm").textContent=fill(t("text.term_value"),{n:first.term_months_max});
- $("saSrc").textContent=`${t("text.sources")} · ${t("text.catalog")} ${fcode}`;
+ $("saSrc").textContent=`${t("text.sources")}: ${[t("text.catalog"),pname(first),META.countries[first.country]].join(" · ")}`; // mismo formato que las fuentes del chat, sin códigos internos
  const g=$("ctry");g.setAttribute("aria-label",t("landing.nav_products"));g.innerHTML="";
  for(const c of codes){const b=document.createElement("button");b.type="button";b.textContent=META.countries[c];b.setAttribute("aria-pressed",String(c===country));b.onclick=()=>{country=c;fromMeta()};g.appendChild(b)}
- $("prods").innerHTML=Object.entries(META.products).filter(([,p])=>p.country===country).map(([code,p])=>
+ $("prods").innerHTML=Object.values(META.products).filter(p=>p.country===country).map(p=>
   `<article class="prod"><h3>${esc(pname(p))}</h3><dl>`+
   (p.rate_min!=null?`<div><dt>${esc(t("text.rate"))}</dt><dd>${pct(p.rate_min)} – ${pct(p.rate_max)}</dd></div>`:"")+
   (p.term_months_max?`<div><dt>${esc(t("text.term"))}</dt><dd>${esc(fill(t("text.term_value"),{n:p.term_months_max}))}</dd></div>`:"")+
-  `</dl><span class="code">${esc(t("text.catalog"))} ${esc(code)}</span></article>`).join("")}
+  `</dl></article>`).join("")}
 
 async function boot(){
  try{UI=await (await fetch("ui.json",{cache:"no-cache"})).json()}catch(e){return}
