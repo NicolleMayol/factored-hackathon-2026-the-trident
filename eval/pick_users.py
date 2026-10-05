@@ -3,7 +3,7 @@
     python eval/pick_users.py            # escribe eval/users_gold.json (determinista: ORDER BY customer_id)
     AGENT_SQL=real python eval/run_eval.py --pause 2     # agent.cli.USERS toma los ids de ese json cuando AGENT_SQL=real
 
-Por qué: los TEST-* de gold no tienen productos ni comportamiento (ver scripts/seed_test_customers.py), así que con SQL real
+Por qué: los TEST-* de gold no tienen productos ni comportamiento (los productos TEST-* se inyectan desde data/medallon/src/gold.py), así que con SQL real
 los pares de escalación por riesgo (P07) no disparan. Con clientes reales elegidos por condición el dev set mide lo mismo que
 con el fixture, pero sobre gold. El json guarda solo el id y la condición que lo eligió, no datos del cliente.
 """
