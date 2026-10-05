@@ -1,0 +1,58 @@
+# N10 · Gate de código: tests y harness de evaluación en cada PR y en main.
+# Todo corre con mocks (AGENT_*=mock): sin secretos, sin red hacia Azure ni Databricks.
+# Lo pidió el #30: main estuvo con 17 tests en rojo desde el #27 y ningún workflow lo vio.
+name: ci
+on:
+  pull_request:
+    # infra/ tiene su plan; docs/ y diagrams/ no tienen código. Los .md no se excluyen:
+    # los prompts del agente y el corpus de policy_docs son .md y los tests los leen.
+    paths-ignore: ["docs/**", "diagrams/**", "infra/**"]
+  push:
+    branches: [main]
+    paths-ignore: ["docs/**", "diagrams/**", "infra/**"]
+  workflow_dispatch:
+
+permissions: { contents: read }
+concurrency: { group: "ci-${{ github.ref }}", cancel-in-progress: true }
+
+env:
+  AGENT_LLM: mock
+  AGENT_STORE: mock
+  AGENT_SQL: mock
+  AGENT_PRESCORE: mock
+  AGENT_EMBED: mock
+  AGENT_TRACE: mock
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements*.txt
+      - name: Dependencias
+        run: pip install -r requirements-dev.txt
+
+      # tests/ y eval/ (pytest.ini): agente, motor de reglas, medallón y guard de fuentes externas.
+      - name: pytest
+        run: pytest -q
+
+      # Matriz de confusión de acción sobre el dev set; sale con 1 si algún umbral no se cumple.
+      # Corre aunque falle pytest, para ver los dos resultados en el mismo run.
+      - name: Harness de evaluación
+        if: success() || failure()
+        run: |
+          set -o pipefail
+          python eval/run_eval.py | tee eval-output.txt
+      - name: Resumen
+        if: success() || failure()
+        run: |
+          if [ -f eval-output.txt ]; then
+            echo '## eval/run_eval.py (mock)' >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+            tail -n 40 eval-output.txt >> "$GITHUB_STEP_SUMMARY"
+            echo '```' >> "$GITHUB_STEP_SUMMARY"
+          fi
