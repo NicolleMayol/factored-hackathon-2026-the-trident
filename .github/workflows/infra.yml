@@ -1,17 +1,12 @@
-# Mover a .github/workflows/infra.yml (reemplaza el actual).
+# Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
 # Dos stacks en orden: infra/azure (recursos de Azure) y luego infra/databricks (Unity Catalog, grants, SPs, warehouse).
 name: infra
 on:
-  # Solo Terraform y el script del backend: cambios en infra/README.md o en docs no corren plan.
-  pull_request:
-    paths: ["infra/**/*.tf", "infra/scripts/**", ".github/workflows/infra.yml"]
-  push:
-    branches: [main]
-    paths: ["infra/**/*.tf", "infra/scripts/**", ".github/workflows/infra.yml"]
+  # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
+  workflow_call:
   workflow_dispatch:
 
 permissions: { contents: read, pull-requests: write, id-token: write }
-concurrency: { group: terraform, cancel-in-progress: false }
 
 env:
   # OIDC: GitHub entrega un token de corta duración; Entra lo cambia por uno del SP (credenciales federadas).
@@ -42,6 +37,7 @@ jobs:
   # PR: plan + comentario. main / manual: plan guardado (tfplan) que apply usa tal cual.
   plan:
     runs-on: ubuntu-latest
+    concurrency: { group: terraform-plan, cancel-in-progress: false }
     outputs:
       changes: ${{ steps.plan.outputs.changes }}
     steps:
@@ -120,6 +116,7 @@ jobs:
     needs: plan
     if: github.event_name != 'pull_request' && needs.plan.outputs.changes != ''
     runs-on: ubuntu-latest
+    concurrency: { group: terraform-apply, cancel-in-progress: false }
     environment: hackathon # exige la aprobación de Nicolle; el plan está en el resumen del job plan
     steps:
       - uses: actions/checkout@v4

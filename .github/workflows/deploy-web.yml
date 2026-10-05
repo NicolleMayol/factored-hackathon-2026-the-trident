@@ -1,15 +1,14 @@
+# Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
 # N5 · Despliegue del chat (web/) en la Static Web App, con OIDC. Solo frontend: no toca la Function.
 # Lee el host de la Function del recurso ARM y lo escribe en config.js. Sin secretos en GitHub:
 # el token de la Static Web App se pide en cada corrida con `az staticwebapp secrets list`.
 name: deploy-web
 on:
-  push:
-    branches: [main]
-    paths: ["web/**", ".github/workflows/deploy-web.yml"]
+  # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
+  workflow_call:
   workflow_dispatch:
 
 permissions: { contents: read, id-token: write }
-concurrency: { group: deploy-web, cancel-in-progress: true }
 
 # Nombres de recursos en variables del repo (Settings → Variables), no en el workflow: otro ambiente
 # solo cambia las variables. Valores = outputs de infra/azure (resource_group, function_app_name, chat_url).

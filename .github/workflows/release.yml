@@ -6,7 +6,7 @@ on:
   push:
     tags: ["v[0-9]+.[0-9]+.[0-9]+"]
 
-permissions: { contents: write }
+permissions: { contents: write, actions: read }
 concurrency: { group: release, cancel-in-progress: false }
 
 jobs:
@@ -22,6 +22,14 @@ jobs:
           git fetch -q origin main
           git merge-base --is-ancestor "$GITHUB_SHA" origin/main \
             || { echo "::error::$GITHUB_REF_NAME no apunta a un commit de main"; exit 1; }
+
+      # ADR-27: solo se versiona un commit que pasó el pipeline de main completo.
+      - name: El pipeline de main está en verde para este commit
+        env: { GH_TOKEN: "${{ github.token }}" }
+        run: |
+          c=$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/main.yml/runs?head_sha=$GITHUB_SHA&per_page=1" \
+            --jq '.workflow_runs[0].conclusion // "sin run"')
+          [ "$c" = success ] || { echo "::error::main.yml para $GITHUB_SHA: $c"; exit 1; }
 
       - name: Crear release
         env:

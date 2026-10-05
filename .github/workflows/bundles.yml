@@ -1,21 +1,15 @@
+# Pieza reutilizable del pipeline (ADR-27): el orden y las condiciones viven en main.yml y pr.yml.
 # X2 · Asset Bundles de datos (data/). Cada carpeta con databricks.yml es un bundle.
 # PR: validate. Push a main: deploy al target de producción, que corre como sp-pipelines (run_as),
 # y copia de policy_docs, policy/catalog.yaml (E5) y los snapshots de tasas (E6) a los volúmenes de ref.
 # Sin aprobación de environment: a main solo llega lo que Nicolle mergea.
 name: bundles
 on:
-  pull_request:
-    # policy/catalog.yaml entra en los paths: lo genera data/ref/build_catalog.py pero vive fuera de
-    # data/, así que sin esto regenerar el catálogo no dispara el workflow y el volumen se queda con
-    # la versión vieja (revisión de servicio en el PR #31).
-    paths: ["data/**", "policy/catalog.yaml", ".github/workflows/bundles.yml"]
-  push:
-    branches: [main]
-    paths: ["data/**", "policy/catalog.yaml", ".github/workflows/bundles.yml"]
+  # Lo llama main.yml/pr.yml (ADR-27); workflow_dispatch queda para correrlo a mano.
+  workflow_call:
   workflow_dispatch:
 
 permissions: { contents: read, id-token: write }
-concurrency: { group: bundles, cancel-in-progress: false }
 
 env:
   # El SP del pipeline entra al workspace como admin y tiene servicePrincipal.user sobre sp-pipelines.
