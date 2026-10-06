@@ -98,29 +98,20 @@ def main():
         choice = "fp32"
     if not a.register:
         return
-    m = load(int8=choice == "int8")
     mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", "databricks")); mlflow.set_experiment(EXPERIMENT); mlflow.set_registry_uri("databricks-uc")
-
-    class _Embed(mlflow.pyfunc.PythonModel):
-        def load_context(self, context):
-            import torch
-            from sentence_transformers import SentenceTransformer
-            self.m = SentenceTransformer(context.artifacts["model"], device="cpu")
-            if context.model_config and context.model_config.get("int8"):
-                self.m[0].auto_model = torch.quantization.quantize_dynamic(self.m[0].auto_model, {torch.nn.Linear}, dtype=torch.qint8)
-
-        def predict(self, context, model_input, params=None):
-            texts = model_input["inputs"].tolist() if hasattr(model_input, "columns") and "inputs" in model_input.columns else list(model_input)
-            return self.m.encode([str(t) for t in texts], batch_size=16, normalize_embeddings=True, convert_to_numpy=True).tolist()
 
     local = ROOT / "ml" / "artifacts" / "bge-m3"
     load(int8=False).save(str(local))  # se guarda fp32; int8 se aplica al cargar (la cuantización dinámica no se serializa)
+    import numpy as np
+    from mlflow.models import ModelSignature
+    from mlflow.types import ColSpec, Schema, TensorSpec
+    signature = ModelSignature(inputs=Schema([ColSpec("string", "inputs")]), outputs=Schema([TensorSpec(np.dtype("float64"), (-1, 1024))]))  # UC exige firma; con models-from-code no se infiere
     with mlflow.start_run(run_name=f"bge-m3-{choice}") as run:
         if result_path.exists():
             mlflow.log_dict(json.loads(result_path.read_text()), "go_no_go.json")
         mlflow.log_params({"model": MODEL_ID, "variant": choice, "dims": 1024})
-        info = mlflow.pyfunc.log_model(name="model", python_model=_Embed(), artifacts={"model": str(local)}, model_config={"int8": choice == "int8"},
-                                       input_example={"inputs": ["¿Cuál es la tasa del préstamo personal?"]}, pip_requirements=["sentence-transformers>=3.0", "torch", "numpy"],
+        info = mlflow.pyfunc.log_model(name="model", python_model=str(ROOT / "ml" / "bge_m3_model.py"), artifacts={"model": str(local)}, model_config={"int8": choice == "int8"}, signature=signature,  # models from code: sin pickle
+                                       input_example={"inputs": ["¿Cuál es la tasa del préstamo personal?"]}, pip_requirements=["--extra-index-url https://download.pytorch.org/whl/cpu", "torch>=2.2", "sentence-transformers>=3.0", "numpy"],  # torch CPU: la rueda CUDA pesa GB y el endpoint es CPU
                                        registered_model_name=UC_NAME)
         print(f"registrado {UC_NAME} ({choice}) · run {run.info.run_id} · {info.model_uri}")
 

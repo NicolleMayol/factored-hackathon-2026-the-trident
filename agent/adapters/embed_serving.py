@@ -19,7 +19,7 @@ class EmbedServing:
         out: list[list[float]] = []
         for i in range(0, len(texts), 32):
             batch = texts[i:i + 32]
-            r = requests.post(f"{self.host}/serving-endpoints/{self.endpoint}/invocations", timeout=max(self.s.tool_timeout_cold_s, 60),
+            r = requests.post(f"{self.host}/serving-endpoints/{self.endpoint}/invocations", timeout=(self.s.embed_query_timeout_s if len(texts) == 1 else max(self.s.tool_timeout_cold_s, 60)),  # 1 texto = consulta del agente: corto; lotes = carga
                               headers={**dbx_auth.auth_headers(), "Content-Type": "application/json"}, json={"inputs": batch})
             r.raise_for_status()
             pred = r.json().get("predictions", [])
