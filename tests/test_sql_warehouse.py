@@ -73,3 +73,20 @@ def test_traza_con_error_no_rompe_el_turno(monkeypatch):
     monkeypatch.setattr(tr.requests, "post", lambda url, **kw: R({}, 500)); monkeypatch.setattr(tr.dbx_auth, "auth_headers", lambda: {})
     t = tr.TraceMlflow(s); t.log_turn({"trace_id": "x"}); t.flush()
     assert t.errors == 1
+
+
+def test_cliente_memorizado_30s_y_sin_memo_con_0(monkeypatch):
+    """Un turno de pre-evaluación pide customer_profile hasta 4 veces: con el memo de 30 s va un solo viaje; con 0 s, uno por llamada."""
+    n = {"posts": 0}
+    def fake_post(url, **kw):
+        n["posts"] += 1
+        return R({"status": {"state": "SUCCEEDED"}, "manifest": {"schema": {"columns": [{"name": "customer_id", "type_name": "STRING"}]}}, "result": {"data_array": [["TEST-CO-001"]]}})
+    monkeypatch.setattr(sw.requests, "post", fake_post); monkeypatch.setattr(sw.dbx_auth, "auth_headers", lambda: {})
+    q = sw.SQLWarehouse(_settings(monkeypatch))
+    for _ in range(4):
+        q.query("customer_profile", {"customer_id": "TEST-CO-001"})
+    q.query("customer_profile", {"customer_id": "TEST-CO-002"})
+    assert n["posts"] == 2  # un viaje por cliente
+    monkeypatch.setenv("SQL_CUSTOMER_CACHE_S", "0"); q0 = sw.SQLWarehouse(Settings()); n["posts"] = 0; print("TTL", q0.s.sql_customer_cache_s, q0._cache)
+    q0.query("customer_profile", {"customer_id": "TEST-CO-001"}); q0.query("customer_profile", {"customer_id": "TEST-CO-001"})
+    assert n["posts"] == 2

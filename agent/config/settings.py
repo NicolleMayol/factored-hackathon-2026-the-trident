@@ -54,7 +54,8 @@ class Settings:
     # límites (contracts/tools.yaml)
     tool_timeout_s: float = 8.0
     tool_timeout_cold_s: float = 25.0
-    embed_query_timeout_s: float = float(_env("EMBED_QUERY_TIMEOUT_S", "8"))  # en consulta: si el endpoint está frío, search_policy sigue solo léxico (embed_fallback)
+    embed_query_timeout_s: float = field(default_factory=lambda: float(_env("EMBED_QUERY_TIMEOUT_S", "8")))  # en consulta: si el endpoint está frío, search_policy sigue solo léxico (embed_fallback)
+    sql_customer_cache_s: float = field(default_factory=lambda: float(_env("SQL_CUSTOMER_CACHE_S", "30")))  # memo de customer_* dentro del turno y su confirmación (0 = sin memo)
     tool_retries: int = 2
     max_tool_iterations: int = 2
     jwt_exp_min: int = 30
