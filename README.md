@@ -8,6 +8,8 @@ Customer service agent for a regional bank (Mexico, Colombia, Argentina), focuse
 
 **Pitch slides: [docs/pitch/the-trident-slides.pdf](docs/pitch/the-trident-slides.pdf)** (6 slides, links inside open the evidence in this repo)
 
+**Youtube pitch: https://www.youtube.com/watch?v=uMvlWH5iR0w**
+
 1. **Project page** (`/`, English). You land here first. It exists only for the hackathon, it is not part of the bank's product: the problem, the numbers, a service sheet with the live status of each dependency, and what's next.
 2. **Customer site** (`landing.html`). The bank's public page as a customer would see it, in Spanish, Portuguese or English. From there, "Chat" opens the assistant.
 3. **Chat** (`chat.html`). Pick a test customer first. All of them are synthetic (`TEST-*` rows in gold, no real data):
