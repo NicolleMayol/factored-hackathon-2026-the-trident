@@ -1,0 +1,863 @@
+{
+  "datasets": [
+    {
+      "name": "ds_acciones",
+      "displayName": "Acciones por turno",
+      "queryLines": [
+        "-- `expected_action` solo lo escribe el harness de evaluación: con valor es un caso de eval, sin\n",
+        "-- valor es tráfico real. El eval tiene casos de abstención a propósito, así que mezclarlos\n",
+        "-- distorsiona la foto de la operación (revisión de servicio en el #75).\n",
+        "SELECT CASE WHEN expected_action IS NULL THEN 'operación' ELSE 'evaluación' END AS origen,\n",
+        "       action,\n",
+        "       count(*)                                        AS turnos,\n",
+        "       round(avg(latency_ms))                          AS latencia_media_ms,\n",
+        "       round(avg(groundedness), 3)                     AS groundedness\n",
+        "FROM hackathon.ops.agent_turns\n",
+        "GROUP BY 1, action\n",
+        "ORDER BY origen, turnos DESC"
+      ]
+    },
+    {
+      "name": "ds_escalamientos",
+      "displayName": "Por qué escala el agente",
+      "queryLines": [
+        "-- ADR-21 §3: separa la abstención correcta (policy, scope) del fallo de infraestructura\n",
+        "-- (timeout_tool). Sin esta columna, la matriz de confusión de acción mezclaría las dos.\n",
+        "SELECT CASE WHEN expected_action IS NULL THEN 'operación' ELSE 'evaluación' END AS origen,\n",
+        "       escalate_reason,\n",
+        "       count(*)                                                    AS escalamientos,\n",
+        "       CASE WHEN escalate_reason = 'timeout_tool' THEN 'infraestructura'\n",
+        "            ELSE 'decisión del agente' END                         AS naturaleza\n",
+        "FROM hackathon.ops.agent_turns\n",
+        "WHERE action = 'escalate'\n",
+        "GROUP BY 1, escalate_reason\n",
+        "ORDER BY origen, escalamientos DESC"
+      ]
+    },
+    {
+      "name": "ds_latencia",
+      "displayName": "Latencia por acción",
+      "queryLines": [
+        "SELECT action,\n",
+        "       round(percentile(latency_ms, 0.50)) AS p50_ms,\n",
+        "       round(percentile(latency_ms, 0.95)) AS p95_ms,\n",
+        "       count(*)                            AS turnos\n",
+        "FROM hackathon.ops.agent_turns\n",
+        "GROUP BY action\n",
+        "ORDER BY p95_ms DESC"
+      ]
+    },
+    {
+      "name": "ds_idioma",
+      "displayName": "Turnos por idioma",
+      "queryLines": [
+        "SELECT CASE WHEN locale LIKE 'pt%' THEN 'pt' ELSE 'es' END AS idioma,\n",
+        "       count(*)                                            AS turnos,\n",
+        "       round(avg(groundedness), 3)                         AS groundedness,\n",
+        "       round(avg(latency_ms))                              AS latencia_media_ms\n",
+        "FROM hackathon.ops.agent_turns\n",
+        "GROUP BY 1\n",
+        "ORDER BY turnos DESC"
+      ]
+    },
+    {
+      "name": "ds_costo",
+      "displayName": "Costo y volumen",
+      "queryLines": [
+        "SELECT count(*)                                   AS turnos,\n",
+        "       round(sum(cost_usd), 4)                     AS costo_total_usd,\n",
+        "       round(avg(cost_usd), 6)                     AS costo_por_turno_usd,\n",
+        "       sum(tokens_in + tokens_out)                 AS tokens\n",
+        "FROM hackathon.ops.agent_turns"
+      ]
+    },
+    {
+      "name": "ds_dq",
+      "displayName": "Calidad de datos · última corrida",
+      "queryLines": [
+        "SELECT table AS tabla, rule AS regla, rows_checked, rows_failed, passed\n",
+        "FROM hackathon.ops.dq_results\n",
+        "WHERE run_ts = (SELECT max(run_ts) FROM hackathon.ops.dq_results)\n",
+        "ORDER BY passed, tabla, regla"
+      ]
+    },
+    {
+      "name": "ds_dq_resumen",
+      "displayName": "Calidad por capa",
+      "queryLines": [
+        "SELECT split(table, '[.]')[0]                              AS capa,\n",
+        "       count(*)                                            AS checks,\n",
+        "       sum(CASE WHEN passed THEN 0 ELSE 1 END)             AS fallidos\n",
+        "FROM hackathon.ops.dq_results\n",
+        "WHERE run_ts = (SELECT max(run_ts) FROM hackathon.ops.dq_results)\n",
+        "GROUP BY 1\n",
+        "ORDER BY capa"
+      ]
+    },
+    {
+      "name": "ds_motivos",
+      "displayName": "Peso de cada motivo de contacto",
+      "queryLines": [
+        "-- Confirma el 22 % de Producto y da el contexto: el FCR es lo que separa lo automatizable\n",
+        "-- (Producto 0,896) de lo que necesita una persona (Queja 0,436).\n",
+        "SELECT reason_category,\n",
+        "       sum(volume)                                            AS contactos,\n",
+        "       round(100 * sum(volume) / sum(sum(volume)) OVER (), 1) AS pct_total,\n",
+        "       round(sum(fcr_rate * volume) / sum(volume), 3)         AS fcr,\n",
+        "       round(sum(escalated) / sum(volume), 3)                 AS tasa_escalado\n",
+        "FROM hackathon.gold.contact_demand\n",
+        "GROUP BY reason_category\n",
+        "ORDER BY contactos DESC"
+      ]
+    },
+    {
+      "name": "ds_producto_pais",
+      "displayName": "Consultas de producto por país",
+      "queryLines": [
+        "SELECT country,\n",
+        "       sum(volume)                                            AS contactos_producto,\n",
+        "       round(100 * sum(volume) / sum(sum(volume)) OVER (), 1) AS pct_del_total_producto,\n",
+        "       round(avg(wait_p50_s))                                 AS espera_p50_s\n",
+        "FROM hackathon.gold.contact_demand\n",
+        "WHERE reason_category = 'Producto'\n",
+        "GROUP BY country\n",
+        "ORDER BY contactos_producto DESC"
+      ]
+    },
+    {
+      "name": "ds_periodo",
+      "displayName": "Periodo y volumen diario",
+      "queryLines": [
+        "SELECT min(date) AS desde, max(date) AS hasta,\n",
+        "       round(sum(volume) / count(DISTINCT date)) AS contactos_por_dia\n",
+        "FROM hackathon.gold.contact_demand\n",
+        "WHERE reason_category = 'Producto'"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "pagina_ops",
+      "displayName": "Observabilidad · agente y datos",
+      "layout": [
+        {
+          "widget": {
+            "name": "titulo",
+            "textbox_spec": "# Observabilidad\n\nDos de los cuatro dominios de ADR-15, los que tienen dato real: **IA** (`ops.agent_turns`, lo escribe el agente) y **datos** (`ops.dq_results`, lo escribe el job del medallón). Infra (`ops.infra_requests`) y ML (`ops.ml_inference`) quedan pendientes de X3.\n\nLos turnos se separan en **operación** y **evaluación**: `expected_action` solo lo escribe el harness, y el eval incluye casos de abstención a propósito."
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "w_costo",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_costo",
+                  "fields": [
+                    {
+                      "name": "turnos",
+                      "expression": "`turnos`"
+                    },
+                    {
+                      "name": "costo_total_usd",
+                      "expression": "`costo_total_usd`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "turnos",
+                  "displayName": "Turnos registrados"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "w_acciones",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_acciones",
+                  "fields": [
+                    {
+                      "name": "origen",
+                      "expression": "`origen`"
+                    },
+                    {
+                      "name": "action",
+                      "expression": "`action`"
+                    },
+                    {
+                      "name": "turnos",
+                      "expression": "`turnos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "action",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Acción"
+                },
+                "y": {
+                  "fieldName": "turnos",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Turnos"
+                },
+                "color": {
+                  "fieldName": "origen",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Origen"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Qué hace el agente · operación vs evaluación"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 4,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_escalamientos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_escalamientos",
+                  "fields": [
+                    {
+                      "name": "origen",
+                      "expression": "`origen`"
+                    },
+                    {
+                      "name": "escalate_reason",
+                      "expression": "`escalate_reason`"
+                    },
+                    {
+                      "name": "escalamientos",
+                      "expression": "`escalamientos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "escalamientos",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Escalamientos"
+                },
+                "color": {
+                  "fieldName": "escalate_reason",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Causa"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Por qué escala · decisión del agente vs infraestructura"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 2,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_latencia",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_latencia",
+                  "fields": [
+                    {
+                      "name": "action",
+                      "expression": "`action`"
+                    },
+                    {
+                      "name": "p50_ms",
+                      "expression": "`p50_ms`"
+                    },
+                    {
+                      "name": "p95_ms",
+                      "expression": "`p95_ms`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "action",
+                    "displayName": "Acción"
+                  },
+                  {
+                    "fieldName": "p50_ms",
+                    "displayName": "p50 (ms)"
+                  },
+                  {
+                    "fieldName": "p95_ms",
+                    "displayName": "p95 (ms)"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Latencia por acción · umbral de ops.yaml p95 ≤ 8000 ms · incluye arranques en frío"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 9,
+            "width": 4,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_idioma",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_idioma",
+                  "fields": [
+                    {
+                      "name": "idioma",
+                      "expression": "`idioma`"
+                    },
+                    {
+                      "name": "turnos",
+                      "expression": "`turnos`"
+                    },
+                    {
+                      "name": "groundedness",
+                      "expression": "`groundedness`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "idioma",
+                    "displayName": "Idioma"
+                  },
+                  {
+                    "fieldName": "turnos",
+                    "displayName": "Turnos"
+                  },
+                  {
+                    "fieldName": "groundedness",
+                    "displayName": "Groundedness"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "ES y PT · métricas por idioma (ADR-11)"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 2,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "w_dq_resumen",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_dq_resumen",
+                  "fields": [
+                    {
+                      "name": "capa",
+                      "expression": "`capa`"
+                    },
+                    {
+                      "name": "checks",
+                      "expression": "`checks`"
+                    },
+                    {
+                      "name": "fallidos",
+                      "expression": "`fallidos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "capa",
+                    "displayName": "Capa"
+                  },
+                  {
+                    "fieldName": "checks",
+                    "displayName": "Checks"
+                  },
+                  {
+                    "fieldName": "fallidos",
+                    "displayName": "Fallidos"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Calidad por capa · última corrida del medallón"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 15,
+            "width": 4,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "w_dq_detalle",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_dq",
+                  "fields": [
+                    {
+                      "name": "tabla",
+                      "expression": "`tabla`"
+                    },
+                    {
+                      "name": "regla",
+                      "expression": "`regla`"
+                    },
+                    {
+                      "name": "rows_checked",
+                      "expression": "`rows_checked`"
+                    },
+                    {
+                      "name": "rows_failed",
+                      "expression": "`rows_failed`"
+                    },
+                    {
+                      "name": "passed",
+                      "expression": "`passed`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "passed",
+                    "displayName": "OK"
+                  },
+                  {
+                    "fieldName": "tabla",
+                    "displayName": "Tabla"
+                  },
+                  {
+                    "fieldName": "regla",
+                    "displayName": "Regla"
+                  },
+                  {
+                    "fieldName": "rows_checked",
+                    "displayName": "Filas revisadas"
+                  },
+                  {
+                    "fieldName": "rows_failed",
+                    "displayName": "Filas en falta"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Detalle de calidad · los fallidos primero"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 20,
+            "width": 6,
+            "height": 8
+          }
+        }
+      ]
+    },
+    {
+      "name": "pagina_demanda",
+      "displayName": "Demanda · por qué el workflow 4",
+      "layout": [
+        {
+          "widget": {
+            "name": "t_demanda",
+            "textbox_spec": "# Demanda de contacto\n\n**686.296 contactos** entre 2023-06-17 y 2026-06-17 (`gold.contact_demand`, E4). `Producto` —consultas sobre productos de crédito— son **150.863, el 22 %**, con **138 al día** de media.\n\nEl criterio para automatizar no es el volumen sino el **FCR**: una categoría que ya resuelve al primer contacto es una consulta estándar. `Queja` (0,436) y `Técnico` (0,699) se quedan con las personas."
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 6,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "w_periodo",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_periodo",
+                  "fields": [
+                    {
+                      "name": "contactos_por_dia",
+                      "expression": "`contactos_por_dia`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "contactos_por_dia",
+                  "displayName": "Consultas de producto al día"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 2,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "w_motivos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_motivos",
+                  "fields": [
+                    {
+                      "name": "reason_category",
+                      "expression": "`reason_category`"
+                    },
+                    {
+                      "name": "contactos",
+                      "expression": "`contactos`"
+                    },
+                    {
+                      "name": "pct_total",
+                      "expression": "`pct_total`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "reason_category",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Motivo"
+                },
+                "y": {
+                  "fieldName": "contactos",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Contactos"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Peso de cada motivo · Producto es el 22 %"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 3,
+            "width": 4,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_motivos_fcr",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_motivos",
+                  "fields": [
+                    {
+                      "name": "reason_category",
+                      "expression": "`reason_category`"
+                    },
+                    {
+                      "name": "fcr",
+                      "expression": "`fcr`"
+                    },
+                    {
+                      "name": "tasa_escalado",
+                      "expression": "`tasa_escalado`"
+                    },
+                    {
+                      "name": "contactos",
+                      "expression": "`contactos`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "reason_category",
+                    "displayName": "Motivo"
+                  },
+                  {
+                    "fieldName": "contactos",
+                    "displayName": "Contactos"
+                  },
+                  {
+                    "fieldName": "fcr",
+                    "displayName": "FCR"
+                  },
+                  {
+                    "fieldName": "tasa_escalado",
+                    "displayName": "Escalado"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "FCR y escalado · el escalado es ~10 % en todas; lo que separa es el FCR"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 6,
+            "width": 2,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_producto_pais",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_producto_pais",
+                  "fields": [
+                    {
+                      "name": "country",
+                      "expression": "`country`"
+                    },
+                    {
+                      "name": "contactos_producto",
+                      "expression": "`contactos_producto`"
+                    },
+                    {
+                      "name": "pct_del_total_producto",
+                      "expression": "`pct_del_total_producto`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "contactos_producto",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Contactos"
+                },
+                "color": {
+                  "fieldName": "country",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "País"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Consultas de producto por país · MX 50 %, CO 30 %, AR 20 %"
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 9,
+            "width": 4,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "w_espera",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_producto_pais",
+                  "fields": [
+                    {
+                      "name": "country",
+                      "expression": "`country`"
+                    },
+                    {
+                      "name": "espera_p50_s",
+                      "expression": "`espera_p50_s`"
+                    },
+                    {
+                      "name": "contactos_producto",
+                      "expression": "`contactos_producto`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "country",
+                    "displayName": "País"
+                  },
+                  {
+                    "fieldName": "contactos_producto",
+                    "displayName": "Contactos"
+                  },
+                  {
+                    "fieldName": "espera_p50_s",
+                    "displayName": "Espera p50 (s)"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Espera mediana · ~2 min en los tres países"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 12,
+            "width": 2,
+            "height": 5
+          }
+        }
+      ]
+    }
+  ]
+}
