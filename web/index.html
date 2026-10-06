@@ -140,7 +140,7 @@ td.cost{color:var(--mute)}
       <div class="card"><div class="big">1.0 · 0.917</div><b>Retrieval recall@5, Spanish · Portuguese</b><span class="s">Hybrid search (vectors + BM25 + RRF), routed by policy section, with bge-m3.</span><span class="mono">eval/retrieval_eval.py · 24 questions</span></div>
       <div class="card"><div class="big">0.78</div><b>Pre-score AUC on 134,037 customers</b><span class="s">Portfolio features add 0.12 AUC; the model choice adds nothing. Logistic regression won because it is simpler.</span><span class="mono">4 experiments in MLflow</span></div>
       <div class="card"><div class="big">11 → 3</div><b>Failures from prompt v1 to v2</b><span class="s">The gain came from the prompt, not the model. We picked Llama 3.3 70B from 4 endpoints with the same test harness.</span><span class="mono">eval/models.md</span></div>
-      <div class="card"><div class="big">0.00035 USD</div><b>Cost per turn · p50 3.3 s, p95 9.7 s</b><span class="s">Two calls to the 70B model per turn. The p95 misses our 8 s target. The first turn takes about 15 s when the SQL warehouse is cold.</span><span class="mono">ops.agent_turns · 82 turns</span></div>
+      <div class="card"><div class="big">0.00035 USD</div><b>Cost per turn · p50 3.1 s, p95 16.5 s</b><span class="s">Measured on the deployed app with 10 users at once: 95 turns, no errors. Two calls to the 70B model per turn. The p95 misses our 8 s target; the slow tail is the pre-check turns.</span><span class="mono">carga.yml · k6, 10 users · 95 turns</span></div>
     </div>
   </section>
 
@@ -173,7 +173,7 @@ td.cost{color:var(--mute)}
         <tbody>
           <tr><th scope="row">Autonomy</th><td>It informs and runs a pre-check; it never approves or denies</td><td class="cost">Less automation to show off</td></tr>
           <tr><th scope="row">Accuracy</th><td>Every figure cites its source; rates checked against the usury cap</td><td class="cost">Shorter answers and more handoffs</td></tr>
-          <tr><th scope="row">Latency</th><td>Target p95 ≤ 8 s warm, measured 9.7 s; scale-to-zero</td><td class="cost">Slow first turn after idle time; p95 still above target</td></tr>
+          <tr><th scope="row">Latency</th><td>Target p95 ≤ 8 s warm, measured 16.5 s with 10 concurrent users (p50 3.1 s); scale-to-zero</td><td class="cost">Slow first turn after idle time; p95 still above target</td></tr>
           <tr><th scope="row">Cost</th><td>Free tiers and serverless, about 35–125 USD for 7 days</td><td class="cost">No always-on capacity; RU/s limits</td></tr>
           <tr><th scope="row">Oversight</th><td>Handoff with full context and reason</td><td class="cost">Some cases are not solved in the chat</td></tr>
         </tbody>
