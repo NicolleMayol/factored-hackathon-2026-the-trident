@@ -33,7 +33,10 @@ export function setup() {
 export default function (data) {
   const casos = CASOS.filter((c) => data.tokens[c.user]);
   const c = casos[(__VU * 7 + __ITER) % casos.length];
-  const r = http.post(`${API}/api/chat`, JSON.stringify({ message: c.message, locale: c.language }), {
+  // El locale va completo (handoff.schema.json: es-MX|es-CO|es-AR|pt-BR). Con "es"/"pt" el escalamiento fallaba al validar
+  // el handoff y el turno salía por fallo seguro (76 timeout_tool en la corrida del 5 oct). En es se usa el del token.
+  const body = { message: c.message, ...(c.language === "pt" ? { locale: "pt-BR" } : {}) };
+  const r = http.post(`${API}/api/chat`, JSON.stringify(body), {
     headers: { ...JSON_H, authorization: `Bearer ${data.tokens[c.user]}` },
     tags: { ruta: "chat", accion_esperada: c.expected_action },
     timeout: "60s",

@@ -27,13 +27,30 @@ def runtime(settings: Settings | None = None, deps: Deps | None = None):
     return s, d, build_graph(d, s)
 
 
+def _locales() -> list[str]:
+    from agent.handoff import _schema
+    return _schema()["properties"]["locale"]["enum"]
+
+
+def pick_locale(requested: str | None, token_locale: str | None) -> str:
+    """Locale del turno: el pedido si es uno de handoff.schema.json; si llega corto ("pt", "es"), pt → pt-BR y es → el del token.
+    Un locale fuera del enum hacía fallar la validación del handoff y el escalamiento salía por fallo seguro, sin case_id."""
+    ok = _locales()
+    tok = token_locale if token_locale in ok else "es-MX"
+    if requested in ok:
+        return requested
+    if str(requested or "").lower().startswith("pt"):
+        return "pt-BR"
+    return tok
+
+
 def handle(message: str, session: dict[str, Any], *, rt=None, history: list[dict[str, str]] | None = None) -> dict[str, Any]:
     """session: {customer_id, scopes, locale, conversation_id?, trace_id?}. Devuelve {reply, action, citations, trace_id, cost_usd, latency_ms, action_id?}."""
     s, d, graph = rt or runtime()
     t0 = time.perf_counter()
     trace_id = session.get("trace_id") or uuid.uuid4().hex
     conv = session.get("conversation_id") or uuid.uuid4().hex
-    locale = session.get("locale", "es-MX")
+    locale = pick_locale(session.get("locale"), "es-MX")
     init = {"trace_id": trace_id, "conversation_id": conv, "customer_id": session["customer_id"], "scopes": list(session.get("scopes", [])),
             "locale": locale, "language": "pt" if locale.startswith("pt") else "es", "message": message, "history": history or [],
             "node_path": [], "iterations": 0, "tool_results": {}, "tools_called": []}
