@@ -72,16 +72,6 @@
       ]
     },
     {
-      "name": "ds_dq",
-      "displayName": "Calidad de datos · última corrida",
-      "queryLines": [
-        "SELECT table AS tabla, rule AS regla, rows_checked, rows_failed, passed\n",
-        "FROM hackathon.ops.dq_results\n",
-        "WHERE run_ts = (SELECT max(run_ts) FROM hackathon.ops.dq_results)\n",
-        "ORDER BY passed, tabla, regla"
-      ]
-    },
-    {
       "name": "ds_dq_resumen",
       "displayName": "Calidad por capa",
       "queryLines": [
@@ -143,7 +133,7 @@
         {
           "widget": {
             "name": "titulo",
-            "textbox_spec": "# Observabilidad\n\nDos de los cuatro dominios de ADR-15, los que tienen dato real: **IA** (`ops.agent_turns`, lo escribe el agente) y **datos** (`ops.dq_results`, lo escribe el job del medallón). Infra (`ops.infra_requests`) y ML (`ops.ml_inference`) quedan pendientes de X3.\n\nLos turnos se separan en **operación** y **evaluación**: `expected_action` solo lo escribe el harness, y el eval incluye casos de abstención a propósito."
+            "textbox_spec": "# Observabilidad del agente\n\n**662 turnos** registrados en `ops.agent_turns`. Abajo: cuántos turnos hubo, qué hizo el agente en cada uno y por qué escaló cuando escaló.\n\nLos turnos se separan en **operación** (tráfico real) y **evaluación** (casos del harness): el eval incluye abstenciones a propósito y mezclarlos distorsiona la foto."
           },
           "position": {
             "x": 0,
@@ -329,10 +319,6 @@
                       "expression": "`action`"
                     },
                     {
-                      "name": "p50_ms",
-                      "expression": "`p50_ms`"
-                    },
-                    {
                       "name": "p95_ms",
                       "expression": "`p95_ms`"
                     }
@@ -342,27 +328,27 @@
               }
             ],
             "spec": {
-              "version": 1,
-              "widgetType": "table",
+              "version": 3,
+              "widgetType": "bar",
               "encodings": {
-                "columns": [
-                  {
-                    "fieldName": "action",
-                    "displayName": "Acción"
+                "x": {
+                  "fieldName": "action",
+                  "scale": {
+                    "type": "categorical"
                   },
-                  {
-                    "fieldName": "p50_ms",
-                    "displayName": "p50 (ms)"
+                  "displayName": "Acción"
+                },
+                "y": {
+                  "fieldName": "p95_ms",
+                  "scale": {
+                    "type": "quantitative"
                   },
-                  {
-                    "fieldName": "p95_ms",
-                    "displayName": "p95 (ms)"
-                  }
-                ]
+                  "displayName": "p95 (ms)"
+                }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Latencia por acción · umbral de ops.yaml p95 ≤ 8000 ms · incluye arranques en frío"
+                "title": "Latencia p95 por acción · umbral 8.000 ms, incluye arranques en frío"
               }
             }
           },
@@ -389,10 +375,6 @@
                     {
                       "name": "turnos",
                       "expression": "`turnos`"
-                    },
-                    {
-                      "name": "groundedness",
-                      "expression": "`groundedness`"
                     }
                   ],
                   "disaggregated": true
@@ -400,27 +382,27 @@
               }
             ],
             "spec": {
-              "version": 1,
-              "widgetType": "table",
+              "version": 3,
+              "widgetType": "bar",
               "encodings": {
-                "columns": [
-                  {
-                    "fieldName": "idioma",
-                    "displayName": "Idioma"
+                "x": {
+                  "fieldName": "idioma",
+                  "scale": {
+                    "type": "categorical"
                   },
-                  {
-                    "fieldName": "turnos",
-                    "displayName": "Turnos"
+                  "displayName": "Idioma"
+                },
+                "y": {
+                  "fieldName": "turnos",
+                  "scale": {
+                    "type": "quantitative"
                   },
-                  {
-                    "fieldName": "groundedness",
-                    "displayName": "Groundedness"
-                  }
-                ]
+                  "displayName": "Turnos"
+                }
               },
               "frame": {
                 "showTitle": true,
-                "title": "ES y PT · métricas por idioma (ADR-11)"
+                "title": "Turnos por idioma · el agente responde en ES y PT"
               }
             }
           },
@@ -433,7 +415,7 @@
         },
         {
           "widget": {
-            "name": "w_dq_resumen",
+            "name": "w_dq",
             "queries": [
               {
                 "name": "main_query",
@@ -447,10 +429,6 @@
                     {
                       "name": "checks",
                       "expression": "`checks`"
-                    },
-                    {
-                      "name": "fallidos",
-                      "expression": "`fallidos`"
                     }
                   ],
                   "disaggregated": true
@@ -458,27 +436,27 @@
               }
             ],
             "spec": {
-              "version": 1,
-              "widgetType": "table",
+              "version": 3,
+              "widgetType": "bar",
               "encodings": {
-                "columns": [
-                  {
-                    "fieldName": "capa",
-                    "displayName": "Capa"
+                "x": {
+                  "fieldName": "capa",
+                  "scale": {
+                    "type": "categorical"
                   },
-                  {
-                    "fieldName": "checks",
-                    "displayName": "Checks"
+                  "displayName": "Capa"
+                },
+                "y": {
+                  "fieldName": "checks",
+                  "scale": {
+                    "type": "quantitative"
                   },
-                  {
-                    "fieldName": "fallidos",
-                    "displayName": "Fallidos"
-                  }
-                ]
+                  "displayName": "Checks"
+                }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Calidad por capa · última corrida del medallón"
+                "title": "Checks de calidad por capa · última corrida del medallón"
               }
             }
           },
@@ -487,80 +465,6 @@
             "y": 15,
             "width": 4,
             "height": 5
-          }
-        },
-        {
-          "widget": {
-            "name": "w_dq_detalle",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_dq",
-                  "fields": [
-                    {
-                      "name": "tabla",
-                      "expression": "`tabla`"
-                    },
-                    {
-                      "name": "regla",
-                      "expression": "`regla`"
-                    },
-                    {
-                      "name": "rows_checked",
-                      "expression": "`rows_checked`"
-                    },
-                    {
-                      "name": "rows_failed",
-                      "expression": "`rows_failed`"
-                    },
-                    {
-                      "name": "passed",
-                      "expression": "`passed`"
-                    }
-                  ],
-                  "disaggregated": true
-                }
-              }
-            ],
-            "spec": {
-              "version": 1,
-              "widgetType": "table",
-              "encodings": {
-                "columns": [
-                  {
-                    "fieldName": "passed",
-                    "displayName": "OK"
-                  },
-                  {
-                    "fieldName": "tabla",
-                    "displayName": "Tabla"
-                  },
-                  {
-                    "fieldName": "regla",
-                    "displayName": "Regla"
-                  },
-                  {
-                    "fieldName": "rows_checked",
-                    "displayName": "Filas revisadas"
-                  },
-                  {
-                    "fieldName": "rows_failed",
-                    "displayName": "Filas en falta"
-                  }
-                ]
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "Detalle de calidad · los fallidos primero"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 20,
-            "width": 6,
-            "height": 8
           }
         }
       ]
@@ -572,7 +476,7 @@
         {
           "widget": {
             "name": "t_demanda",
-            "textbox_spec": "# Demanda de contacto\n\n**686.296 contactos** entre 2023-06-17 y 2026-06-17 (`gold.contact_demand`, E4). `Producto` —consultas sobre productos de crédito— son **150.863, el 22 %**, con **138 al día** de media.\n\nEl criterio para automatizar no es el volumen sino el **FCR**: una categoría que ya resuelve al primer contacto es una consulta estándar. `Queja` (0,436) y `Técnico` (0,699) se quedan con las personas."
+            "textbox_spec": "# Demanda de contacto\n\n**686.296 contactos** entre 2023-06-17 y 2026-06-17. Las consultas sobre productos de crédito son **150.863 (22 %)**, unas **138 al día**.\n\nAbajo: cuánto pesa cada motivo, qué tan bien se resuelve cada uno al primer contacto, y de qué país vienen las consultas de producto."
           },
           "position": {
             "x": 0,
@@ -677,72 +581,6 @@
         },
         {
           "widget": {
-            "name": "w_motivos_fcr",
-            "queries": [
-              {
-                "name": "main_query",
-                "query": {
-                  "datasetName": "ds_motivos",
-                  "fields": [
-                    {
-                      "name": "reason_category",
-                      "expression": "`reason_category`"
-                    },
-                    {
-                      "name": "fcr",
-                      "expression": "`fcr`"
-                    },
-                    {
-                      "name": "tasa_escalado",
-                      "expression": "`tasa_escalado`"
-                    },
-                    {
-                      "name": "contactos",
-                      "expression": "`contactos`"
-                    }
-                  ],
-                  "disaggregated": true
-                }
-              }
-            ],
-            "spec": {
-              "version": 1,
-              "widgetType": "table",
-              "encodings": {
-                "columns": [
-                  {
-                    "fieldName": "reason_category",
-                    "displayName": "Motivo"
-                  },
-                  {
-                    "fieldName": "contactos",
-                    "displayName": "Contactos"
-                  },
-                  {
-                    "fieldName": "fcr",
-                    "displayName": "FCR"
-                  },
-                  {
-                    "fieldName": "tasa_escalado",
-                    "displayName": "Escalado"
-                  }
-                ]
-              },
-              "frame": {
-                "showTitle": true,
-                "title": "FCR y escalado · el escalado es ~10 % en todas; lo que separa es el FCR"
-              }
-            }
-          },
-          "position": {
-            "x": 0,
-            "y": 6,
-            "width": 2,
-            "height": 6
-          }
-        },
-        {
-          "widget": {
             "name": "w_producto_pais",
             "queries": [
               {
@@ -801,24 +639,20 @@
         },
         {
           "widget": {
-            "name": "w_espera",
+            "name": "w_fcr",
             "queries": [
               {
                 "name": "main_query",
                 "query": {
-                  "datasetName": "ds_producto_pais",
+                  "datasetName": "ds_motivos",
                   "fields": [
                     {
-                      "name": "country",
-                      "expression": "`country`"
+                      "name": "reason_category",
+                      "expression": "`reason_category`"
                     },
                     {
-                      "name": "espera_p50_s",
-                      "expression": "`espera_p50_s`"
-                    },
-                    {
-                      "name": "contactos_producto",
-                      "expression": "`contactos_producto`"
+                      "name": "fcr",
+                      "expression": "`fcr`"
                     }
                   ],
                   "disaggregated": true
@@ -826,35 +660,35 @@
               }
             ],
             "spec": {
-              "version": 1,
-              "widgetType": "table",
+              "version": 3,
+              "widgetType": "bar",
               "encodings": {
-                "columns": [
-                  {
-                    "fieldName": "country",
-                    "displayName": "País"
+                "x": {
+                  "fieldName": "reason_category",
+                  "scale": {
+                    "type": "categorical"
                   },
-                  {
-                    "fieldName": "contactos_producto",
-                    "displayName": "Contactos"
+                  "displayName": "Motivo"
+                },
+                "y": {
+                  "fieldName": "fcr",
+                  "scale": {
+                    "type": "quantitative"
                   },
-                  {
-                    "fieldName": "espera_p50_s",
-                    "displayName": "Espera p50 (s)"
-                  }
-                ]
+                  "displayName": "FCR"
+                }
               },
               "frame": {
                 "showTitle": true,
-                "title": "Espera mediana · ~2 min en los tres países"
+                "title": "Resolución al primer contacto · Producto 0,896 frente a Queja 0,436"
               }
             }
           },
           "position": {
             "x": 0,
-            "y": 12,
-            "width": 2,
-            "height": 5
+            "y": 9,
+            "width": 6,
+            "height": 6
           }
         }
       ]
