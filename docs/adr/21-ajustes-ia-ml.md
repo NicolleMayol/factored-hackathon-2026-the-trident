@@ -10,10 +10,10 @@ Owner: Manuela · v1.6 · 2026-10-05 (evaluación sobre gold: usuarios reales po
 
 | Punto | Valor |
 | --- | --- |
-| Modelo | `hackathon.ml.bge_m3`, bge-m3 int8 ONNX, 1024 dims, lo registra ia-ml |
-| Endpoint | `embed-bge-m3`, CPU small, scale-to-zero (false en ventana de evaluación), lo crea servicio en `infra/databricks` como `prescore-lgbm` |
+| Modelo | `hackathon.ml.bge_m3`, bge-m3 1024 dims, lo registra ia-ml (`ml/register_bge_m3.py`). int8 = cuantización dinámica de torch al cargar (no ONNX: la misma clase sirve en Model Serving); el artefacto guardado es fp32 (2,2 GB). Desde el 5 oct se registra como *models from code* (`ml/bge_m3_model.py`): la primera versión arrastraba un pickle de 3,4 GB (cloudpickle serializó por valor una clase definida dentro de `main()` con el modelo cargado) y el contenedor no pasaba la prueba de salud |
+| Endpoint | `embed-bge-m3`, CPU Medium (en Small no pasó la prueba de salud), scale-to-zero, lo crea ia-ml con `ml/serving.py` (también `prescore-lgbm`); CAN_QUERY a `sp-agent-ro` con `--grant <app id>`; `HF_HUB_OFFLINE=1` porque el contenedor no tiene salida a internet |
 | Consumidores | job E7 de datos (chunks) y nodo Act del agente (consulta) |
-| Por qué no en la Function App | arranque ≤ 30 s (`infra.function_app`); el modelo int8 pesa ~570 MB y no cabe en ese presupuesto de arranque |
+| Por qué no en la Function App | arranque ≤ 30 s (`infra.function_app`); el artefacto pesa 2,2 GB y no cabe en ese presupuesto de arranque |
 | Por qué no FM APIs | `databricks-bge-large-en` y `databricks-gte-large-en` son solo inglés; el corpus es es+pt |
 | Garantía | chunk y consulta usan el mismo artefacto y la misma versión; `model_version` se guarda en cada chunk y en `ops.agent_turns` |
 | Go/no-go int8 | Recall@5 en PT con int8 ≥ Recall@5 fp32 − 0,02 sobre 20 preguntas; si no, se registra fp32 |
