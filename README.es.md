@@ -3,6 +3,28 @@ English version: [README.md](README.md)
 
 Agente de servicio al cliente para un banco regional (México, Colombia, Argentina) enfocado en un workflow: información de productos de crédito y elegibilidad, en español y portugués. Informa y simula; nunca decide crédito. Sabe cuándo no actuar y lo demuestra con números.
 
+## Pruébalo
+**App desplegada: https://gentle-moss-06f3f1f0f.2.azurestaticapps.net**
+
+1. **Página del proyecto** (`/`, en inglés). Es donde se llega primero. Existe solo para la hackathon, no es parte del producto del banco: el problema, los números, una ficha de servicio con el estado en vivo de cada dependencia y lo que sigue.
+2. **Sitio del cliente** (`landing.html`). La página pública del banco como la vería un cliente, en español, portugués o inglés. Desde ahí, "Chat" abre el asistente.
+3. **Chat** (`chat.html`). Primero se elige un cliente de prueba. Todos son sintéticos (filas `TEST-*` en gold, sin datos reales):
+
+   | Cliente de prueba | Qué esperar |
+   | --- | --- |
+   | perfil apto (Colombia) | la pre-evaluación sale elegible |
+   | condicionado (México) | revisión humana |
+   | no califica (Argentina) | explica el motivo y pasa el caso a un asesor |
+   | habla portugués (Colombia) | el cliente apto, en portugués |
+   | solo consulta (México) | sin permiso de pre-evaluación: informa y escala si insiste |
+   | Analista del banco | abre los casos que el asistente escaló, con todo el contexto |
+
+   La conversación es en español o portugués; la interfaz también viene en inglés. Entre las sugerencias bajo la caja de texto hay una inyección de prompt. "Detalles técnicos" muestra el trace id, la latencia y el costo de cada turno.
+4. **La ruta de 30 segundos.** Tres enlaces al final de la página del proyecto abren el chat y envían la pregunta: [una respuesta con su fuente](https://gentle-moss-06f3f1f0f.2.azurestaticapps.net/chat.html?lang=es&user=cliente_co_ok&ask=2) · [un caso de riesgo que pasa a una persona](https://gentle-moss-06f3f1f0f.2.azurestaticapps.net/chat.html?lang=es&user=cliente_ar_no&ask=1) · [una inyección de prompt](https://gentle-moss-06f3f1f0f.2.azurestaticapps.net/chat.html?lang=es&user=cliente_co_ok&ask=3).
+5. **Data insights** (`insights.html`). Agregados en vivo desde gold: demanda de contacto por motivo y país, y cuántos clientes están cerca del umbral de puntaje.
+
+El primer turno tras un rato sin uso puede tardar 15–20 s mientras despiertan la Function y el SQL warehouse; el chat muestra los segundos y lo avisa. Estado de las cinco dependencias: [`/api/healthz`](https://gentle-moss-06f3f1f0f.2.azurestaticapps.net/api/healthz).
+
 ## Cómo funciona
 - Grafo de estados Understand → Decide → Act → Verify → Escalate (LangGraph) en Azure Function App. Decide es determinista: matriz de política en `policy/policy.yaml`, scopes del token y flags del cliente.
 - Tres componentes separados: LLM (conversación, Databricks Foundation Model APIs), pre-scoring con regresión logística (insumo del motor, nunca decide) y reglas de elegibilidad versionadas (única fuente del resultado).
@@ -68,7 +90,16 @@ El dataset trae clientes, productos y transacciones, pero no lo que la regulaci�
 | Insights sobre el dataset (demanda de crédito por país e idioma, segmentos) | `data/` (notebook E10) |
 
 ## Ejecutar
-Instrucciones de setup, despliegue y evaluación reproducible en `docs/adr/09-servicio.md` y `docs/adr/06-evaluacion.md` (se completan durante el sprint).
+En local cada dependencia corre como mock (`data/mock`), sin cuenta de Azure ni de Databricks:
+```
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env
+pytest -q                          # pruebas unitarias, de contrato y de valores límite
+python -m agent.devserver          # chat en http://localhost:7071
+python eval/run_eval.py            # matriz de confusión de acción → eval/results/latest.json
+```
+Cada dependencia pasa de mock a real con una variable (`AGENT_LLM`, `AGENT_SQL`, `AGENT_STORE`, `AGENT_EMBED`, `AGENT_PRESCORE`; tabla en `agent/README.md`). El despliegue va por `.github/workflows/main.yml`: pruebas, plan y apply de Terraform con aprobación, bundles de Databricks, la Function, la web y un smoke test (`docs/adr/09-servicio.md`).
 
 ## Equipo
 Eladio Yovera (datos) · Manuela Larrea (IA/ML) · Nicolle Mayol (servicio). Documentación como código: cada decisión entra por PR con análisis de impacto (`AGENTS.md`, `.claude/skills/adr-hackathon`).
