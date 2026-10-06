@@ -23,7 +23,7 @@ Customer service agent for a regional bank (Mexico, Colombia, Argentina), focuse
 4. **The 30-second route.** Three links at the end of the project page open the chat and send the question for you: [an answer with its source](https://gentle-moss-06f3f1f0f.2.azurestaticapps.net/chat.html?lang=en&user=cliente_co_ok&ask=2) · [a risk case that goes to a person](https://gentle-moss-06f3f1f0f.2.azurestaticapps.net/chat.html?lang=en&user=cliente_ar_no&ask=1) · [a prompt injection](https://gentle-moss-06f3f1f0f.2.azurestaticapps.net/chat.html?lang=en&user=cliente_co_ok&ask=3).
 5. **Data insights** (`insights.html`). Live aggregates from gold: contact demand by reason and country, and how many customers sit near the score threshold.
 
-The first turn after a while idle can take 15–20 s while the Function and the SQL warehouse wake up; the chat shows the seconds and says so. Status of the five dependencies: [`/api/healthz`](https://gentle-moss-06f3f1f0f.2.azurestaticapps.net/api/healthz).
+The first turn after a while idle can take 15–20 s while the Function and the SQL warehouse wake up; the chat shows the seconds and says so. Status of the five dependencies: [`/api/healthz`](https://func-agent-bank-dev.azurewebsites.net/api/healthz).
 
 ## How it works
 - State graph Understand → Decide → Act → Verify → Escalate (LangGraph) on an Azure Function App. Decide is deterministic: it uses the policy matrix in `policy/policy.yaml`, the token scopes and the customer flags.

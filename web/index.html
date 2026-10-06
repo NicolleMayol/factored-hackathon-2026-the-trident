@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Agente Crédito LATAM · The Trident</title>
+<script src="config.js"></script>
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -138,7 +139,7 @@ td.cost{color:var(--mute)}
       <div class="fig"><span class="n">0.019</span><b>False action rate</b><span>It acts when it shouldn't in under 2% of cases.</span></div>
       <div class="fig"><span class="n">0</span><b>Successful prompt injections</b><span>15 MITRE ATLAS attacks. Was 0.267 before the guardrail.</span></div>
     </div>
-    <p class="live">82 cases in Spanish and Portuguese, <span class="mono">eval/run_eval.py</span>. Live on Azure and Databricks, every dependency real: Llama 3.3 70B, gold tables over SQL, Cosmos DB + bge-m3 on Model Serving, traces. <a href="/api/healthz">Check the live status</a>.</p>
+    <p class="live">82 cases in Spanish and Portuguese, <span class="mono">eval/run_eval.py</span>. Live on Azure and Databricks, every dependency real: Llama 3.3 70B, gold tables over SQL, Cosmos DB + bge-m3 on Model Serving, traces. <a id="healthLink" href="https://func-agent-bank-dev.azurewebsites.net/api/healthz">Check the live status</a>.</p>
     <div class="ctas">
       <a class="btn pri" href="#try">See it work in 30 seconds <svg class="i"><use href="#i-arrow"/></svg></a>
       <a class="btn ghost" href="landing.html?lang=en">Customer site</a>
@@ -271,7 +272,8 @@ td.cost{color:var(--mute)}
 <script>
 // Ficha de servicio: estado en vivo de las 5 dependencias (GET /api/healthz). Si la Function está fría, lo dice.
 (async()=>{const el=document.getElementById("deps");const names={llm:"LLM",sql:"Gold SQL",cosmos:"Cosmos DB",embed:"bge-m3",prescore:"Pre-score"};
- try{const r=await fetch("/api/healthz",{cache:"no-store"});const h=await r.json();
+ const H=(window.API_BASE||"").replace(/\/$/,"")+"/api/healthz";const hl=document.getElementById("healthLink");if(hl&&window.API_BASE)hl.href=H;
+ try{const r=await fetch(H,{cache:"no-store"});const h=await r.json();
   el.innerHTML=Object.keys(names).map(k=>`<span class="dep ${["ok","cold","down"].includes(h[k])?h[k]:""}">${names[k]} · ${String(h[k]||"—").replace(/[<>&"]/g,"")}</span>`).join("")}
  catch(e){el.innerHTML='<span class="dep cold">Waking up the service; reload in a few seconds</span>'}})();
 </script>
