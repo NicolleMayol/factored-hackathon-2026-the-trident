@@ -6,6 +6,8 @@ Agente de servicio al cliente para un banco regional (México, Colombia, Argenti
 ## Pruébalo
 **App desplegada: https://gentle-moss-06f3f1f0f.2.azurestaticapps.net**
 
+**Slides del pitch: [docs/pitch/the-trident-slides.pdf](docs/pitch/the-trident-slides.pdf)** (6 slides en inglés; los vínculos abren la evidencia en este repo)
+
 1. **Página del proyecto** (`/`, en inglés). Es donde se llega primero. Existe solo para la hackathon, no es parte del producto del banco: el problema, los números, una ficha de servicio con el estado en vivo de cada dependencia y lo que sigue.
 2. **Sitio del cliente** (`landing.html`). La página pública del banco como la vería un cliente, en español, portugués o inglés. Desde ahí, "Chat" abre el asistente.
 3. **Chat** (`chat.html`). Primero se elige un cliente de prueba. Todos son sintéticos (filas `TEST-*` en gold, sin datos reales):
@@ -88,6 +90,7 @@ El dataset trae clientes, productos y transacciones, pero no lo que la regulaci�
 | Dependencias y calendario del equipo | `docs/adr/dependencies.md` |
 | Clientes de prueba y usuario analista | `docs/test-users.md` |
 | Insights sobre el dataset (demanda de crédito por país e idioma, segmentos) | `data/` (notebook E10) |
+| Slides del pitch (PDF; `.pptx` editable al lado) | `docs/pitch/` |
 
 ## Ejecutar
 En local cada dependencia corre como mock (`data/mock`), sin cuenta de Azure ni de Databricks:
