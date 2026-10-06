@@ -161,7 +161,7 @@ td.cost{color:var(--mute)}
       <div class="card"><div class="big">1.0 · 0.917</div><b>Retrieval recall@5, Spanish · Portuguese</b><span class="s">Hybrid search (vectors + BM25 + RRF), routed by policy section, with bge-m3.</span><span class="mono">eval/retrieval_eval.py · 24 questions</span></div>
       <div class="card"><div class="big">0.78</div><b>Pre-score AUC on 134,037 customers</b><span class="s">Portfolio features add 0.12 AUC; the model choice adds nothing. Logistic regression won because it is simpler.</span><span class="mono">4 experiments in MLflow</span></div>
       <div class="card"><div class="big">11 → 3</div><b>Failures from prompt v1 to v2</b><span class="s">The gain came from the prompt, not the model. We picked Llama 3.3 70B from 4 endpoints with the same test harness.</span><span class="mono">eval/models.md</span></div>
-      <div class="card"><div class="big">1.0 → 0.98</div><b>Abstain accuracy, mock data → real data</b><span class="s">Real data exposed two bugs the mock could not show: the 70B returns a null product slot, and test customers in gold had no products. Both fixed; false action rate 0.057 → 0.019.</span><span class="mono">README · Evidence</span></div>
+      <div class="card"><div class="big">1.0 → 0.98</div><b>Abstain accuracy, fixture → everything real</b><span class="s">The real 70B and real gold exposed two bugs the fixture could not show: a null product slot, and test customers with no products in gold. Both fixed (abstain 0.94 → 0.98, false action 0.057 → 0.019). The gap left comes from intent on edge-case messages, not from the data.</span><span class="mono">README · Evidence</span></div>
     </div>
   </section>
 
@@ -224,8 +224,10 @@ td.cost{color:var(--mute)}
     <div class="head"><h2>What's next, and why it isn't here yet</h2><p class="lead">Each gap with its cause and the next step. None is hidden.</p></div>
     <div class="cards c2x" style="margin-top:28px">
       <div class="miss"><h3>Model Serving at runtime</h3><p>The prescore-lgbm endpoint is ready and gives exactly the same result as the in-process model (p = 0.969). A cold endpoint takes over 25 s, so production runs the model in-process.</p><p class="nx">Next: switch to the endpoint once it stays warm.</p></div>
-      <div class="miss"><h3>Latency under load</h3><p>p95 16.5 s with 10 concurrent users, against a target of 8 s; p50 is 3.1 s and no request failed. The slow tail is the pre-check turns: two calls to the 70B model plus gold queries.</p><p class="nx">Next: shorten the pre-check path, then measure again with the same k6 test.</p></div>
+      <div class="miss"><h3>Latency under load</h3><p>p95 16.5 s with 10 concurrent users, against a target of 8 s; p50 is 3.1 s and no request failed. Our code is no longer the tail: a per-customer SQL memo cut pre-checks from 14.8 s to 4.7 s (p50). The slowest turns are single calls to the 70B, queued on the pay-per-token endpoint.</p><p class="nx">Next: provisioned throughput for the 70B, or the 8B for simple turns; confirm with the same k6 test.</p></div>
+      <div class="miss"><h3>Embedding endpoint cost</h3><p>bge-m3 runs without scale-to-zero during the evaluation. A cold start takes minutes, and the agent would fall back to lexical search.</p><p class="nx">Next: turn scale-to-zero back on after the evaluation.</p></div>
       <div class="miss"><h3>A real held-out set</h3><p>The dataset does not separate the five intents of the workflow.</p><p class="nx">Next: label real call transcripts.</p></div>
+      <div class="miss"><h3>Rate caps for Colombia and Mexico</h3><p>Provisional values, not yet cited: the SFC publishes a monthly PDF and Banxico an interactive query tool.</p><p class="nx">Next: paste the two official figures per row.</p></div>
       <div class="miss"><h3>Portuguese in the dataset</h3><p>The dataset is 100% Spanish. We measure Portuguese with synthetic documents and cases, and we say so.</p><p class="nx">Next: real Portuguese conversations from the bank.</p></div>
     </div>
   </section>
