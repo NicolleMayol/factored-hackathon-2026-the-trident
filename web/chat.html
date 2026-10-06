@@ -473,12 +473,13 @@ function busy(k){if($("picker").hidden)return;for(const b of document.querySelec
 // Aviso de espera del selector: el anillo queda y solo cambia el texto.
 function loadMsg(key){const l=$("loading");l.lastElementChild.textContent=t(key);l.hidden=false}
 // Sugerencias con {name:<product_type>} y {amount:<product_type>}: nombre y un monto dentro del rango del producto del país del cliente.
-function sugg(){const u=curU;if(!u)return [];const byType=ty=>Object.values(META.products).find(p=>p.country===u.country&&p.type===ty);const out=[];
- for(const tpl of t("suggestions")){let ok=true;
-  const s=tpl.replace(/\{(name|amount):([a-z_]+)\}/g,(_,k,ty)=>{const p=byType(ty);if(!p){ok=false;return""}
-   if(k==="name"){const n=p.name[lang]||p.name[UI.default_lang];return n.charAt(0).toLowerCase()+n.slice(1)}
-   return String(Math.min(p.amount_max,p.amount_min*10))});
-  if(ok)out.push(s)}return out}
+// Una sugerencia con el producto del país del cliente; null si el país no tiene ese producto.
+function fillSugg(tpl){const u=curU;if(!u||!tpl)return null;const byType=ty=>Object.values(META.products).find(p=>p.country===u.country&&p.type===ty);let ok=true;
+ const s=tpl.replace(/\{(name|amount):([a-z_]+)\}/g,(_,k,ty)=>{const p=byType(ty);if(!p){ok=false;return""}
+  if(k==="name"){const n=p.name[lang]||p.name[UI.default_lang];return n.charAt(0).toLowerCase()+n.slice(1)}
+  return String(Math.min(p.amount_max,p.amount_min*10))});
+ return ok?s:null}
+function sugg(){return t("suggestions").map(fillSugg).filter(Boolean)}
 function renderSugg(){$("sugg").innerHTML="";for(const s of sugg()){const c=document.createElement("button");c.type="button";c.className="sg";c.textContent=s;c.onclick=()=>send(s);$("sugg").appendChild(c)}}
 function renderCases(){$("cases").innerHTML="";for(const c of cases){const b=document.createElement("button");b.type="button";b.className="pill";b.textContent=c;b.onclick=()=>{$("case").value=c;openCase(c)};$("cases").appendChild(b)}}
 
@@ -543,7 +544,10 @@ async function boot(){
  if(!r.ok||!Array.isArray(m.users)){setHealth("down","text.starting");loadMsg("text.starting");setTimeout(boot,10000);return}
  META=m;const hr=await fetch(API+"/healthz").catch(()=>null);setHealth(hr&&hr.ok?"up":"slow",hr&&hr.ok?"text.online":"text.degraded");
  // ?user=<clave> abre ese cliente directo (enlaces para la demo); si no, primero se elige.
- const q=new URLSearchParams(location.search).get("user");if(META.users.some(u=>u.key===q))login(q);else showPicker()}
+ // &ask=<n> además envía la sugerencia n de ui.json (ruta guiada de la página del jurado). Solo índices de sugerencias: nunca texto libre desde la URL.
+ const qs=new URLSearchParams(location.search),q=qs.get("user"),ask=Number(qs.get("ask"));
+ if(!META.users.some(u=>u.key===q)){showPicker();return}
+ await login(q);const txt=Number.isInteger(ask)&&qs.has("ask")?fillSugg(t("suggestions")[ask]):null;if(txt&&tok)send(txt)}
 boot();
 </script>
 </body>
