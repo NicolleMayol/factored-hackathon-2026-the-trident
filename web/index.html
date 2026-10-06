@@ -181,8 +181,8 @@ td.cost{color:var(--mute)}
     <div class="head"><h2>Service sheet</h2><p class="lead">What the bank gets when it switches it on. Load figures come from a k6 test on the deployed app.</p></div>
     <dl class="sheet">
       <div><dt>Dependencies, live</dt><dd id="deps"><span class="dep">checking…</span></dd></div>
-      <div><dt>Latency, 10 concurrent users</dt><dd>p50 3.1 s · p95 16.5 s · target 8 s, missed</dd></div>
-      <div><dt>Errors under load</dt><dd>0% over 95 turns</dd></div>
+      <div><dt>Latency, 10 concurrent users</dt><dd>p50 2.7 s · p95 17.5 s · target 8 s, missed</dd></div>
+      <div><dt>Errors under load</dt><dd>No HTTP errors over 89 turns; 5 (5.6%) rate-limited by the LLM endpoint and handed to an advisor</dd></div>
       <div><dt>Cost</dt><dd>0.00035 USD per turn ≈ 0.35 USD per 1,000 turns</dd></div>
       <div><dt>Languages · countries</dt><dd>Spanish, Portuguese · Mexico, Colombia, Argentina</dd></div>
       <div><dt>What it never does</dt><dd>Approve or deny credit, skip a rule, use customer data without consent</dd></div>
@@ -218,7 +218,7 @@ td.cost{color:var(--mute)}
         <tbody>
           <tr><th scope="row">Autonomy</th><td>It informs and runs a pre-check; it never approves or denies</td><td class="cost">Less automation to show off</td></tr>
           <tr><th scope="row">Accuracy</th><td>Every figure cites its source; rates checked against the usury cap</td><td class="cost">Shorter answers and more handoffs</td></tr>
-          <tr><th scope="row">Latency</th><td>Target p95 ≤ 8 s warm, measured 16.5 s with 10 concurrent users (p50 3.1 s); scale-to-zero</td><td class="cost">Slow first turn after idle time; p95 still above target</td></tr>
+          <tr><th scope="row">Latency</th><td>Target p95 ≤ 8 s warm, measured 17.5 s with 10 concurrent users (p50 2.7 s); scale-to-zero</td><td class="cost">Slow first turn after idle time; p95 still above target</td></tr>
           <tr><th scope="row">Cost</th><td>Free tiers and serverless, about 35–125 USD for 7 days</td><td class="cost">No always-on capacity; RU/s limits</td></tr>
           <tr><th scope="row">Oversight</th><td>Handoff with full context and reason</td><td class="cost">Some cases are not solved in the chat</td></tr>
         </tbody>
@@ -236,7 +236,7 @@ td.cost{color:var(--mute)}
     <div class="head"><h2>What's next, and why it isn't here yet</h2><p class="lead">Each gap with its cause and the next step. None is hidden.</p></div>
     <div class="cards c2x" style="margin-top:28px">
       <div class="miss"><h3>Model Serving at runtime</h3><p>The prescore-lgbm endpoint is ready and gives exactly the same result as the in-process model (p = 0.969). A cold endpoint takes over 25 s, so production runs the model in-process.</p><p class="nx">Next: switch to the endpoint once it stays warm.</p></div>
-      <div class="miss"><h3>Latency under load</h3><p>p95 16.5 s with 10 concurrent users, against a target of 8 s; p50 is 3.1 s and no request failed. Our code is no longer the tail: a per-customer SQL memo cut pre-checks from 14.8 s to 4.7 s (p50). The slowest turns are single calls to the 70B, queued on the pay-per-token endpoint.</p><p class="nx">Next: provisioned throughput for the 70B, or the 8B for simple turns; confirm with the same k6 test.</p></div>
+      <div class="miss"><h3>Latency under load</h3><p>p95 17.5 s with 10 concurrent users, against a target of 8 s; p50 is 2.7 s. Our code is no longer the tail: a per-customer SQL memo cut pre-checks from 14.8 s to 4.7 s (p50). The slowest turns wait in the pay-per-token queue of the 70B, and 5.6% of turns hit the 8B's rate limit; those fail safe and go to an advisor.</p><p class="nx">Next: provisioned throughput and a retry on 429; confirm with the same k6 test.</p></div>
       <div class="miss"><h3>Embedding endpoint cost</h3><p>bge-m3 runs without scale-to-zero during the evaluation. A cold start takes minutes, and the agent would fall back to lexical search.</p><p class="nx">Next: turn scale-to-zero back on after the evaluation.</p></div>
       <div class="miss"><h3>A real held-out set</h3><p>The dataset does not separate the five intents of the workflow.</p><p class="nx">Next: label real call transcripts.</p></div>
       <div class="miss"><h3>Rate caps for Colombia and Mexico</h3><p>Provisional values, not yet cited: the SFC publishes a monthly PDF and Banxico an interactive query tool.</p><p class="nx">Next: paste the two official figures per row.</p></div>
