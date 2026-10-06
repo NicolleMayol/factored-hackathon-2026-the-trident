@@ -12,8 +12,8 @@ elements:
   - id: gold.customer_360
     file: contracts/gold.yaml
     owner: datos
-    consumers: [ia-ml]
-    used_by: [get_customer_profile, prescore_features]
+    consumers: [ia-ml, servicio]
+    used_by: [get_customer_profile, prescore_features, "GET /insights: segment, credit_score, estimated_monthly_income, customer_id (ADR-29)"]
   - id: gold.customer_products
     file: contracts/gold.yaml
     owner: datos
@@ -38,12 +38,12 @@ elements:
     file: contracts/gold.yaml
     owner: datos
     consumers: [ia-ml]
-    used_by: [intent_classifier]
+    used_by: ["etiquetado por texto según docs/labels.md (M5): overrides por prefijo, label_source y es_entrenable = false", "demanda y trazabilidad, no entrenamiento: el clasificador de ADR-07 usa casos propios"]
   - id: gold.contact_demand
     file: contracts/gold.yaml
     owner: datos
-    consumers: [ia-ml]
-    used_by: [pitch slide 2]
+    consumers: [ia-ml, servicio]
+    used_by: [pitch slide 2, "GET /insights: reason_category, volume, fcr_rate, csat_avg (ADR-29)"]
   - id: ref.regulator_rates
     file: contracts/gold.yaml
     owner: datos
@@ -89,6 +89,11 @@ elements:
     owner: ia-ml
     consumers: [servicio]
     used_by: ["GET /meta expone el enum reason_code; cada código necesita texto en web/ui.json (tests/test_meta.py, ADR-25)"]
+  - id: api.GET_/insights
+    file: contracts/api.yaml
+    owner: servicio
+    consumers: []
+    used_by: ["web/insights.html: los tres hallazgos de datos (E10) en vivo, solo agregados de gold (ADR-29)"]
   - id: api.GET_/meta
     file: contracts/api.yaml
     owner: servicio

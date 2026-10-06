@@ -1,33 +1,33 @@
-transcript_id,customer_text,detected_intents,contact_reason,reason_category,detected_language,process_date,intent_label,action_label
-T0000,Quiero saber la tasa del préstamo personal,product_info,product_info,credit,es,2025-04-10,product_info,answer
-T0001,¿Califico para una tarjeta de crédito?,eligibility_simulation,eligibility_simulation,credit,es,2025-06-10,eligibility_simulation,confirm
-T0002,Quiero solicitar el crédito ya,formal_application,formal_application,credit,es,2025-06-10,formal_application,escalate
-T0003,¿Cuándo me desembolsan?,disbursement,disbursement,credit,es,2025-05-10,disbursement,escalate
-T0004,"Hola, ¿qué clima hace?",out_of_scope,out_of_scope,credit,es,2025-03-10,out_of_scope,answer
-T0005,Qual a taxa de juros do empréstimo pessoal?,product_info,product_info,credit,pt,2025-05-10,product_info,answer
-T0006,Tenho direito a um cartão de crédito?,eligibility_simulation,eligibility_simulation,credit,pt,2025-04-10,eligibility_simulation,confirm
-T0007,Quero solicitar o empréstimo,formal_application,formal_application,credit,pt,2025-02-10,formal_application,escalate
-T0008,Quiero saber la tasa del préstamo personal,product_info,product_info,credit,es,2025-06-10,product_info,answer
-T0009,¿Califico para una tarjeta de crédito?,eligibility_simulation,eligibility_simulation,credit,es,2025-06-10,eligibility_simulation,confirm
-T0010,Quiero solicitar el crédito ya,formal_application,formal_application,credit,es,2025-03-10,formal_application,escalate
-T0011,¿Cuándo me desembolsan?,disbursement,disbursement,credit,es,2025-01-10,disbursement,escalate
-T0012,"Hola, ¿qué clima hace?",out_of_scope,out_of_scope,credit,es,2025-06-10,out_of_scope,answer
-T0013,Qual a taxa de juros do empréstimo pessoal?,product_info,product_info,credit,pt,2025-01-10,product_info,answer
-T0014,Tenho direito a um cartão de crédito?,eligibility_simulation,eligibility_simulation,credit,pt,2025-04-10,eligibility_simulation,confirm
-T0015,Quero solicitar o empréstimo,formal_application,formal_application,credit,pt,2025-06-10,formal_application,escalate
-T0016,Quiero saber la tasa del préstamo personal,product_info,product_info,credit,es,2025-05-10,product_info,answer
-T0017,¿Califico para una tarjeta de crédito?,eligibility_simulation,eligibility_simulation,credit,es,2025-06-10,eligibility_simulation,confirm
-T0018,Quiero solicitar el crédito ya,formal_application,formal_application,credit,es,2025-03-10,formal_application,escalate
-T0019,¿Cuándo me desembolsan?,disbursement,disbursement,credit,es,2025-01-10,disbursement,escalate
-T0020,"Hola, ¿qué clima hace?",out_of_scope,out_of_scope,credit,es,2025-05-10,out_of_scope,answer
-T0021,Qual a taxa de juros do empréstimo pessoal?,product_info,product_info,credit,pt,2025-04-10,product_info,answer
-T0022,Tenho direito a um cartão de crédito?,eligibility_simulation,eligibility_simulation,credit,pt,2025-06-10,eligibility_simulation,confirm
-T0023,Quero solicitar o empréstimo,formal_application,formal_application,credit,pt,2025-04-10,formal_application,escalate
-T0024,Quiero saber la tasa del préstamo personal,product_info,product_info,credit,es,2025-06-10,product_info,answer
-T0025,¿Califico para una tarjeta de crédito?,eligibility_simulation,eligibility_simulation,credit,es,2025-05-10,eligibility_simulation,confirm
-T0026,Quiero solicitar el crédito ya,formal_application,formal_application,credit,es,2025-02-10,formal_application,escalate
-T0027,¿Cuándo me desembolsan?,disbursement,disbursement,credit,es,2025-06-10,disbursement,escalate
-T0028,"Hola, ¿qué clima hace?",out_of_scope,out_of_scope,credit,es,2025-01-10,out_of_scope,answer
-T0029,Qual a taxa de juros do empréstimo pessoal?,product_info,product_info,credit,pt,2025-06-10,product_info,answer
-T0030,Tenho direito a um cartão de crédito?,eligibility_simulation,eligibility_simulation,credit,pt,2025-05-10,eligibility_simulation,confirm
-T0031,Quero solicitar o empréstimo,formal_application,formal_application,credit,pt,2025-02-10,formal_application,escalate
+transcript_id,customer_text,detected_intents,contact_reason,reason_category,detected_language,process_date,intent_label,action_label,label_source,es_entrenable
+T0000,Quiero saber la tasa del préstamo personal,product_info,product_info,credit,es,2025-04-10,product_info,answer,manual,false
+T0001,¿Califico para una tarjeta de crédito?,eligibility_simulation,eligibility_simulation,credit,es,2025-06-10,eligibility_simulation,confirm,manual,false
+T0002,Quiero solicitar el crédito ya,formal_application,formal_application,credit,es,2025-06-10,formal_application,escalate,manual,false
+T0003,¿Cuándo me desembolsan?,disbursement,disbursement,credit,es,2025-05-10,disbursement,escalate,manual,false
+T0004,"Hola, ¿qué clima hace?",out_of_scope,out_of_scope,credit,es,2025-03-10,out_of_scope,answer,manual,false
+T0005,Qual a taxa de juros do empréstimo pessoal?,product_info,product_info,credit,pt,2025-05-10,product_info,answer,manual,false
+T0006,Tenho direito a um cartão de crédito?,eligibility_simulation,eligibility_simulation,credit,pt,2025-04-10,eligibility_simulation,confirm,manual,false
+T0007,Quero solicitar o empréstimo,formal_application,formal_application,credit,pt,2025-02-10,formal_application,escalate,manual,false
+T0008,Quiero saber la tasa del préstamo personal,product_info,product_info,credit,es,2025-06-10,product_info,answer,manual,false
+T0009,¿Califico para una tarjeta de crédito?,eligibility_simulation,eligibility_simulation,credit,es,2025-06-10,eligibility_simulation,confirm,manual,false
+T0010,Quiero solicitar el crédito ya,formal_application,formal_application,credit,es,2025-03-10,formal_application,escalate,manual,false
+T0011,¿Cuándo me desembolsan?,disbursement,disbursement,credit,es,2025-01-10,disbursement,escalate,manual,false
+T0012,"Hola, ¿qué clima hace?",out_of_scope,out_of_scope,credit,es,2025-06-10,out_of_scope,answer,manual,false
+T0013,Qual a taxa de juros do empréstimo pessoal?,product_info,product_info,credit,pt,2025-01-10,product_info,answer,manual,false
+T0014,Tenho direito a um cartão de crédito?,eligibility_simulation,eligibility_simulation,credit,pt,2025-04-10,eligibility_simulation,confirm,manual,false
+T0015,Quero solicitar o empréstimo,formal_application,formal_application,credit,pt,2025-06-10,formal_application,escalate,manual,false
+T0016,Quiero saber la tasa del préstamo personal,product_info,product_info,credit,es,2025-05-10,product_info,answer,manual,false
+T0017,¿Califico para una tarjeta de crédito?,eligibility_simulation,eligibility_simulation,credit,es,2025-06-10,eligibility_simulation,confirm,manual,false
+T0018,Quiero solicitar el crédito ya,formal_application,formal_application,credit,es,2025-03-10,formal_application,escalate,manual,false
+T0019,¿Cuándo me desembolsan?,disbursement,disbursement,credit,es,2025-01-10,disbursement,escalate,manual,false
+T0020,"Hola, ¿qué clima hace?",out_of_scope,out_of_scope,credit,es,2025-05-10,out_of_scope,answer,manual,false
+T0021,Qual a taxa de juros do empréstimo pessoal?,product_info,product_info,credit,pt,2025-04-10,product_info,answer,manual,false
+T0022,Tenho direito a um cartão de crédito?,eligibility_simulation,eligibility_simulation,credit,pt,2025-06-10,eligibility_simulation,confirm,manual,false
+T0023,Quero solicitar o empréstimo,formal_application,formal_application,credit,pt,2025-04-10,formal_application,escalate,manual,false
+T0024,Quiero saber la tasa del préstamo personal,product_info,product_info,credit,es,2025-06-10,product_info,answer,manual,false
+T0025,¿Califico para una tarjeta de crédito?,eligibility_simulation,eligibility_simulation,credit,es,2025-05-10,eligibility_simulation,confirm,manual,false
+T0026,Quiero solicitar el crédito ya,formal_application,formal_application,credit,es,2025-02-10,formal_application,escalate,manual,false
+T0027,¿Cuándo me desembolsan?,disbursement,disbursement,credit,es,2025-06-10,disbursement,escalate,manual,false
+T0028,"Hola, ¿qué clima hace?",out_of_scope,out_of_scope,credit,es,2025-01-10,out_of_scope,answer,manual,false
+T0029,Qual a taxa de juros do empréstimo pessoal?,product_info,product_info,credit,pt,2025-06-10,product_info,answer,manual,false
+T0030,Tenho direito a um cartão de crédito?,eligibility_simulation,eligibility_simulation,credit,pt,2025-05-10,eligibility_simulation,confirm,manual,false
+T0031,Quero solicitar o empréstimo,formal_application,formal_application,credit,pt,2025-02-10,formal_application,escalate,manual,false
