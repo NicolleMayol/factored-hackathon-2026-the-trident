@@ -23,7 +23,7 @@ Agente de servicio al cliente para un banco regional (México, Colombia, Argenti
 | --- | --- | --- |
 | Autonomía | El agente informa y pre-evalúa; nunca aprueba ni niega crédito | menos "wow" de automatización |
 | Exactitud | Toda cifra cita un chunk o una regla; tasa ≤ usura verificada | respuestas más cortas y con más escalamientos |
-| Latencia | p95 ≤ 8 s en caliente (medido: 9,7 s, ver Evidencia); cold start reportado aparte; scale-to-zero fuera de la ventana de evaluación | primer turno lento tras inactividad |
+| Latencia | p95 ≤ 8 s en caliente (desplegado: p95 16,5 s con 10 usuarios a la vez, p50 3,1 s; ver Evidencia); cold start reportado aparte; scale-to-zero fuera de la ventana de evaluación | primer turno lento tras inactividad; p95 sobre la meta |
 | Costo | Free tiers y serverless (versión C, ≈ 35–125 USD / 7 días) | sin always-on; límites de RU/s |
 | Supervisión humana | Handoff con contexto completo y motivo (`escalate_reason`); vista de analista | parte de los casos no se resuelve en el chat |
 
@@ -44,6 +44,7 @@ El dataset trae clientes, productos y transacciones, pero no lo que la regulaci�
 | Clasificador de intención (baseline) | TF-IDF char 2–5 + LogReg, 109 frases sintéticas → 60 mensajes únicos del held-out | macro-F1 0,92 (es 0,94 · pt 0,89); sus errores son los que el guardrail resuelve |
 | Pre-score | 134.037 clientes reales de gold; target proxy declarado (sin mora > 30 d); 4 experimentos en MLflow | logística v1 0,66 → **v2 con cartera 0,78**; LightGBM 0,66 → 0,78: las features valen 0,12 de AUC, el modelo 0 |
 | Costo y latencia por turno | 82 turnos reales del eval, trazas en `ops.agent_turns` | 0,00035 USD/turno · p50 3,3 s · p95 9,7 s (dos llamadas al 70B; ≈ 0,9 s por consulta a gold); primer turno ≈ 15 s si el warehouse está frío |
+| Latencia en la app desplegada | prueba de carga k6 (`carga.yml`) sobre main, todos los modos reales: 10 usuarios a la vez, 1 min | 95 turnos, 0 % errores · p50 3,1 s · p90 14,4 s · p95 16,5 s · máx 22,2 s. No cumple la meta de 8 s; la cola lenta son los turnos de pre-chequeo |
 | Pre-score en runtime | mismo cliente por endpoint (`prescore-lgbm`) y en proceso (`policy/prescore_logreg.json`) | paridad exacta (p = 0,969, mismo SHAP); endpoint frío > 25 s (timeout controlado), caliente 5,5 s con las 3 consultas a gold; por eso producción corre `prescore=local` |
 
 ## Qué falta y por qué (what's missing)

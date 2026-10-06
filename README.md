@@ -23,7 +23,7 @@ Customer service agent for a regional bank (Mexico, Colombia, Argentina), focuse
 | --- | --- | --- |
 | Autonomy | The agent informs and runs a pre-check; it never approves or denies credit | less automation "wow" |
 | Accuracy | Every figure cites a chunk or a rule; rate ≤ usury cap, checked | shorter answers and more escalations |
-| Latency | p95 ≤ 8 s warm (measured 9.7 s, see Evidence); cold start reported separately; scale-to-zero outside the evaluation window | slow first turn after idle time |
+| Latency | p95 ≤ 8 s warm (deployed: p95 16.5 s with 10 concurrent users, p50 3.1 s; see Evidence); cold start reported separately; scale-to-zero outside the evaluation window | slow first turn after idle time; p95 above target |
 | Cost | Free tiers and serverless (version C, ≈ 35–125 USD / 7 days) | no always-on; RU/s limits |
 | Human oversight | Handoff with full context and reason (`escalate_reason`); analyst view | some cases are not resolved in the chat |
 
@@ -43,7 +43,8 @@ The dataset includes customers, products and transactions, but not what regulati
 | Hybrid retrieval (vector + BM25 + RRF, routed by section) | 24 questions with an expected chunk (`eval/retrieval_eval.py`) | Recall@5 with bge-m3 fp32: ES 1.0 · PT 0.917 |
 | Intent classifier (baseline) | TF-IDF char 2–5 + LogReg, 109 synthetic phrases → 60 unique held-out messages | macro-F1 0.92 (es 0.94 · pt 0.89); its errors are the ones the guardrail fixes |
 | Pre-score | 134,037 real customers from gold; declared proxy target (no late payments > 30 d); 4 experiments in MLflow | logistic v1 0.66 → **v2 with portfolio 0.78**; LightGBM 0.66 → 0.78: the features are worth 0.12 AUC, the model 0 |
-| Cost and latency per turn | 82 real eval turns from local, traces in `ops.agent_turns` | 0.00035 USD/turn · with store/embed on mock: p50 3.3 s · p95 9.7 s · with Cosmos + `embed-bge-m3` (after #69): p50 3.1 s · p95 10.7 s (`search_policy` ≈ 1.2 s; two calls to the 70B; ≈ 0.9 s per gold query); first turn ≈ 15–20 s when the warehouse or the Function is cold. Production numbers (10-user load test by service) replace these when measured |
+| Cost and latency per turn | 82 real eval turns from local, traces in `ops.agent_turns` | 0.00035 USD/turn · with store/embed on mock: p50 3.3 s · p95 9.7 s · with Cosmos + `embed-bge-m3` (after #69): p50 3.1 s · p95 10.7 s (`search_policy` ≈ 1.2 s; two calls to the 70B; ≈ 0.9 s per gold query); first turn ≈ 15–20 s when the warehouse or the Function is cold. |
+| Latency on the deployed app | k6 load test (`carga.yml`) on main, all modes real: 10 concurrent users, 1 min | 95 turns, 0% errors · p50 3.1 s · p90 14.4 s · p95 16.5 s · max 22.2 s. Misses the 8 s target; the slow tail is the pre-check turns |
 | Deployed Function (`func-agent-bank-dev`, all real after #69) | `/api/healthz`; `POST /api/chat` as `cliente_co_pt` and `cliente_co_ok`; row in `ops.agent_turns` | 5 dependencies `ok`; PT turn answered with Cosmos citations (first turn after the apply: 20 s, Function + endpoint cold); ES turn warm: 4.7 s with 3 citations; trace recorded with `reply_source=llm` |
 | `embed-bge-m3` deployment | two failed health checks (Small and Medium, "update timed out") | cause: the registered version carried a 3.4 GB `python_model.pkl` (cloudpickle) on top of the 2.2 GB artifact; re-registered as models-from-code (`ml/bge_m3_model.py`, v5) → READY in 13 min; CAN_QUERY granted to `sp-agent-ro` |
 | Pre-score at runtime | same customer through the endpoint (`prescore-lgbm`) and in-process (`policy/prescore_logreg.json`) | exact parity (p = 0.969, same SHAP); cold endpoint > 25 s (controlled timeout), warm 5.5 s with the 3 gold queries; that is why production runs `prescore=local` |
