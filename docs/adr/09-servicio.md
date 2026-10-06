@@ -382,3 +382,36 @@ ia-ml necesita los textos de llamadas para el etiquetado de intención (M5). `da
 | Exportar un CSV con `customer_text` | Las filas del dataset saldrían del tenant (regla de Factored, ADR-12) |
 | Grant a mano en el workspace | Se pierde en el próximo apply; los grants viven en Terraform |
 
+## ADR-29 · Hallazgos de datos en la app: `GET /insights` y `insights.html`  ·  rol: servicio  ·  2026-10-05  ·  estado: cerrada
+
+**Decisión.** Los tres hallazgos del notebook de datos (E10) se publican en la app: `GET /api/insights` corre las mismas consultas sobre `hackathon.gold` con la identidad del agente (`sp-agent-ro`, que ya lee gold) y devuelve solo agregados; `web/insights.html` los muestra en vivo, en inglés, enlazada desde la portada.
+
+| Alternativas descartadas | Por qué |
+| --- | --- |
+| Iframe de un dashboard AI/BI (embebido básico) | Cada juez tendría que iniciar sesión en Databricks |
+| Embebido para usuarios externos | Dashboard nuevo, backend que emite tokens con un service principal y dominios permitidos en el workspace: 2–3 h la noche de la entrega |
+| Figuras exportadas del notebook | Cifras congeladas; si gold cambia, la página miente |
+
+**Contrato.** `contracts/api.yaml` v1.4.0. Público, sin JWT, caché de una hora (gold se refresca cada 6 h). Respuesta: `threshold` (el `min_score` más común de `policy/catalog.yaml`, no un número en el código), `demand` (contactos, participación, FCR y CSAT por motivo), `segments` (clientes, participación, score medio, % bajo el umbral y % a ±25 puntos, sin los `TEST-*` de ADR-22) y `coverage` (% sin score y sin ingreso). Si el warehouse no responde: 503 sin detalles internos; la página reintenta seis veces y dice qué pasa.
+
+**Impacto.**
+
+| Elemento | Estado | Owner | Consumers afectados | Qué deben hacer | Fecha límite |
+| --- | --- | --- | --- | --- | --- |
+| `api.GET_/insights` | nuevo | servicio | — | — | lun 5 |
+| `gold.contact_demand` | existe; servicio pasa a consumirla | datos | servicio | Avisar si cambian `reason_category`, `volume`, `fcr_rate` o `csat_avg` | lun 5 |
+| `gold.customer_360` | existe; servicio pasa a consumirla | datos | servicio | Avisar si cambian `segment`, `credit_score`, `estimated_monthly_income` o `customer_id` | lun 5 |
+| `data.analytics_insights` | existe; se publica en la web | datos | servicio | Mantener las consultas del notebook alineadas con las del endpoint | lun 5 |
+| `contracts/api.yaml` | cambia: v1.4.0 | servicio | ia-ml | Nada | lun 5 |
+
+**Cómo se prueba.** `tests/test_insights.py` corre el mismo SQL sobre `data/mock` cargado en SQLite: excluye los `TEST-*`, los totales cuadran, el umbral sale del catálogo, los porcentajes por segmento coinciden con un conteo a mano y la respuesta no trae ningún `customer_id`. El smoke de `main.yml` pide `/api/insights` contra gold (aviso, no fallo, si el warehouse no despierta en ~2 min) y `insights.html`.
+
+**Hackathon vs To-Be.**
+
+| Hackathon | To-Be |
+| --- | --- |
+| Endpoint con SQL directo y caché en memoria | Métricas en una vista o métrica de Unity Catalog, con dueño en datos |
+| Página propia en Static Web Apps | Dashboard AI/BI embebido para usuarios externos, con filtros |
+| Caché de una hora por instancia | Tabla agregada que el pipeline escribe al cerrar cada corrida |
+
+**Dependencias.** Ninguna fecha cambia. E10 (notebook de datos) sigue como fuente de las consultas; el endpoint las replica.
