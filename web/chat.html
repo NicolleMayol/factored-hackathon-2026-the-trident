@@ -516,7 +516,7 @@ async function confirmAct(ok){const my=seq;const ty=addTyping("text.scoring");
  renderBot(j)}
 
 // Campos de contracts/handoff.schema.json: verified_facts {fact, source}, actions_taken {tool, result, verified}.
-const item=x=>typeof x==="string"?x:x.fact?`${x.fact}${x.source?" · "+srcLabel(x.source):""}`:x.tool?`${srcLabel(x.tool)}: ${x.result??""}`:x.id?srcLabel(x.id):JSON.stringify(x);
+const item=x=>typeof x==="string"?x:x.fact?`${x.fact}${x.source?" · "+srcLabel(x.source):""}`:x.tool?`${srcLabel(x.tool)}: ${x.result??""}`:x.id?srcLabel(x.id)+(x.type==="rule"&&x.text?` · ${x.text}`:""):JSON.stringify(x);
 const li=a=>a&&a.length?`<ul>${a.map(x=>`<li>${esc(item(x))}</li>`).join("")}</ul>`:"—";
 async function openCase(id){const [r,j]=await call("/handoff/"+encodeURIComponent(id));const F=k=>esc(t("analyst.fields."+k));
  if(!r.ok){$("hand").innerHTML=`<div class="hand"><span class="tag t-stop">${esc(r.status===404?t("analyst.not_found"):t("text.error")+" "+r.status)}</span><div>${esc(j.error||"")}</div></div>`;return}
