@@ -29,7 +29,7 @@ def chat(req: func.HttpRequest) -> func.HttpResponse:
     try:
         claims = _auth(req)
         body = req.get_json()
-        out = H.handle(body["message"], {"customer_id": claims["customer_id"], "scopes": claims["scopes"], "locale": body.get("locale") or claims.get("locale", "es-MX"),
+        out = H.handle(body["message"], {"customer_id": claims["customer_id"], "scopes": claims["scopes"], "locale": H.pick_locale(body.get("locale"), claims.get("locale")),
                                          "conversation_id": body.get("conversation_id"), "trace_id": req.headers.get("x-trace-id")})
         out.pop("_state", None)
         return _json(200, out)

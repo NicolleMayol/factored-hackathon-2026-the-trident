@@ -78,7 +78,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"token": issue_test_token(u["customer_id"], u["scopes"], S.jwt_signing_key, S.jwt_exp_min, u["locale"])})
             if p == "/chat":
                 c = self._auth(); b = self._body()
-                out = H.handle(b["message"], {"customer_id": c["customer_id"], "scopes": c["scopes"], "locale": b.get("locale") or c.get("locale", "es-MX"), "conversation_id": b.get("conversation_id")})
+                out = H.handle(b["message"], {"customer_id": c["customer_id"], "scopes": c["scopes"], "locale": H.pick_locale(b.get("locale"), c.get("locale")), "conversation_id": b.get("conversation_id")})
                 st = out.pop("_state"); out["node_path"] = st.get("node_path"); out["rules_fired"] = st.get("rules_fired")
                 return self._send(200, out)
             if p == "/chat/confirm":
