@@ -62,6 +62,7 @@ nav a:hover{color:#fff}
 .cards{display:grid;gap:16px}
 .c3{grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr))}
 .c2{grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr))}
+.c4{grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr))}
 .c2x{grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr))}
 .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:10px}
 .card .k{color:var(--brand)}
@@ -147,6 +148,17 @@ td.cost{color:var(--mute)}
 </div>
 
 <main>
+  <section id="problem" class="wrap" style="padding-top:88px">
+    <div class="head"><h2>One contact in five is a product question</h2><p class="lead">From the bank's contact records, June 2023 to June 2026. These are the questions the assistant takes, and the ones where an AI must never decide.</p></div>
+    <div class="cards c4" style="margin-top:28px">
+      <div class="card"><div class="big">22%</div><b>of 686,296 contacts are about products</b><span class="s">Second only to transactions (35%). About 138 a day.</span></div>
+      <div class="card"><div class="big">50%</div><b>of product contacts come from Mexico</b><span class="s">Colombia 30%, Argentina 20%.</span></div>
+      <div class="card"><div class="big">~2 min</div><b>Median wait on a product contact</b><span class="s">118 s on average across the three countries.</span></div>
+      <div class="card"><div class="big">1 in 10</div><b>product contacts already go to a person</b><span class="s">The assistant hands those over with the context gathered, so the customer does not repeat it.</span></div>
+    </div>
+    <p class="mono" style="color:var(--mute);margin:14px 0 0">gold.contact_demand · <a href="insights.html">see all data insights →</a></p>
+  </section>
+
   <section class="wrap cards c3 principles" aria-label="Principles">
     <div class="card"><span class="mono k">Autonomy</span><p>It informs and runs a pre-check. It never approves or denies credit.</p></div>
     <div class="card"><span class="mono k">Accuracy</span><p>Every figure cites a document chunk or a rule. No citation, no claim.</p></div>
