@@ -280,8 +280,16 @@ def gold_intent_labels():
     """
     import schemas
 
-    with open(f"{VOL_FUENTES}/labels.md", encoding="utf-8") as f:
-        overrides = schemas.overrides_de_labels(f.read())
+    # Si labels.md no está en el volumen (copia de bundles.yml aún no corrida, volumen recreado),
+    # se sigue sin overrides en vez de tumbar el pipeline: un fallo aquí se llevaría las otras seis
+    # tablas por delante, porque el error ocurre al evaluar el módulo. Las filas salen `unmatched`
+    # y el check de DQ lo marca (revisión de servicio en el #72).
+    try:
+        with open(f"{VOL_FUENTES}/labels.md", encoding="utf-8") as f:
+            overrides = schemas.overrides_de_labels(f.read())
+    except Exception as e:  # noqa: BLE001  el pipeline no debe caer por un insumo que falta
+        print(f"labels.md no disponible ({type(e).__name__}): se etiqueta todo como unmatched")
+        overrides = {}
 
     tr = spark.read.table(f"{CATALOG}.silver.call_transcripts")  # noqa: F821
     inter = spark.read.table(f"{CATALOG}.silver.call_center_interactions").select(  # noqa: F821
