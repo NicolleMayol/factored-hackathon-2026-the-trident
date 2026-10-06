@@ -176,6 +176,19 @@ def main() -> int:
     llaves = cd.select("date", "country", "reason_category").distinct().count()
     filas.append(("gold.contact_demand", "grano_unico_dia_pais_categoria", ncd == llaves, ncd, ncd - llaves, None))
 
+    # ---- E3: etiquetas de intención
+    il = spark.table(f"{cat}.gold.intent_labels")
+    nil_ = il.count()
+    filas.append(check(spark, cat, "gold.intent_labels", "intent_en_dominio",
+                       "intent_label NOT IN ('product_info','eligibility_simulation','formal_application','disbursement','out_of_scope')", nil_))
+    filas.append(check(spark, cat, "gold.intent_labels", "no_entrenable", "es_entrenable = true", nil_))
+    # Sin coincidencia con ningún override: la frase queda out_of_scope, pero visible. Si crece,
+    # es que el origen trae aperturas nuevas y hay que avisar a ia-ml para que amplíe docs/labels.md.
+    sin_match = il.where(F.col("label_source") == "unmatched").count()
+    filas.append(("gold.intent_labels", "todas_las_frases_tienen_override", sin_match == 0, nil_, sin_match, None))
+    filas.append(("gold.intent_labels", "grano_unico_por_transcript_id",
+                  nil_ == il.select("transcript_id").distinct().count(), nil_, 0, None))
+
     # Columnas prohibidas: ninguna puede haber cruzado a gold (ADR-22).
     prohibidas = {"gender", "marital_status", "date_of_birth"}
     for t in ("customer_360", "customer_products", "customer_behavior_12m"):

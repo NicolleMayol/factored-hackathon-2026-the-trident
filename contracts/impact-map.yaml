@@ -38,7 +38,7 @@ elements:
     file: contracts/gold.yaml
     owner: datos
     consumers: [ia-ml]
-    used_by: [intent_classifier]
+    used_by: ["etiquetado por texto según docs/labels.md (M5): overrides por prefijo, label_source y es_entrenable = false", "demanda y trazabilidad, no entrenamiento: el clasificador de ADR-07 usa casos propios"]
   - id: gold.contact_demand
     file: contracts/gold.yaml
     owner: datos

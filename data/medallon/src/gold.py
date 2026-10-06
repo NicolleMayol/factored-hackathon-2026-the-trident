@@ -258,3 +258,64 @@ def gold_contact_demand():
         )
         .withColumn("_ingested_at", F.current_timestamp())
     )
+
+
+@dp.table(
+    name=f"{CATALOG}.gold.intent_labels",
+    comment="1 fila por transcript_id (E3). es_entrenable = false: las 42 frases no cubren el workflow 4 (M5).",
+)
+@dp.expect_or_fail("transcript_id_no_nulo", "transcript_id IS NOT NULL")
+@dp.expect("intent_en_dominio", "intent_label IN ('product_info','eligibility_simulation','formal_application','disbursement','out_of_scope')")
+@dp.expect("no_entrenable", "es_entrenable = false")
+def gold_intent_labels():
+    """Etiquetas por texto, según la regla de ia-ml en docs/labels.md (M5).
+
+    El etiquetado es por frase y se propaga: `customer_text` son 42 plantillas sobre 171.321
+    transcripciones. Por eso `es_entrenable = false` — propagar deja la misma frase en train y test,
+    y ninguna de las 42 habla de elegibilidad, solicitud ni desembolso (acuerdo del PR #31).
+
+    Los overrides se leen del volumen, no se copian aquí: la regla es de ia-ml y vive en su
+    documento. Si no hay coincidencia, la frase queda `out_of_scope` con `label_source = unmatched`,
+    visible en vez de silenciosa.
+    """
+    import schemas
+
+    with open(f"{VOL_FUENTES}/labels.md", encoding="utf-8") as f:
+        overrides = schemas.overrides_de_labels(f.read())
+
+    tr = spark.read.table(f"{CATALOG}.silver.call_transcripts")  # noqa: F821
+    inter = spark.read.table(f"{CATALOG}.silver.call_center_interactions").select(  # noqa: F821
+        "interaction_id", "contact_reason", "reason_category"
+    )
+
+    # Override por igualdad o por prefijo: las 42 frases son 2 aperturas más muletillas, así que el
+    # prefijo basta y una muletilla nueva no deja la fila sin etiqueta.
+    intent = F.lit(None).cast("string")
+    for frase, valor in overrides.items():
+        intent = F.when(F.col("customer_text").startswith(F.lit(frase)), F.lit(valor)).otherwise(intent)
+
+    accion = F.lit(None).cast("string")
+    for nombre, acc in schemas.ACCION_POR_INTENT.items():
+        accion = F.when(F.col("intent_label") == nombre, F.lit(acc)).otherwise(accion)
+
+    return (
+        tr.join(inter, "interaction_id", "left")
+        .withColumn("intent_label", F.coalesce(intent, F.lit("out_of_scope")))
+        .withColumn("label_source", F.when(intent.isNotNull(), F.lit("manual")).otherwise(F.lit("unmatched")))
+        .withColumn("action_label", accion)
+        .withColumn("es_entrenable", F.lit(False))
+        .select(
+            F.col("transcript_id").cast("string"),
+            F.col("customer_text").cast("string"),
+            F.col("detected_intents").cast("string"),
+            F.col("contact_reason").cast("string"),
+            F.col("reason_category").cast("string"),
+            F.col("detected_language").cast("string"),
+            F.col("process_date").cast("date"),
+            F.col("intent_label").cast("string"),
+            F.col("action_label").cast("string"),
+            F.col("label_source").cast("string"),
+            F.col("es_entrenable").cast("boolean"),
+            F.current_timestamp().alias("_ingested_at"),
+        )
+    )

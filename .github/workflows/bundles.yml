@@ -56,6 +56,9 @@ jobs:
             echo "::notice::Sin data/policy_docs/docs todavía."
           fi
           databricks fs cp policy/catalog.yaml dbfs:/Volumes/hackathon/ref/fuentes/catalog.yaml --overwrite
+          # E3: la regla de etiquetado es de ia-ml y vive en docs/labels.md; el pipeline la lee del
+          # volumen en vez de copiarla, para que añadir un override no obligue a tocar dos sitios.
+          databricks fs cp docs/labels.md dbfs:/Volumes/hackathon/ref/fuentes/labels.md --overwrite
           # E6: los snapshots de tasas de regulador. Se copian todos y conviven a propósito: una
           # respuesta citada en octubre tiene que poder reproducirse con la tasa de octubre.
           for f in data/ref/regulator_rates_*.csv; do

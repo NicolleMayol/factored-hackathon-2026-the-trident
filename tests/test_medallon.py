@@ -230,3 +230,59 @@ def test_contact_demand_respeta_grano_y_rangos():
     for f in filas:
         assert 0 <= float(f["fcr_rate"]) <= 1
         assert int(f["escalated"]) <= int(f["volume"]), f"{f['date']} {f['country']}: más escalados que volumen"
+
+
+# --------------------------------------------------------------------------- E3 · etiquetas
+def test_los_overrides_se_leen_de_labels_md_y_no_se_copian():
+    """La regla de etiquetado es de ia-ml (M5). El pipeline la lee del documento para que añadir un
+    override no obligue a tocar dos sitios."""
+    ov = schemas.overrides_de_labels((ROOT / "docs" / "labels.md").read_text(encoding="utf-8"))
+    assert ov, "no se leyó ningún override de docs/labels.md"
+    assert set(ov.values()) <= set(schemas.ACCION_POR_INTENT), "intent fuera del dominio de policy.yaml"
+    # Las 42 frases son 2 aperturas: consultas de saldo, fuera del workflow 4.
+    assert all(v == "out_of_scope" for v in ov.values())
+
+
+def test_accion_por_intent_coincide_con_policy_yaml():
+    pol = yaml.safe_load((ROOT / "policy" / "policy.yaml").read_text(encoding="utf-8"))
+    intents_en_policy = {r["intent"] for r in pol["rules"] if "intent" in r}
+    assert set(schemas.ACCION_POR_INTENT) <= intents_en_policy | {"out_of_scope"}
+
+
+def test_intent_labels_declara_label_source_y_es_entrenable():
+    """ADR-22 + acuerdo del PR #31: la tabla se entrega, pero no sirve para entrenar."""
+    contrato = yaml.safe_load((ROOT / "contracts" / "gold.yaml").read_text(encoding="utf-8"))
+    cols = contrato["tables"]["gold.intent_labels"]["columns"]
+    assert "label_source" in cols and "es_entrenable" in cols
+    assert "false" in str(cols["es_entrenable"]).lower()
+
+
+# --------------------------------------------------------------------------- API del pipeline
+@pytest.mark.parametrize("modulo", ["bronze", "silver", "gold"])
+def test_los_modulos_del_pipeline_solo_usan_la_api_de_sdp(modulo):
+    """ADR-20 declara Spark Declarative Pipelines. Un `@dlt.table` suelto en un archivo que solo
+    importa `pyspark.pipelines` lanza NameError al cargar el módulo y tumba el pipeline entero;
+    ni pytest ni `bundle validate` lo ven, porque ninguno ejecuta ese código (revisión del #68)."""
+    fuente = (ROOT / "data" / "medallon" / "src" / f"{modulo}.py").read_text(encoding="utf-8")
+    assert "from pyspark import pipelines as dp" in fuente
+    assert "dlt." not in fuente, f"{modulo}.py usa la API vieja de dlt en vez de dp"
+
+
+def test_todo_nombre_usado_en_los_decoradores_esta_importado():
+    """Compila cada módulo y comprueba que no quede un nombre global sin definir ni importar."""
+    import ast as _ast
+
+    for modulo in ("bronze", "silver", "gold"):
+        ruta = ROOT / "data" / "medallon" / "src" / f"{modulo}.py"
+        arbol = _ast.parse(ruta.read_text(encoding="utf-8"))
+        importados = {a.asname or a.name.split(".")[0]
+                      for n in _ast.walk(arbol) if isinstance(n, (_ast.Import, _ast.ImportFrom))
+                      for a in n.names}
+        # `spark` lo inyecta el runtime del pipeline; el resto tiene que estar importado.
+        decoradores = {d.func.value.id
+                       for n in _ast.walk(arbol) if isinstance(n, _ast.FunctionDef)
+                       for d in n.decorator_list
+                       if isinstance(d, _ast.Call) and isinstance(d.func, _ast.Attribute)
+                       and isinstance(d.func.value, _ast.Name)}
+        faltan = decoradores - importados - {"spark"}
+        assert not faltan, f"{modulo}.py decora con {faltan}, que no está importado"

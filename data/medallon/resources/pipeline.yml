@@ -1,5 +1,5 @@
 # Pipeline declarativo del medallón (ADR-20: SDP, solo serverless).
-# Publica en varios esquemas del mismo catálogo con nombres completos en @dlt.table.
+# Publica en varios esquemas del mismo catálogo con nombres completos en @dp.table.
 resources:
   pipelines:
     medallon_pipeline:

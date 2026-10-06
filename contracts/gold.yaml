@@ -51,7 +51,7 @@ tables:
   gold.intent_labels:
     grain: 1 fila por transcript_id
     split: {by: process_date, test: últimos 3 meses}
-    columns: {transcript_id: string, customer_text: string, detected_intents: string, contact_reason: string, reason_category: string, detected_language: string, process_date: date, intent_label: string, action_label: string}
+    columns: {transcript_id: string, customer_text: string, detected_intents: string, contact_reason: string, reason_category: string, detected_language: string, process_date: date, intent_label: string, action_label: string, label_source: "string, values: [manual, model, low_confidence, unmatched]", es_entrenable: "boolean, siempre false: las 42 frases no cubren el workflow 4 (M5, docs/labels.md)"}
   gold.contact_demand:
     grain: día × país × reason_category
     columns: {date: date, country: string, reason_category: string, volume: int, fcr_rate: "decimal(5,4)", escalated: int, wait_p50_s: int, csat_avg: "decimal(3,2)"}

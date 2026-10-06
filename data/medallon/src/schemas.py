@@ -56,6 +56,43 @@ HINTS = {
     "daily_exchange_rates": "exchange_rate DECIMAL(12,6), buy_rate DECIMAL(12,6), sell_rate DECIMAL(12,6)",
 }
 
+# Acción por intent (policy/policy.yaml, vía docs/labels.md de ia-ml). `out_of_scope → clarify`:
+# la frase se entiende, pero queda fuera del workflow 4 y se pide precisión.
+ACCION_POR_INTENT = {
+    "product_info": "answer",
+    "eligibility_simulation": "confirm",
+    "formal_application": "escalate",
+    "disbursement": "escalate",
+    "out_of_scope": "clarify",
+}
+
+_INTENTS = "|".join(ACCION_POR_INTENT)
+
+
+def overrides_de_labels(texto_md: str) -> dict[str, str]:
+    """Lee la tabla "Overrides" de docs/labels.md: | frase | intent |.
+
+    La regla de etiquetado es de ia-ml (M5) y vive en ese documento; el pipeline la aplica en vez de
+    copiarla, para que añadir un override no obligue a tocar dos sitios. Mismo formato que lee
+    `ml/label_phrases.py`.
+    """
+    import re
+
+    fuera, pares = False, {}
+    for linea in texto_md.splitlines():
+        if linea.startswith("## Overrides"):
+            fuera = True
+            continue
+        if fuera and linea.startswith("## ") :
+            break
+        if not fuera:
+            continue
+        m = re.match(rf"\|\s*(.+?)\s*\|\s*({_INTENTS})\s*\|", linea)
+        if m and m.group(1) != "customer_text":
+            pares[m.group(1)] = m.group(2)
+    return pares
+
+
 # Las tablas del agente usan ISO-2 (credit_product_catalog, ref.regulator_rates, policy_chunks) y
 # customer_360 usa el nombre completo. country_code elimina la traducción (PR #27, opción 2 de ia-ml).
 CODIGO_PAIS = {"Mexico": "MX", "Colombia": "CO", "Argentina": "AR"}
