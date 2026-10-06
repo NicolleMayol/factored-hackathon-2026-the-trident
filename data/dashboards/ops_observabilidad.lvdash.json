@@ -1,0 +1,322 @@
+{
+  "datasets": [
+    {
+      "name": "ds_acciones",
+      "displayName": "Acciones por turno",
+      "queryLines": [
+        "SELECT action,\n",
+        "       count(*)                                        AS turnos,\n",
+        "       round(avg(latency_ms))                          AS latencia_media_ms,\n",
+        "       round(avg(groundedness), 3)                     AS groundedness\n",
+        "FROM hackathon.ops.agent_turns\n",
+        "GROUP BY action\n",
+        "ORDER BY turnos DESC"
+      ]
+    },
+    {
+      "name": "ds_escalamientos",
+      "displayName": "Por qué escala el agente",
+      "queryLines": [
+        "-- ADR-21 §3: separa la abstención correcta (policy, scope) del fallo de infraestructura\n",
+        "-- (timeout_tool). Sin esta columna, la matriz de confusión de acción mezclaría las dos.\n",
+        "SELECT escalate_reason,\n",
+        "       count(*)                                                    AS escalamientos,\n",
+        "       CASE WHEN escalate_reason = 'timeout_tool' THEN 'infraestructura'\n",
+        "            ELSE 'decisión del agente' END                         AS naturaleza\n",
+        "FROM hackathon.ops.agent_turns\n",
+        "WHERE action = 'escalate'\n",
+        "GROUP BY escalate_reason\n",
+        "ORDER BY escalamientos DESC"
+      ]
+    },
+    {
+      "name": "ds_latencia",
+      "displayName": "Latencia por acción",
+      "queryLines": [
+        "SELECT action,\n",
+        "       round(percentile(latency_ms, 0.50)) AS p50_ms,\n",
+        "       round(percentile(latency_ms, 0.95)) AS p95_ms,\n",
+        "       count(*)                            AS turnos\n",
+        "FROM hackathon.ops.agent_turns\n",
+        "GROUP BY action\n",
+        "ORDER BY p95_ms DESC"
+      ]
+    },
+    {
+      "name": "ds_idioma",
+      "displayName": "Turnos por idioma",
+      "queryLines": [
+        "SELECT CASE WHEN locale LIKE 'pt%' THEN 'pt' ELSE 'es' END AS idioma,\n",
+        "       count(*)                                            AS turnos,\n",
+        "       round(avg(groundedness), 3)                         AS groundedness,\n",
+        "       round(avg(latency_ms))                              AS latencia_media_ms\n",
+        "FROM hackathon.ops.agent_turns\n",
+        "GROUP BY 1\n",
+        "ORDER BY turnos DESC"
+      ]
+    },
+    {
+      "name": "ds_costo",
+      "displayName": "Costo y volumen",
+      "queryLines": [
+        "SELECT count(*)                                   AS turnos,\n",
+        "       round(sum(cost_usd), 4)                     AS costo_total_usd,\n",
+        "       round(avg(cost_usd), 6)                     AS costo_por_turno_usd,\n",
+        "       sum(tokens_in + tokens_out)                 AS tokens\n",
+        "FROM hackathon.ops.agent_turns"
+      ]
+    },
+    {
+      "name": "ds_dq",
+      "displayName": "Calidad de datos · última corrida",
+      "queryLines": [
+        "SELECT table AS tabla, rule AS regla, rows_checked, rows_failed, passed\n",
+        "FROM hackathon.ops.dq_results\n",
+        "WHERE run_ts = (SELECT max(run_ts) FROM hackathon.ops.dq_results)\n",
+        "ORDER BY passed, tabla, regla"
+      ]
+    },
+    {
+      "name": "ds_dq_resumen",
+      "displayName": "Calidad por capa",
+      "queryLines": [
+        "SELECT split(table, '[.]')[0]                              AS capa,\n",
+        "       count(*)                                            AS checks,\n",
+        "       sum(CASE WHEN passed THEN 0 ELSE 1 END)             AS fallidos\n",
+        "FROM hackathon.ops.dq_results\n",
+        "WHERE run_ts = (SELECT max(run_ts) FROM hackathon.ops.dq_results)\n",
+        "GROUP BY 1\n",
+        "ORDER BY capa"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "pagina_ops",
+      "displayName": "Observabilidad · agente y datos",
+      "layout": [
+        {
+          "widget": {
+            "name": "titulo",
+            "textbox_spec": "# Observabilidad\n\nDos de los cuatro dominios de ADR-15, los que tienen dato real: **IA** (`ops.agent_turns`, lo escribe el agente) y **datos** (`ops.dq_results`, lo escribe el job del medallón). Infra (`ops.infra_requests`) y ML (`ops.ml_inference`) quedan pendientes de X3."
+          },
+          "position": { "x": 0, "y": 0, "width": 6, "height": 3 }
+        },
+        {
+          "widget": {
+            "name": "w_costo",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_costo",
+                  "fields": [
+                    { "name": "turnos", "expression": "`turnos`" },
+                    { "name": "costo_total_usd", "expression": "`costo_total_usd`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": { "fieldName": "turnos", "displayName": "Turnos registrados" }
+              }
+            }
+          },
+          "position": { "x": 0, "y": 3, "width": 2, "height": 3 }
+        },
+        {
+          "widget": {
+            "name": "w_acciones",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_acciones",
+                  "fields": [
+                    { "name": "action", "expression": "`action`" },
+                    { "name": "turnos", "expression": "`turnos`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": { "fieldName": "action", "scale": { "type": "categorical" }, "displayName": "Acción" },
+                "y": { "fieldName": "turnos", "scale": { "type": "quantitative" }, "displayName": "Turnos" }
+              },
+              "frame": { "showTitle": true, "title": "Qué hace el agente en cada turno" }
+            }
+          },
+          "position": { "x": 2, "y": 3, "width": 4, "height": 6 }
+        },
+        {
+          "widget": {
+            "name": "w_escalamientos",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_escalamientos",
+                  "fields": [
+                    { "name": "escalate_reason", "expression": "`escalate_reason`" },
+                    { "name": "escalamientos", "expression": "`escalamientos`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "pie",
+              "encodings": {
+                "angle": { "fieldName": "escalamientos", "scale": { "type": "quantitative" }, "displayName": "Escalamientos" },
+                "color": { "fieldName": "escalate_reason", "scale": { "type": "categorical" }, "displayName": "Causa" }
+              },
+              "frame": { "showTitle": true, "title": "Por qué escala: decisión del agente vs infraestructura" }
+            }
+          },
+          "position": { "x": 0, "y": 6, "width": 2, "height": 6 }
+        },
+        {
+          "widget": {
+            "name": "w_latencia",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_latencia",
+                  "fields": [
+                    { "name": "action", "expression": "`action`" },
+                    { "name": "p50_ms", "expression": "`p50_ms`" },
+                    { "name": "p95_ms", "expression": "`p95_ms`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  { "fieldName": "action", "displayName": "Acción" },
+                  { "fieldName": "p50_ms", "displayName": "p50 (ms)" },
+                  { "fieldName": "p95_ms", "displayName": "p95 (ms)" }
+                ]
+              },
+              "frame": { "showTitle": true, "title": "Latencia por acción · umbral de ops.yaml: p95 ≤ 8000 ms en caliente" }
+            }
+          },
+          "position": { "x": 2, "y": 9, "width": 4, "height": 6 }
+        },
+        {
+          "widget": {
+            "name": "w_idioma",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_idioma",
+                  "fields": [
+                    { "name": "idioma", "expression": "`idioma`" },
+                    { "name": "turnos", "expression": "`turnos`" },
+                    { "name": "groundedness", "expression": "`groundedness`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  { "fieldName": "idioma", "displayName": "Idioma" },
+                  { "fieldName": "turnos", "displayName": "Turnos" },
+                  { "fieldName": "groundedness", "displayName": "Groundedness" }
+                ]
+              },
+              "frame": { "showTitle": true, "title": "ES y PT · métricas por idioma (ADR-11)" }
+            }
+          },
+          "position": { "x": 0, "y": 12, "width": 2, "height": 5 }
+        },
+        {
+          "widget": {
+            "name": "w_dq_resumen",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_dq_resumen",
+                  "fields": [
+                    { "name": "capa", "expression": "`capa`" },
+                    { "name": "checks", "expression": "`checks`" },
+                    { "name": "fallidos", "expression": "`fallidos`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  { "fieldName": "capa", "displayName": "Capa" },
+                  { "fieldName": "checks", "displayName": "Checks" },
+                  { "fieldName": "fallidos", "displayName": "Fallidos" }
+                ]
+              },
+              "frame": { "showTitle": true, "title": "Calidad por capa · última corrida del medallón" }
+            }
+          },
+          "position": { "x": 2, "y": 15, "width": 4, "height": 5 }
+        },
+        {
+          "widget": {
+            "name": "w_dq_detalle",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_dq",
+                  "fields": [
+                    { "name": "tabla", "expression": "`tabla`" },
+                    { "name": "regla", "expression": "`regla`" },
+                    { "name": "rows_checked", "expression": "`rows_checked`" },
+                    { "name": "rows_failed", "expression": "`rows_failed`" },
+                    { "name": "passed", "expression": "`passed`" }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 1,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  { "fieldName": "passed", "displayName": "OK" },
+                  { "fieldName": "tabla", "displayName": "Tabla" },
+                  { "fieldName": "regla", "displayName": "Regla" },
+                  { "fieldName": "rows_checked", "displayName": "Filas revisadas" },
+                  { "fieldName": "rows_failed", "displayName": "Filas en falta" }
+                ]
+              },
+              "frame": { "showTitle": true, "title": "Detalle de calidad · los fallidos primero" }
+            }
+          },
+          "position": { "x": 0, "y": 20, "width": 6, "height": 8 }
+        }
+      ]
+    }
+  ]
+}
