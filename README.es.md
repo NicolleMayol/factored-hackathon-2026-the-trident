@@ -27,6 +27,8 @@ Agente de servicio al cliente para un banco regional (México, Colombia, Argenti
 
 El primer turno tras un rato sin uso puede tardar 15–20 s mientras despiertan la Function y el SQL warehouse; el chat muestra los segundos y lo avisa. Estado de las cinco dependencias: [`/api/healthz`](https://func-agent-bank-dev.azurewebsites.net/api/healthz).
 
+> **Nota de costo (7 de octubre).** Para contener la factura, los endpoints de modelos ahora escalan a cero también durante la evaluación: se duermen cuando nadie los usa. Si `embed-bge-m3` está dormido, el primer turno responde solo con búsqueda léxica (`embed_fallback`, visible en la traza) y despierta el endpoint, que tarda unos minutos. Mientras tanto `/api/healthz` muestra `embed: cold`. Si preguntas de nuevo después, la respuesta usa también la búsqueda vectorial.
+
 ## Cómo funciona
 - Grafo de estados Understand → Decide → Act → Verify → Escalate (LangGraph) en Azure Function App. Decide es determinista: matriz de política en `policy/policy.yaml`, scopes del token y flags del cliente.
 - Tres componentes separados: LLM (conversación, Databricks Foundation Model APIs), pre-scoring con regresión logística (insumo del motor, nunca decide) y reglas de elegibilidad versionadas (única fuente del resultado).
@@ -47,7 +49,7 @@ El primer turno tras un rato sin uso puede tardar 15–20 s mientras despiertan 
 | --- | --- | --- |
 | Autonomía | El agente informa y pre-evalúa; nunca aprueba ni niega crédito | menos "wow" de automatización |
 | Exactitud | Toda cifra cita un chunk o una regla; tasa ≤ usura verificada | respuestas más cortas y con más escalamientos |
-| Latencia | p95 ≤ 8 s en caliente (desplegado: p95 17,5 s con 10 usuarios a la vez, p50 2,7 s; ver Evidencia); cold start reportado aparte; scale-to-zero fuera de la ventana de evaluación | primer turno lento tras inactividad; p95 sobre la meta |
+| Latencia | p95 ≤ 8 s en caliente (desplegado: p95 17,5 s con 10 usuarios a la vez, p50 2,7 s; ver Evidencia); cold start reportado aparte; scale-to-zero (desde el 7 de octubre también durante la evaluación, por costo) | primer turno lento tras inactividad; p95 sobre la meta |
 | Costo | Free tiers y serverless (versión C, ≈ 35–125 USD / 7 días) | sin always-on; límites de RU/s |
 | Supervisión humana | Handoff con contexto completo y motivo (`escalate_reason`); vista de analista | parte de los casos no se resuelve en el chat |
 
@@ -74,7 +76,7 @@ El dataset trae clientes, productos y transacciones, pero no lo que la regulaci�
 ## Qué falta y por qué (what's missing)
 | Pieza | Estado | Motivo | Qué haría falta |
 | --- | --- | --- | --- |
-| Costo del endpoint de embeddings | `embed-bge-m3` corre sin scale-to-zero durante la ventana de evaluación (ADR-21 §1) | un arranque en frío toma minutos; el agente caería a búsqueda léxica (`embed_fallback`) y la demo perdería el vector | reactivar scale-to-zero tras la evaluación (`ml/serving.py` sin `--always-on`) |
+| Costo del endpoint de embeddings | `embed-bge-m3` corrió sin scale-to-zero los primeros días de la evaluación (ADR-21 §1); desde el 7 de octubre escala a cero, porque el workspace Premium cobra cada DBU | tras un rato sin uso el endpoint tarda minutos en despertar; mientras tanto el agente usa solo búsqueda léxica (`embed_fallback`) y la respuesta pierde el vector | provisioned throughput o endpoint siempre encendido en un despliegue real |
 | p95 con concurrencia | 17,5 s con 10 usuarios a la vez frente a la meta de 8 s, y 5,6 % de turnos limitados por cuota (429 del 8B); nuestro código ya no es la cola (pre-evaluación 3× más rápida tras el #74) | los turnos más lentos son llamadas únicas al 70B en el endpoint pay-per-token, encoladas bajo carga; el 8B llega a su límite de cuota | provisioned throughput para ambos endpoints y reintento con backoff ante 429 antes del fallo seguro; confirmar con la misma prueba k6 |
 | Held-out sobre el dataset | no entrenable: 42 frases plantilla bajo las 6 categorías (`docs/labels.md`) | el dataset no distingue los cinco intents del workflow 4 | etiquetas reales de transcripciones |
 | Topes de CO y MX | valor provisional, no citado | la SFC publica PDF mensual y Banxico consulta interactiva | pegar dos números por fila (E6) |

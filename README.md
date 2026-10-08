@@ -29,6 +29,8 @@ Customer service agent for a regional bank (Mexico, Colombia, Argentina), focuse
 
 The first turn after a while idle can take 15–20 s while the Function and the SQL warehouse wake up; the chat shows the seconds and says so. Status of the five dependencies: [`/api/healthz`](https://func-agent-bank-dev.azurewebsites.net/api/healthz).
 
+> **Cost note (October 7).** To keep the bill down, the model endpoints now scale to zero during the evaluation too: they sleep when nobody uses them. If `embed-bge-m3` is asleep, the first turn answers with keyword search only (`embed_fallback`, visible in the trace) and wakes the endpoint, which takes a few minutes. Until then `/api/healthz` shows `embed: cold`. Ask again after that and the answer also uses vector search.
+
 ## How it works
 - State graph Understand → Decide → Act → Verify → Escalate (LangGraph) on an Azure Function App. Decide is deterministic: it uses the policy matrix in `policy/policy.yaml`, the token scopes and the customer flags.
 - Three separate components: the LLM (conversation, Databricks Foundation Model APIs), a logistic regression pre-score (an input to the engine; it never decides) and versioned eligibility rules (the only source of the outcome).
@@ -49,7 +51,7 @@ The first turn after a while idle can take 15–20 s while the Function and the 
 | --- | --- | --- |
 | Autonomy | The agent informs and runs a pre-check; it never approves or denies credit | less automation "wow" |
 | Accuracy | Every figure cites a chunk or a rule; rate ≤ usury cap, checked | shorter answers and more escalations |
-| Latency | p95 ≤ 8 s warm (deployed: p95 17.5 s with 10 concurrent users, p50 2.7 s; see Evidence); cold start reported separately; scale-to-zero outside the evaluation window | slow first turn after idle time; p95 above target |
+| Latency | p95 ≤ 8 s warm (deployed: p95 17.5 s with 10 concurrent users, p50 2.7 s; see Evidence); cold start reported separately; scale-to-zero (since October 7 also during the evaluation, for cost) | slow first turn after idle time; p95 above target |
 | Cost | Free tiers and serverless (version C, ≈ 35–125 USD / 7 days) | no always-on; RU/s limits |
 | Human oversight | Handoff with full context and reason (`escalate_reason`); analyst view | some cases are not resolved in the chat |
 
@@ -79,7 +81,7 @@ The dataset includes customers, products and transactions, but not what regulati
 | Piece | Status | Reason | What it would take |
 | --- | --- | --- | --- |
 | p95 under concurrency | 17.5 s with 10 concurrent users vs 8 s target, and 5.6% of turns rate-limited (429 on the 8B); our code is no longer the tail (pre-checks 3× faster after #74) | the slowest turns are single calls to the 70B on the pay-per-token endpoint, queued under load; the 8B hits its rate limit | provisioned throughput for both endpoints, and a retry with backoff on 429 before failing safe; same k6 test to confirm |
-| Embedding endpoint cost | `embed-bge-m3` runs without scale-to-zero during the evaluation window (ADR-21 §1) | a cold start takes minutes; the agent would fall back to lexical search (`embed_fallback`) and the demo would lose the vector | re-enable scale-to-zero after the evaluation (`ml/serving.py` without `--always-on`) |
+| Embedding endpoint cost | `embed-bge-m3` ran without scale-to-zero in the first days of the evaluation (ADR-21 §1); since October 7 it scales to zero, because the Premium workspace bills every DBU | after idle time the endpoint takes minutes to wake; meanwhile the agent uses keyword search only (`embed_fallback`) and the answer loses the vector | provisioned throughput or an always-on endpoint in a real deployment |
 | Held-out set from the dataset | not trainable: 42 template phrases under the 6 categories (`docs/labels.md`) | the dataset does not separate the five intents of workflow 4 | real labels from transcripts |
 | CO and MX rate caps | provisional value, not cited | the SFC publishes a monthly PDF and Banxico an interactive query tool | paste two numbers per row (E6) |
 | Portuguese in the dataset | 100% Spanish | the dataset is MX/CO/AR | PT is measured with a synthetic corpus and synthetic cases, stated as such |
