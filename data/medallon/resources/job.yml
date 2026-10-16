@@ -9,7 +9,7 @@ resources:
       schedule:
         quartz_cron_expression: "0 50 0/6 * * ?"
         timezone_id: UTC
-        pause_status: UNPAUSED
+        pause_status: PAUSED # desde el 16 oct (cierre de la evaluación, por costo); UNPAUSED lo reactiva
 
       tasks:
         - task_key: pipeline
