@@ -1,0 +1,143 @@
+# Apagado al cierre de la ventana de evaluación (16 oct 2026, 23:59 COT = 04:59 UTC del 17).
+# Apaga sin destruir: Function detenida, job del medallón en pausa, data-landing deshabilitado.
+# Lo único que se borra es el contenedor conversations de Cosmos (documentos de 24 h), con respaldo
+# previo, para que la cuenta quede en 800 RU/s dentro del free tier y deje de cobrar.
+# Sin environment/aprobación: corre solo a la hora. El guardia aborta si el plan trae cualquier otro
+# borrado o reemplazo. Al terminar se deshabilita a sí mismo.
+# Reabrir: variable de repo SHUTDOWN=false (o sin definir), correr infra, reactivar data-landing,
+# despausar fh26-medallon y restaurar con infra/scripts/cosmos_backup.py restore.
+name: shutdown
+on:
+  schedule:
+    - cron: "59 4 17 10 *" # 23:59 COT
+    - cron: "29 5 17 10 *" # respaldo por si GitHub se salta el primero
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Solo respaldo, plan y guardia (no apaga nada)"
+        type: boolean
+        default: true
+
+permissions: { contents: read, id-token: write, actions: write }
+concurrency: { group: terraform-apply, cancel-in-progress: false }
+
+env:
+  ARM_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+  ARM_TENANT_ID: ${{ vars.AZURE_TENANT_ID }}
+  ARM_SUBSCRIPTION_ID: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+  ARM_USE_OIDC: "true"
+  # Mismas variables que infra.yml, para que el plan solo difiera en shutdown.
+  TF_VAR_budget_amount: ${{ vars.BUDGET_AMOUNT || '100' }}
+  TF_VAR_budget_emails: ${{ vars.BUDGET_EMAILS || '[]' }}
+  TF_VAR_admin_object_ids: ${{ vars.ADMIN_OBJECT_IDS || '[]' }}
+  TF_VAR_iaml_object_ids: ${{ vars.IAML_OBJECT_IDS || '[]' }}
+  TF_VAR_function_always_ready: ${{ vars.FUNCTION_ALWAYS_READY || 'false' }}
+  TF_VAR_databricks_client_id: ${{ vars.DATABRICKS_CLIENT_ID }}
+  TF_VAR_sql_http_path: ${{ vars.SQL_HTTP_PATH }}
+  TF_VAR_shutdown: "true"
+  TF_IN_AUTOMATION: "true"
+  TF_INPUT: "false"
+  DATABRICKS_HOST: ${{ vars.DATABRICKS_HOST }}
+  DATABRICKS_AUTH_TYPE: github-oidc-azure
+  GH_TOKEN: ${{ github.token }}
+  RG: rg-ai-agents-dev
+  COSMOS_ACCOUNT: cosmos-agent-bank-dev
+  BACKUP_ACCOUNT: sttfstateagentbankdev # privado, OIDC; el repo es público y no va como artifact
+  BACKUP_CONTAINER: backup
+  HEALTHZ: https://func-agent-bank-dev.azurewebsites.net/api/healthz
+  DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run }}
+
+jobs:
+  shutdown:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+        with: { terraform_version: "1.16.4", terraform_wrapper: false }
+      - uses: databricks/setup-cli@main
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Respaldo de Cosmos
+        run: |
+          set -euo pipefail
+          pip install -q "azure-cosmos>=4.7"
+          export COSMOS_ENDPOINT="https://$COSMOS_ACCOUNT.documents.azure.com:443/"
+          COSMOS_KEY=$(az cosmosdb keys list -n "$COSMOS_ACCOUNT" -g "$RG" --query primaryMasterKey -o tsv)
+          echo "::add-mask::$COSMOS_KEY"
+          export COSMOS_KEY
+          dest="cosmos/$(date -u +%Y%m%dT%H%M%SZ)"
+          python infra/scripts/cosmos_backup.py backup backup
+          az storage container create -n "$BACKUP_CONTAINER" --account-name "$BACKUP_ACCOUNT" --auth-mode login -o none
+          az storage blob upload-batch --auth-mode login --account-name "$BACKUP_ACCOUNT" -d "$BACKUP_CONTAINER" \
+            --destination-path "$dest" -s backup -o none
+          { echo "## Respaldo de Cosmos"; echo; echo "\`$BACKUP_ACCOUNT/$BACKUP_CONTAINER/$dest\`"; echo '```'; wc -l backup/*.jsonl; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Plan con shutdown
+        id: plan
+        working-directory: infra/azure
+        run: |
+          set -o pipefail
+          terraform init
+          set +e
+          terraform plan -no-color -lock-timeout=5m -detailed-exitcode -out=tfplan | tee plan.txt
+          rc=${PIPESTATUS[0]}
+          set -e
+          [ "$rc" = 1 ] && exit 1
+          echo "changes=$([ "$rc" = 2 ] && echo true || echo false)" >> "$GITHUB_OUTPUT"
+          { echo "## terraform plan · shutdown"; echo '```'; grep -E '^(Plan:|No changes\.)' plan.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+
+      # Guardia: el único borrado permitido es conversations; ningún reemplazo.
+      - name: Guardia contra destroy
+        if: steps.plan.outputs.changes == 'true'
+        working-directory: infra/azure
+        run: |
+          set -euo pipefail
+          bad=$(terraform show -json tfplan | jq -r '
+            .resource_changes[]
+            | select(.change.actions | index("delete"))
+            | select(.address != "azurerm_cosmosdb_sql_container.conversations[0]" or (.change.actions | index("create")))
+            | .address')
+          if [ -n "$bad" ]; then
+            echo "::error::El plan borra o reemplaza recursos no permitidos:"; echo "$bad"; exit 1
+          fi
+
+      - name: Apply
+        if: steps.plan.outputs.changes == 'true' && env.DRY_RUN != 'true'
+        working-directory: infra/azure
+        run: terraform apply -lock-timeout=5m tfplan
+
+      - name: Pausar el job del medallón
+        if: env.DRY_RUN != 'true'
+        run: |
+          set -euo pipefail
+          id=$(databricks jobs list --name fh26-medallon -o json | jq -r '.[0].job_id // empty')
+          if [ -z "$id" ]; then echo "::warning::No encontré fh26-medallon"; exit 0; fi
+          schedule=$(databricks jobs get "$id" -o json | jq -c '.settings.schedule | .pause_status = "PAUSED"')
+          databricks jobs update --json "{\"job_id\": $id, \"new_settings\": {\"schedule\": $schedule}}"
+          databricks jobs get "$id" -o json | jq -r '"fh26-medallon: " + .settings.schedule.pause_status'
+
+      - name: Deshabilitar data-landing
+        if: env.DRY_RUN != 'true'
+        run: gh workflow disable data-landing.yml -R "$GITHUB_REPOSITORY" || echo "::warning::data-landing ya estaba deshabilitado"
+
+      - name: Comprobar que la Function no responde
+        if: env.DRY_RUN != 'true'
+        run: |
+          for i in 1 2 3 4 5 6; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$HEALTHZ" || true)
+            echo "healthz: $code"
+            [ "$code" != "200" ] && { echo "Function apagada ($code)" >> "$GITHUB_STEP_SUMMARY"; exit 0; }
+            sleep 20
+          done
+          echo "::error::/api/healthz sigue respondiendo 200"; exit 1
+
+      - name: Deshabilitar este workflow
+        if: success() && env.DRY_RUN != 'true'
+        run: gh workflow disable shutdown.yml -R "$GITHUB_REPOSITORY"

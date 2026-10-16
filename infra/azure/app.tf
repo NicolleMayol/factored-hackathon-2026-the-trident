@@ -39,6 +39,7 @@ resource "azurerm_function_app_flex_consumption" "main" {
   resource_group_name = azurerm_resource_group.main.name
   service_plan_id     = azurerm_service_plan.func.id
   https_only          = true
+  enabled             = !var.shutdown # apagado al cierre de la evaluación (workflow shutdown)
   tags                = local.tags
 
   runtime_name           = "python"
@@ -52,7 +53,7 @@ resource "azurerm_function_app_flex_consumption" "main" {
   storage_access_key          = azurerm_storage_account.func.primary_access_key
 
   dynamic "always_ready" {
-    for_each = var.function_always_ready ? [1] : []
+    for_each = var.function_always_ready && !var.shutdown ? [1] : []
     content {
       name           = "http"
       instance_count = 1
