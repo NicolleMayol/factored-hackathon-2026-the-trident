@@ -1,13 +1,13 @@
 # Mover a .github/workflows/data-landing.yml (la conexión de Claude no puede escribir en .github/workflows).
 # Copia incremental del dataset de Factored (S3, solo lectura, prefijo data/) a ADLS:
 #   adlsagentbankdev/landing/factored-datathon/data/
-# Corre cada 6 h y a mano. Solo trae archivos nuevos o cambiados (ifSourceNewer) y deja un manifiesto
+# Corre a mano (el cron de cada 6 h está apagado desde el 16 oct). Solo trae archivos nuevos o cambiados (ifSourceNewer) y deja un manifiesto
 # con el inventario y las diferencias contra la corrida anterior (evidencia de llegadas tardías).
 # Sin environment/aprobación: solo lee S3 y escribe en landing. Las llaves de AWS solo viven aquí.
 name: data-landing
 on:
-  schedule:
-    - cron: "17 */6 * * *" # cada 6 h, minuto 17 para no caer en :00
+  # Sin cron desde el 16 oct (cierre de la evaluación, por costo). Para reactivarlo:
+  # schedule: [{ cron: "17 */6 * * *" }]  # cada 6 h, minuto 17 para no caer en :00
   workflow_dispatch:
     inputs:
       overwrite:

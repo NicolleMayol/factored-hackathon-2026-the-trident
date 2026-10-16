@@ -33,6 +33,12 @@ variable "function_always_ready" {
   default     = false
 }
 
+variable "shutdown" {
+  description = "true al cerrar la ventana de evaluación: Function detenida y sin conversations (Cosmos queda en 800 RU/s, dentro del free tier). Nada más se borra. false lo vuelve a encender."
+  type        = bool
+  default     = false
+}
+
 # Valores que llegan del stack de Databricks (mañana, tras account admin). Vacíos hasta entonces.
 variable "databricks_client_id" {
   description = "Application ID de sp-agent-ro."

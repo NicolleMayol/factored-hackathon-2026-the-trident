@@ -57,7 +57,10 @@ resource "azurerm_cosmosdb_sql_database" "agent" {
   # sin throughput a nivel de base: cada contenedor tiene el suyo
 }
 
+# Con shutdown se borra: 3 × 400 RU/s pasan a 800, dentro de las 1.000 del free tier, y la cuenta
+# deja de cobrar. Los documentos viven 24 h (default_ttl); el workflow shutdown los respalda antes.
 resource "azurerm_cosmosdb_sql_container" "conversations" {
+  count               = var.shutdown ? 0 : 1
   name                = "conversations"
   resource_group_name = azurerm_resource_group.main.name
   account_name        = azurerm_cosmosdb_account.main.name
@@ -65,6 +68,11 @@ resource "azurerm_cosmosdb_sql_container" "conversations" {
   partition_key_paths = ["/conversation_id"]
   throughput          = 400
   default_ttl         = 86400
+}
+
+moved {
+  from = azurerm_cosmosdb_sql_container.conversations
+  to   = azurerm_cosmosdb_sql_container.conversations[0]
 }
 
 resource "azurerm_cosmosdb_sql_container" "handoffs" {
